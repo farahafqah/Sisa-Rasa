@@ -107,20 +107,7 @@ def search_results_page():
     # We'll handle authentication in the client-side JavaScript
     return render_template('search-results.html')
 
-@app.route('/test-redirect', methods=['GET'])
-def test_redirect_page():
-    """Test page for redirect functionality."""
-    return render_template('test-redirect.html')
 
-@app.route('/test', methods=['GET'])
-def test_page():
-    """Test page for static file serving."""
-    return render_template('test.html')
-
-@app.route('/test-api', methods=['GET'])
-def test_api_page():
-    """Test page for API functionality."""
-    return render_template('test-api.html')
 
 @app.route('/api/docs', methods=['GET'])
 def api_docs():
