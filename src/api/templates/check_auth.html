@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checking Authentication...</title>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f1ead1;
+    }
+    .loader {
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #e1cc7f;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+    .container {
+      text-align: center;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="loader"></div>
+    <p>Checking authentication...</p>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Check if token exists in localStorage
+      const token = localStorage.getItem('token');
+      
+      if (token) {
+        // Token exists, make a request to verify it
+        fetch('/api/auth/me', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+        .then(response => {
+          if (response.ok) {
+            // Token is valid, redirect to the original page
+            window.location.href = "{{ redirect_url }}";
+          } else {
+            // Token is invalid, redirect to login
+            localStorage.removeItem('token');
+            localStorage.removeItem('userId');
+            localStorage.removeItem('userName');
+            window.location.href = '/login';
+          }
+        })
+        .catch(error => {
+          console.error('Error verifying token:', error);
+          // On error, redirect to login
+          window.location.href = '/login';
+        });
+      } else {
+        // No token, redirect to login
+        window.location.href = '/login';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e8; color: #2e7d32; }
+        button { background: #ea5e18; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #d54e15; }
+    </style>
+</head>
+<body>
+    <h1>API Test Page</h1>
+    
+    <h2>Test Recipe Recommendation API</h2>
+    <button onclick="testAPI()">Test API with rice, salt</button>
+    
+    <div id="results"></div>
+
+    <script>
+        async function testAPI() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="result">Testing API...</div>';
+            
+            try {
+                console.log('Testing API with ingredients: rice, salt');
+                
+                const response = await fetch('/api/recommend', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        ingredients: ['rice', 'salt'],
+                        limit: 5
+                    })
+                });
+                
+                console.log('Response status:', response.status);
+                console.log('Response ok:', response.ok);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('API Response:', data);
+                
+                if (data.status === 'ok' && data.recipes) {
+                    let html = `<div class="result success">
+                        <h3>API Test Successful!</h3>
+                        <p><strong>Status:</strong> ${data.status}</p>
+                        <p><strong>Recipe Count:</strong> ${data.count}</p>
+                        <h4>First Recipe:</h4>
+                    `;
+                    
+                    if (data.recipes.length > 0) {
+                        const recipe = data.recipes[0];
+                        html += `
+                            <p><strong>Name:</strong> ${recipe.name}</p>
+                            <p><strong>Match %:</strong> ${recipe.ingredient_match_percentage}%</p>
+                            <p><strong>Ingredients:</strong> ${recipe.ingredients.slice(0, 5).join(', ')}${recipe.ingredients.length > 5 ? '...' : ''}</p>
+                        `;
+                    }
+                    
+                    html += '</div>';
+                    resultsDiv.innerHTML = html;
+                } else {
+                    resultsDiv.innerHTML = `<div class="result error">
+                        <h3>API Error</h3>
+                        <p>Status: ${data.status}</p>
+                        <p>Message: ${data.message || 'Unknown error'}</p>
+                    </div>`;
+                }
+                
+            } catch (error) {
+                console.error('API Test Error:', error);
+                resultsDiv.innerHTML = `<div class="result error">
+                    <h3>Request Failed</h3>
+                    <p>Error: ${error.message}</p>
+                    <p>Check the console for more details.</p>
+                </div>`;
+            }
+        }
+        
+        // Auto-test on page load
+        window.onload = function() {
+            testAPI();
+        };
+    </script>
+</body>
+</html>

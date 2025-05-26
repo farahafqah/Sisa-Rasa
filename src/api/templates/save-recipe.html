@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Save Recipe | Sisa Rasa</title>
+
+  <!-- Styles and Fonts -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&display=swap" rel="stylesheet">
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+
+  <!-- Vue -->
+  <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+
+  <!-- SweetAlert for notifications -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: url("{{ url_for('static', filename='images/bg.png') }}") no-repeat center center fixed;
+      background-size: cover;
+      margin: 0;
+    }
+    /* Sidebar styles */
+    .sidebar {
+      background-color: #083640;
+      min-height: 100vh;
+      padding-top: 1rem;
+      color: white;
+      border-right: 1px solid rgba(255,255,255,0.1);
+    }
+    /* Logo styles */
+    .logo-container {
+      background-color: #072a32;
+      padding: 1.5rem 1rem;
+      margin-bottom: 2rem;
+      text-align: center;
+      border-radius: 0 0 10px 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    .logo-container img {
+      width: 80px;
+      height: auto;
+      margin-bottom: 0.75rem;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+      transition: transform 0.3s ease;
+    }
+    .logo-container:hover img {
+      transform: scale(1.05);
+    }
+    .logo-container h5 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+      color: white;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .logo-container small {
+      font-size: 0.8rem;
+      opacity: 0.9;
+      display: block;
+      color: #fedf2f;
+    }
+    .nav-links {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      padding-left: 0;
+      margin-top: 2rem;
+    }
+    .nav-links a {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1.5rem;
+      font-weight: 600;
+      text-decoration: none;
+      color: white;
+      border-radius: 0;
+      transition: background 0.3s;
+      border-left: 4px solid transparent;
+    }
+    .nav-links a.active {
+      background-color: #ea5e18;
+      border-left: 4px solid #fedf2f;
+    }
+    .nav-links a:hover:not(.active) {
+      background-color: rgba(234, 94, 24, 0.3);
+    }
+
+    /* Header styles */
+    .header-bar {
+      background-color: transparent;
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #083640;
+    }
+    .header-bar h5 {
+      font-weight: 700;
+      margin-bottom: 0;
+    }
+    .user-profile {
+      background-color: #083640;
+      border-radius: 2rem;
+      padding: 0.5rem 1rem;
+      display: flex;
+      align-items: center;
+      color: white;
+    }
+    .user-profile img {
+      border: 2px solid white;
+    }
+
+    /* Recipe card styles */
+    .recipe-card {
+      background-color: #ffffff;
+      border-radius: 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 1.25rem;
+      transition: all 0.3s ease;
+      margin-bottom: 1.5rem;
+    }
+    .recipe-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+    }
+    .recipe-card .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+    }
+    .recipe-card h6 {
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: #083640;
+    }
+    .recipe-card p {
+      margin-bottom: 0.75rem;
+      font-size: 0.9rem;
+    }
+    .recipe-card .card-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .btn-save {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      padding: 0;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-save:hover {
+      transform: scale(1.2);
+    }
+    .bx-heart {
+      color: gray;
+    }
+    .bxs-heart {
+      color: #ea5e18;
+    }
+
+    /* Animation styles */
+    .fade-in {
+      animation: fadeIn 0.8s ease forwards;
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    @keyframes fadeIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    @keyframes pop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.5); }
+      100% { transform: scale(1); }
+    }
+    .pop {
+      animation: pop 0.5s ease;
+    }
+
+    /* Loading spinner */
+    .loading-spinner {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 200px;
+    }
+
+    /* Footer styles */
+    .footer {
+      background-color: #072a32;
+      color: rgba(255,255,255,0.7);
+      text-align: center;
+      padding: 1rem;
+      margin-top: 2rem;
+      font-size: 0.8rem;
+      border-radius: 0.5rem;
+    }
+    .footer a {
+      color: #fedf2f;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+    .footer a:hover {
+      color: #ea5e18;
+    }
+
+    /* Empty state */
+    .empty-state {
+      background-color: #083640;
+      color: white;
+      padding: 2rem;
+      border-radius: 1rem;
+      text-align: center;
+    }
+    .empty-state h6 {
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+    .empty-state a {
+      color: #fedf2f;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .empty-state a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app" class="container-fluid">
+    <div class="row">
+      <!-- Sidebar -->
+      <div class="col-md-2 sidebar">
+        <div class="logo-container">
+          <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Sisa Rasa Logo">
+          <h5>Sisa Rasa</h5>
+          <small>Rasa Baru</small>
+          <small>Sisa Lama</small>
+        </div>
+        <nav class="nav-links">
+          <a href="dashboard"><i class='bx bx-grid-alt'></i>Dashboard</a>
+          <a href="save-recipe" class="active"><i class='bx bx-book-heart'></i>Save Recipe</a>
+          <a href="profile"><i class='bx bx-user'></i>Profile</a>
+          <a href="#"><i class='bx bx-cog'></i>Settings</a>
+          <a href="#" @click="logout"><i class='bx bx-log-out'></i>Log Out</a>
+          <a href="#"><i class='bx bx-help-circle'></i>Help</a>
+        </nav>
+      </div>
+
+      <!-- Main Content -->
+      <div class="col-md-10">
+        <!-- Header -->
+        <div class="header-bar">
+          <div>
+            <h5>Welcome , ${ userName }!</h5>
+            <p>Here are your saved recipes 🍽️</p>
+          </div>
+          <div class="user-profile">
+            <span class="me-2">${ userName }</span>
+            <img v-if="profileImageUrl" :src="profileImageUrl" class="rounded-circle" alt="User" width="40" height="40" style="object-fit: cover;">
+            <img v-else src="{{ url_for('static', filename='images/user.png') }}" class="rounded-circle" alt="User" width="40">
+          </div>
+        </div>
+
+        <div class="container mt-4">
+          <!-- Loading State -->
+          <div v-if="loading" class="loading-spinner">
+            <div class="spinner-border text-warning" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+
+          <!-- Recipes Grid -->
+          <div v-else-if="savedRecipes.length > 0" class="row g-4">
+            <div class="col-md-6" v-for="(recipe, index) in savedRecipes" :key="recipe.id">
+              <div class="recipe-card fade-in">
+                <div class="card-header">
+                  <h6>${ recipe.name }</h6>
+                  <div class="card-actions">
+                    <button class="btn-save" @click="unsaveRecipe(recipe.id, index)">
+                      <i :id="'heart-' + index" class='bx bxs-heart'></i>
+                    </button>
+                    <button class="btn-save">
+                      <i class='bx bx-dots-vertical-rounded'></i>
+                    </button>
+                  </div>
+                </div>
+                <p><strong>Ingredients:</strong> ${ recipe.ingredients.join(', ') }</p>
+                <p><strong>Instructions:</strong> ${ recipe.steps.join('. ') }</p>
+                <p v-if="recipe.techniques && recipe.techniques.length > 0">
+                  <strong>Techniques:</strong> ${ recipe.techniques.join(', ') }
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div v-else class="empty-state">
+            <h6>No saved recipes yet. Start saving your favorites! 💾</h6>
+            <p class="mt-3">Go to the <a href="dashboard">Dashboard</a> to find and save recipes.</p>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer mt-5">
+          <p>&copy; 2025 Sisa Rasa. All rights reserved. <a href="#">Terms of Service</a> | <a href="#">Privacy Policy</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vue App -->
+  <script>
+    const { createApp } = Vue;
+
+    // Check if token exists
+    const token = localStorage.getItem('token');
+    if (!token) {
+      window.location.href = '/login';
+    }
+
+    createApp({
+      // Change delimiters to avoid conflict with Jinja2
+      delimiters: ['${', '}'],
+      data() {
+        return {
+          userName: "",
+          profileImageUrl: null,
+          savedRecipes: [],
+          loading: true
+        }
+      },
+      mounted() {
+        this.fetchUserInfo();
+        this.fetchProfileImage();
+        this.fetchSavedRecipes();
+      },
+      methods: {
+        fetchProfileImage() {
+          // Check if user has a profile image
+          fetch('/api/auth/profile-image/current', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
+          .then(res => {
+            if (!res.ok) {
+              if (res.status !== 404) {
+                // If error other than 404, log it
+                console.error('Error fetching profile image:', res.statusText);
+              }
+              // If 404, we'll just use the initials avatar
+              return null;
+            }
+            return res.json();
+          })
+          .then(data => {
+            if (data && data.status === 'success' && data.profile_image) {
+              // If successful, set the profile image URL (which is now a data URI)
+              this.profileImageUrl = data.profile_image;
+            }
+          })
+          .catch(err => {
+            console.error('Error fetching profile image:', err);
+          });
+        },
+        fetchUserInfo() {
+          fetch('/api/auth/me', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
+          .then(res => {
+            if (!res.ok) {
+              throw new Error('Failed to get user info');
+            }
+            return res.json();
+          })
+          .then(data => {
+            if (data.status === 'success' && data.user) {
+              this.userName = data.user.name;
+
+              // Generate initials from name
+              if (this.userName) {
+                const parts = this.userName.split(' ');
+                this.userInitials = parts.map(p => p[0]).join('').toUpperCase();
+              } else {
+                this.userInitials = "SR";
+              }
+            }
+          })
+          .catch(err => {
+            console.error('Error fetching user info:', err);
+            // Redirect to login if authentication fails
+            if (err.message.includes('authentication')) {
+              window.location.href = '/login';
+            }
+          });
+        },
+        fetchSavedRecipes() {
+          this.loading = true;
+
+          fetch('/api/recipes/saved', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
+          .then(res => {
+            if (!res.ok) {
+              throw new Error('Failed to get saved recipes');
+            }
+            return res.json();
+          })
+          .then(data => {
+            this.loading = false;
+            if (data.status === 'success' && data.recipes) {
+              this.savedRecipes = data.recipes;
+            } else {
+              this.savedRecipes = [];
+            }
+          })
+          .catch(err => {
+            this.loading = false;
+            console.error('Error fetching saved recipes:', err);
+            this.savedRecipes = [];
+
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Failed to load saved recipes. Please try again.',
+              confirmButtonColor: '#ea5e18'
+            });
+          });
+        },
+        unsaveRecipe(recipeId, index) {
+          // Animate heart pop
+          const heart = document.getElementById(`heart-${index}`);
+          if (heart) {
+            heart.classList.add('pop');
+            setTimeout(() => {
+              heart.classList.remove('pop');
+            }, 500);
+          }
+
+          fetch(`/api/recipe/${recipeId}/unsave`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
+          .then(res => {
+            if (!res.ok) {
+              throw new Error('Failed to unsave recipe');
+            }
+            return res.json();
+          })
+          .then(data => {
+            if (data.status === 'success') {
+              // Remove recipe from list
+              this.savedRecipes.splice(index, 1);
+
+              Swal.fire({
+                icon: 'success',
+                title: 'Recipe Removed',
+                text: 'Recipe has been removed from your saved recipes',
+                timer: 2000,
+                showConfirmButton: false
+              });
+            } else {
+              throw new Error('Failed to remove recipe');
+            }
+          })
+          .catch(err => {
+            console.error('Error removing recipe:', err);
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Failed to remove recipe. Please try again.',
+              confirmButtonColor: '#ea5e18'
+            });
+          });
+        },
+        logout() {
+          // Clear local storage
+          localStorage.removeItem('token');
+          localStorage.removeItem('userId');
+          localStorage.removeItem('userName');
+
+          // Redirect to login page
+          window.location.href = '/login';
+        }
+      }
+    }).mount('#app');
+  </script>
+
+  <!-- Boxicons -->
+  <script src="https://unpkg.com/boxicons@2.1.4/dist/boxicons.js"></script>
+</body>
+</html>

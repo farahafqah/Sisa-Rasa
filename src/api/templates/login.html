@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login | Sisa Rasa</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- Box Icons -->
+  <link href='https://cdn.jsdelivr.net/npm/boxicons@2.0.5/css/boxicons.min.css' rel='stylesheet'>
+  <!-- SweetAlert for notifications -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- GSAP for animations -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.5.1/gsap.min.js" defer></script>
+
+  <style>
+    :root {
+      --first-color: #f1ead1;
+      --first-color-dark: #e1cc7f;
+      --first-color-darken: #f9e59a;
+      --white-color: #0b0a0a;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: var(--first-color);
+      margin: var(--header-height) 0 0 0;
+      padding: 0;
+    }
+
+    .l-header {
+      width: 100%;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 100;
+      background-color: var(--first-color);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .nav {
+      height: var(--header-height);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 1rem;
+    }
+
+    .nav__list {
+      display: flex;
+      padding: 0;
+      list-style: none;
+      margin: 0;
+    }
+
+    .nav__item {
+      margin-left: 2rem;
+    }
+
+    .nav__link {
+      font-weight: 600;
+      color: var(--white-color);
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+
+    .nav__link:hover {
+      color: var(--first-color-dark);
+    }
+
+    .main {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 80px 20px 40px;
+    }
+
+    .card {
+      max-width: 900px;
+      width: 100%;
+      border: none;
+      border-radius: 1rem;
+      overflow: hidden;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+    }
+
+    .card img {
+      max-height: 500px;
+      width: 100%;
+      object-fit: contain;
+      padding: 1rem;
+    }
+
+    .btn-custom {
+      background-color: var(--first-color-dark);
+      color: var(--white-color);
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+
+    .btn-custom:hover {
+      background-color: var(--first-color-darken);
+      transform: translateY(-2px);
+    }
+
+    .footer {
+      padding: 2rem 0 1rem;
+      text-align: center;
+      background-color: var(--first-color);
+    }
+
+    .footer__copy {
+      font-size: 0.875rem;
+      color: #666;
+    }
+
+    /* Form validation styles */
+    .form-control:focus {
+      border-color: var(--first-color-dark);
+      box-shadow: 0 0 0 0.25rem rgba(225, 204, 127, 0.25);
+    }
+
+    .invalid-feedback {
+      font-size: 0.8rem;
+    }
+
+    /* Loading indicator */
+    .spinner-border-sm {
+      width: 1rem;
+      height: 1rem;
+      border-width: 0.15em;
+      margin-right: 0.5rem;
+      display: none;
+    }
+
+    @media screen and (min-width: 768px) {
+      :root {
+        --header-height: 4rem;
+      }
+
+      .nav__list {
+        display: flex;
+      }
+
+      .nav__item {
+        margin-left: 3rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="l-header">
+    <nav class="nav container">
+      <a href="/" class="nav__logo">
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Sisa Rasa Logo" width="120" height="auto">
+      </a>
+
+      <ul class="nav__list">
+        <li class="nav__item"><a href="/" class="nav__link">Home</a></li>
+        <li class="nav__item"><a href="/#about" class="nav__link">About</a></li>
+        <li class="nav__item"><a href="/login" class="nav__link active">Login</a></li>
+        <li class="nav__item"><a href="/#contact" class="nav__link">Contact</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- Login Form -->
+  <main class="main">
+    <div class="card flex-lg-row flex-column">
+      <!-- Image Section -->
+      <div class="col-lg-6 p-0 d-none d-lg-block">
+        <img src="{{ url_for('static', filename='images/logo2.png') }}" alt="Login Visual" class="img-fluid w-100 h-100">
+      </div>
+
+      <!-- Login Form Section -->
+      <div class="col-lg-6 p-4 p-lg-5 d-flex flex-column justify-content-center bg-white">
+        <h2 class="text-center mb-2">Login to Sisa Rasa</h2>
+        <p class="text-muted text-center mb-4">Get personalized recipe recommendations</p>
+
+        <form id="loginForm" class="needs-validation" novalidate>
+          <div class="mb-3">
+            <label for="email" class="form-label">Email address</label>
+            <input type="email" class="form-control" id="email" placeholder="you@example.com" required />
+            <div class="invalid-feedback">Please enter a valid email address</div>
+          </div>
+
+          <div class="mb-3">
+            <label for="password" class="form-label">Password</label>
+            <div class="input-group">
+              <input type="password" class="form-control" id="password" placeholder="••••••••" required minlength="6" />
+              <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                <i class='bx bx-hide'></i>
+              </button>
+              <div class="invalid-feedback">Password must be at least 6 characters</div>
+            </div>
+          </div>
+
+          <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="rememberMe">
+            <label class="form-check-label" for="rememberMe">Remember me</label>
+          </div>
+
+          <button type="submit" class="btn btn-custom w-100">
+            <span class="spinner-border spinner-border-sm" id="loginSpinner" role="status" aria-hidden="true"></span>
+            Login
+          </button>
+
+          <div class="text-center mt-3">
+            <a href="#" class="text-decoration-none small">Forgot password?</a>
+          </div>
+        </form>
+
+        <p class="text-center mt-3">Don't have an account? <a href="/signup">Sign up</a></p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <p class="footer__copy">© 2025 Sisa Rasa. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <!-- JS -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Form validation
+      const form = document.getElementById('loginForm');
+      const emailInput = document.getElementById('email');
+      const passwordInput = document.getElementById('password');
+      const togglePasswordBtn = document.getElementById('togglePassword');
+      const loginSpinner = document.getElementById('loginSpinner');
+
+      // Toggle password visibility
+      togglePasswordBtn.addEventListener('click', function() {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        this.querySelector('i').classList.toggle('bx-hide');
+        this.querySelector('i').classList.toggle('bx-show');
+      });
+
+      // Form submission
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        if (!form.checkValidity()) {
+          e.stopPropagation();
+          form.classList.add('was-validated');
+          return;
+        }
+
+        // Show loading spinner
+        loginSpinner.style.display = 'inline-block';
+
+        const email = emailInput.value;
+        const password = passwordInput.value;
+        const rememberMe = document.getElementById('rememberMe').checked;
+
+        // Call the API
+        fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password, rememberMe })
+        })
+        .then(res => {
+          if (!res.ok) {
+            throw new Error('Login failed');
+          }
+          return res.json();
+        })
+        .then(data => {
+          if (data.status === 'success' && data.token && data.user) {
+            // Store token and user data in localStorage
+            localStorage.setItem("token", data.token);
+            localStorage.setItem("userId", data.user.id);
+            localStorage.setItem("userName", data.user.name);
+
+            Swal.fire({
+              icon: 'success',
+              title: 'Login Successful!',
+              text: `Welcome back, ${data.user.name}!`,
+              timer: 2000,
+              showConfirmButton: false
+            });
+
+            setTimeout(() => {
+              // Redirect to dashboard
+              window.location.href = '/dashboard';
+            }, 2000);
+          } else {
+            throw new Error(data.message || 'Invalid login credentials');
+          }
+        })
+          .catch(err => {
+            console.error(err);
+            Swal.fire({
+              icon: 'error',
+              title: 'Login Failed',
+              text: err.message || 'Invalid login credentials. Please try again.',
+              confirmButtonColor: '#e1cc7f'
+            });
+          })
+          .finally(() => {
+            // Hide loading spinner
+            loginSpinner.style.display = 'none';
+          });
+        // No delay needed
+      });
+
+      // GSAP animations
+      gsap.from('.card', {opacity: 0, y: 30, duration: 1, delay: 0.5});
+      gsap.from('h2, p.text-muted', {opacity: 0, y: 20, duration: 0.8, delay: 0.8, stagger: 0.2});
+      gsap.from('.form-control, .btn-custom', {opacity: 0, y: 10, duration: 0.6, delay: 1, stagger: 0.1});
+    });
+  </script>
+</body>
+</html>

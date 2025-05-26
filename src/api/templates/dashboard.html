@@ -1,0 +1,2336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard | Sisa Rasa</title>
+
+  <!-- Styles and Fonts -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&display=swap" rel="stylesheet">
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+
+  <!-- VueJS -->
+  <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- SweetAlert for notifications -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: url("{{ url_for('static', filename='images/bg.png') }}") no-repeat center center fixed;
+      background-size: cover;
+      margin: 0;
+    }
+    /* Sidebar styles */
+    .sidebar {
+      background-color: #083640;
+      min-height: 100vh;
+      padding-top: 1rem;
+      color: white;
+      border-right: 1px solid rgba(255,255,255,0.1);
+    }
+    /* Logo styles */
+    .logo-container {
+      background-color: #072a32;
+      padding: 1.5rem 1rem;
+      margin-bottom: 2rem;
+      text-align: center;
+      border-radius: 0 0 10px 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    .logo-container img {
+      width: 80px;
+      height: auto;
+      margin-bottom: 0.75rem;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+      transition: transform 0.3s ease;
+    }
+    .logo-container:hover img {
+      transform: scale(1.05);
+    }
+    .logo-container h5 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+      color: white;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .logo-container small {
+      font-size: 0.8rem;
+      opacity: 0.9;
+      display: block;
+      color: #fedf2f;
+    }
+    .nav-links {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      padding-left: 0;
+      margin-top: 2rem;
+    }
+    .nav-links a {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1.5rem;
+      font-weight: 600;
+      text-decoration: none;
+      color: white;
+      border-radius: 0;
+      transition: background 0.3s;
+      border-left: 4px solid transparent;
+    }
+    .nav-links a.active {
+      background-color: #ea5e18;
+      border-left: 4px solid #fedf2f;
+    }
+    .nav-links a:hover:not(.active) {
+      background-color: rgba(234, 94, 24, 0.3);
+    }
+
+    /* Header styles */
+    .header-bar {
+      background-color: transparent;
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #083640;
+    }
+    .header-bar h5 {
+      font-weight: 700;
+      margin-bottom: 0;
+    }
+    .user-profile {
+      background-color: #083640;
+      border-radius: 2rem;
+      padding: 0.5rem 1rem;
+      display: flex;
+      align-items: center;
+      color: white;
+    }
+    .user-profile img {
+      border: 2px solid white;
+    }
+
+    /* Search box styles */
+    .search-box {
+      background-color: #ea5e18;
+      padding: 1.5rem;
+      border-radius: 1rem;
+      color: white;
+      margin-bottom: 1.5rem;
+    }
+    .search-box h5 {
+      color: #fedf2f;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+    .search-input-container {
+      position: relative;
+      margin-bottom: 1rem;
+    }
+    .ingredient-input-wrapper {
+      background-color: white;
+      border-radius: 2rem;
+      padding: 0.5rem;
+      min-height: 50px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem;
+      position: relative;
+    }
+    .ingredient-tag {
+      background-color: #083640;
+      color: white;
+      padding: 0.25rem 0.75rem;
+      border-radius: 1rem;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      animation: fadeInScale 0.3s ease;
+    }
+    .ingredient-tag .remove-tag {
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 1rem;
+      line-height: 1;
+      transition: color 0.2s;
+    }
+    .ingredient-tag .remove-tag:hover {
+      color: #ea5e18;
+    }
+    .ingredient-input {
+      border: none;
+      outline: none;
+      flex: 1;
+      min-width: 150px;
+      padding: 0.5rem;
+      font-size: 1rem;
+      background: transparent;
+      color: #083640;
+    }
+    .ingredient-input::placeholder {
+      color: #999;
+    }
+    .search-icon {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #083640;
+      z-index: 2;
+    }
+    .ingredient-suggestions {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border-radius: 0.5rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 1000;
+      margin-top: 0.25rem;
+    }
+    .suggestion-item {
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      color: #083640;
+      border-bottom: 1px solid #f0f0f0;
+      transition: background-color 0.2s;
+    }
+    .suggestion-item:hover {
+      background-color: #f8f9fa;
+    }
+    .suggestion-item:last-child {
+      border-bottom: none;
+    }
+    .search-box button {
+      background-color: #083640;
+      color: white;
+      border: none;
+      border-radius: 2rem;
+      padding: 0.5rem 1.5rem;
+      font-weight: 600;
+      transition: all 0.3s;
+    }
+    .search-box button:hover:not(:disabled) {
+      background-color: #0a4550;
+      transform: translateY(-2px);
+    }
+    .search-box button:disabled {
+      background-color: #6c757d;
+      cursor: not-allowed;
+      transform: none;
+      opacity: 0.6;
+    }
+    .ingredient-history {
+      margin-top: 1rem;
+    }
+    .ingredient-history h6 {
+      color: #fedf2f;
+      font-size: 0.9rem;
+      margin-bottom: 0.75rem;
+      font-weight: 600;
+    }
+    .history-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .history-tag {
+      background-color: rgba(255,255,255,0.2);
+      color: white;
+      padding: 0.25rem 0.75rem;
+      border-radius: 1rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      border: 1px solid transparent;
+    }
+    .history-tag:hover {
+      background-color: rgba(255,255,255,0.3);
+      border-color: #fedf2f;
+      transform: translateY(-1px);
+    }
+    @keyframes fadeInScale {
+      from {
+        opacity: 0;
+        transform: scale(0.8);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    /* Filter tabs */
+    .filter-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+    }
+    .filter-tabs::-webkit-scrollbar {
+      height: 3px;
+    }
+    .filter-tabs::-webkit-scrollbar-thumb {
+      background-color: rgba(234, 94, 24, 0.5);
+      border-radius: 10px;
+    }
+    .filter-tab {
+      background-color: #f5f5f5;
+      border: 1px solid #ddd;
+      border-radius: 2rem;
+      padding: 0.25rem 1rem;
+      font-size: 0.8rem;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .filter-tab.active {
+      background-color: #083640;
+      color: white;
+      border-color: #083640;
+    }
+
+    /* Recent search styles */
+    .latest-search {
+      background-color: #083640;
+      border-radius: 1rem;
+      padding: 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      color: white;
+    }
+    .latest-search h6 {
+      font-weight: 600;
+      margin-bottom: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 1rem;
+    }
+    .latest-search h6 i {
+      margin-right: 0.5rem;
+      color: #fedf2f;
+    }
+    .clear-history {
+      cursor: pointer;
+      opacity: 0.7;
+      transition: all 0.2s;
+      padding: 0.25rem;
+      border-radius: 0.25rem;
+      font-size: 0.9rem;
+    }
+    .clear-history:hover {
+      opacity: 1;
+      background-color: rgba(255,255,255,0.1);
+      color: #ea5e18;
+    }
+    .recent-search-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem;
+      background-color: rgba(255,255,255,0.1);
+      border-radius: 0.75rem;
+      margin-bottom: 0.75rem;
+      transition: all 0.3s;
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+    .recent-search-item:hover {
+      background-color: rgba(255,255,255,0.2);
+      border-color: #fedf2f;
+      transform: translateY(-2px);
+    }
+    .search-content {
+      flex: 1;
+      min-width: 0;
+    }
+    .search-ingredients {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.25rem;
+      margin-bottom: 0.5rem;
+    }
+    .ingredient-chip {
+      background-color: rgba(234, 94, 24, 0.8);
+      color: white;
+      padding: 0.15rem 0.5rem;
+      border-radius: 1rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    .search-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.7rem;
+      opacity: 0.8;
+    }
+    .search-time {
+      color: #fedf2f;
+    }
+    .search-count {
+      color: rgba(255,255,255,0.7);
+    }
+    .search-actions {
+      display: flex;
+      gap: 0.25rem;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .recent-search-item:hover .search-actions {
+      opacity: 1;
+    }
+    .action-btn {
+      background: none;
+      border: none;
+      color: white;
+      padding: 0.25rem;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 0.9rem;
+    }
+    .action-btn:hover {
+      background-color: rgba(255,255,255,0.2);
+      color: #fedf2f;
+    }
+    .action-btn.remove-btn:hover {
+      background-color: rgba(220, 53, 69, 0.2);
+      color: #dc3545;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 2rem 1rem;
+      opacity: 0.7;
+    }
+    .empty-state i {
+      font-size: 2.5rem;
+      color: #fedf2f;
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+    .empty-state p {
+      margin: 0.5rem 0 0.25rem 0;
+      font-weight: 600;
+    }
+    .empty-state small {
+      font-size: 0.8rem;
+      opacity: 0.8;
+    }
+
+    /* Recommendation styles */
+    .recommend-section {
+      background-color: #083640;
+      padding: 1.5rem;
+      border-radius: 1rem;
+      height: 600px;
+      overflow-y: auto;
+      color: white;
+    }
+    .recommend-section h5 {
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+    .recommend-card {
+      background-color: #ffffff;
+      padding: 1rem;
+      border-radius: 1rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+      color: #333;
+    }
+    .recommend-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+    }
+    .recommend-card h6 {
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+    .recommend-card .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.75rem;
+    }
+    .recommend-card .card-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .recommend-card .card-actions button {
+      background: none;
+      border: none;
+      font-size: 1.25rem;
+      padding: 0;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .recommend-card .card-actions button:hover {
+      transform: scale(1.2);
+    }
+    .recommend-card p {
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+    }
+    .recommend-section::-webkit-scrollbar { width: 6px; }
+    .recommend-section::-webkit-scrollbar-track { background: transparent; }
+    .recommend-section::-webkit-scrollbar-thumb { background-color: #ea5e18; border-radius: 10px; }
+    .recommend-section::-webkit-scrollbar-thumb:hover { background-color: #ff7f3f; }
+
+    /* Footer styles */
+    .footer {
+      background-color: #072a32;
+      color: rgba(255,255,255,0.7);
+      text-align: center;
+      padding: 1rem;
+      margin-top: 2rem;
+      font-size: 0.8rem;
+      border-radius: 0.5rem;
+    }
+    .footer a {
+      color: #fedf2f;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+    .footer a:hover {
+      color: #ea5e18;
+    }
+
+    .fade-in { animation: fadeIn 0.8s ease forwards; opacity: 0; transform: translateY(20px); }
+    @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
+
+    /* Personal Analytics Styles */
+    .analytics-section {
+      background-color: #083640;
+      border-radius: 1rem;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      color: white;
+    }
+    .analytics-section h6 {
+      color: #fedf2f;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .stat-card {
+      background-color: rgba(255,255,255,0.1);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      text-align: center;
+      transition: all 0.3s;
+      border: 1px solid transparent;
+    }
+    .stat-card:hover {
+      background-color: rgba(255,255,255,0.2);
+      border-color: #fedf2f;
+      transform: translateY(-2px);
+    }
+    .stat-number {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #fedf2f;
+      display: block;
+    }
+    .stat-label {
+      font-size: 0.8rem;
+      opacity: 0.9;
+      margin-top: 0.25rem;
+    }
+    .ingredient-cloud {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    .ingredient-bubble {
+      background-color: rgba(234, 94, 24, 0.8);
+      color: white;
+      padding: 0.25rem 0.75rem;
+      border-radius: 1rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+      position: relative;
+      transition: all 0.3s;
+    }
+    .ingredient-bubble:hover {
+      background-color: #ea5e18;
+      transform: scale(1.05);
+    }
+    .ingredient-count {
+      background-color: #fedf2f;
+      color: #083640;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      top: -8px;
+      right: -8px;
+    }
+    .cooking-streak {
+      background-color: rgba(254, 223, 47, 0.2);
+      border-radius: 0.5rem;
+      padding: 0.75rem;
+      margin-top: 1rem;
+      border-left: 4px solid #fedf2f;
+    }
+    .streak-number {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #fedf2f;
+    }
+    .analytics-toggle {
+      background: none;
+      border: none;
+      color: #fedf2f;
+      cursor: pointer;
+      font-size: 0.9rem;
+      opacity: 0.8;
+      transition: opacity 0.3s;
+    }
+    .analytics-toggle:hover {
+      opacity: 1;
+    }
+
+    /* Rating and verification styles */
+    .recipe-rating {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .rating-stars {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    .star {
+      color: #ddd;
+      font-size: 1rem;
+      transition: color 0.2s;
+    }
+    .star.filled {
+      color: #ffc107;
+    }
+    .rating-text {
+      font-size: 0.85rem;
+      color: #666;
+      font-weight: 500;
+    }
+    .verification-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .verification-text {
+      font-size: 0.85rem;
+      color: #28a745;
+      font-weight: 500;
+    }
+
+    /* Rating modal styles */
+    .rating-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .rating-modal-content {
+      background: white;
+      border-radius: 1rem;
+      padding: 2rem;
+      max-width: 500px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .rating-modal h5 {
+      color: #083640;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+    .interactive-stars {
+      display: flex;
+      gap: 0.25rem;
+      margin-bottom: 1rem;
+    }
+    .interactive-star {
+      font-size: 2rem;
+      color: #ddd;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .interactive-star:hover,
+    .interactive-star.active {
+      color: #ffc107;
+      transform: scale(1.1);
+    }
+    .review-textarea {
+      width: 100%;
+      min-height: 100px;
+      border: 2px solid #ddd;
+      border-radius: 0.5rem;
+      padding: 0.75rem;
+      font-family: inherit;
+      resize: vertical;
+      margin-bottom: 1rem;
+    }
+    .review-textarea:focus {
+      border-color: #ea5e18;
+      outline: none;
+    }
+    .modal-buttons {
+      display: flex;
+      gap: 1rem;
+      justify-content: flex-end;
+    }
+    .btn-modal {
+      padding: 0.5rem 1.5rem;
+      border: none;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .btn-primary {
+      background-color: #ea5e18;
+      color: white;
+    }
+    .btn-primary:hover {
+      background-color: #d54e15;
+      transform: translateY(-1px);
+    }
+    .btn-secondary {
+      background-color: #6c757d;
+      color: white;
+    }
+    .btn-secondary:hover {
+      background-color: #5a6268;
+    }
+
+    /* Comment Button */
+    .comment-btn {
+      background-color: transparent !important;
+      color: inherit !important;
+      border-radius: 0.25rem !important;
+    }
+    .comment-btn:hover {
+      background-color: #f8f9fa !important;
+      color: inherit !important;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="container-fluid">
+    <div class="row">
+      <!-- Sidebar -->
+      <div class="col-md-2 sidebar">
+        <div class="logo-container">
+          <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Sisa Rasa Logo">
+          <h5>Sisa Rasa</h5>
+          <small>Rasa Baru</small>
+          <small>Sisa Lama</small>
+        </div>
+        <nav class="nav-links">
+          <a href="{{ url_for('dashboard') }}" class="active"><i class='bx bx-grid-alt'></i>Dashboard</a>
+          <a href="{{ url_for('save_recipe_page') }}" id="savedRecipesLink"><i class='bx bx-book-heart'></i>Save Recipe</a>
+          <a href="{{ url_for('profile_page') }}" id="profileLink"><i class='bx bx-user'></i>Profile</a>
+          <a href="#" id="settingsLink"><i class='bx bx-cog'></i>Settings</a>
+          <a href="{{ url_for('welcome') }}" id="logoutBtn"><i class='bx bx-log-out'></i>Log Out</a>
+          <a href="#" id="helpLink"><i class='bx bx-help-circle'></i>Help</a>
+        </nav>
+      </div>
+
+      <!-- Main Content -->
+      <div class="col-md-10">
+        <!-- Header -->
+        <div class="header-bar">
+          <div>
+            <h5>Welcome, ${ userName }!</h5>
+            <p>Lets take a look at your fridge</p>
+          </div>
+          <div class="user-profile">
+            <span class="me-2">${ userName }</span>
+            <img v-if="profileImageUrl" :src="profileImageUrl" class="rounded-circle" alt="User" width="40" height="40" style="object-fit: cover;">
+            <img v-else src="{{ url_for('static', filename='images/user.png') }}" class="rounded-circle" alt="User" width="40">
+          </div>
+        </div>
+
+        <div class="container mt-4">
+          <div class="row">
+            <!-- Left Column -->
+            <div class="col-md-8">
+              <!-- Personal Analytics Section -->
+              <div v-if="showAnalytics" class="analytics-section fade-in">
+                <h6>
+                  <i class='bx bx-bar-chart-alt-2'></i> Your Cooking Journey
+                  <button class="analytics-toggle ms-auto" @click="toggleAnalytics">
+                    <i class='bx bx-chevron-up'></i>
+                  </button>
+                </h6>
+
+                <div class="stats-grid">
+                  <div class="stat-card">
+                    <span class="stat-number">${ personalAnalytics.personal_stats?.total_searches || 0 }</span>
+                    <div class="stat-label">Searches</div>
+                  </div>
+                  <div class="stat-card">
+                    <span class="stat-number">${ personalAnalytics.personal_stats?.total_recipe_saves || 0 }</span>
+                    <div class="stat-label">Saved Recipes</div>
+                  </div>
+                  <div class="stat-card">
+                    <span class="stat-number">${ personalAnalytics.personal_stats?.total_reviews_given || 0 }</span>
+                    <div class="stat-label">Reviews</div>
+                  </div>
+                  <div class="stat-card">
+                    <span class="stat-number">${ personalAnalytics.personal_stats?.unique_ingredients_tried || 0 }</span>
+                    <div class="stat-label">Ingredients Tried</div>
+                  </div>
+                </div>
+
+                <!-- Cooking Streak -->
+                <div v-if="personalAnalytics.cooking_streak?.current_streak > 0" class="cooking-streak">
+                  <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                      <span class="streak-number">${ personalAnalytics.cooking_streak.current_streak }</span>
+                      <span class="ms-2">day${ personalAnalytics.cooking_streak.current_streak !== 1 ? 's' : '' } cooking streak! 🔥</span>
+                    </div>
+                    <small>Best: ${ personalAnalytics.cooking_streak.longest_streak } days</small>
+                  </div>
+                </div>
+
+                <!-- Favorite Ingredients -->
+                <div v-if="topIngredients.length > 0">
+                  <h6 class="mt-3 mb-2" style="font-size: 0.9rem; color: #fedf2f;">Your Favorite Ingredients</h6>
+                  <div class="ingredient-cloud">
+                    <div v-for="ingredient in topIngredients" :key="ingredient.name" class="ingredient-bubble">
+                      ${ ingredient.name }
+                      <span class="ingredient-count">${ ingredient.count }</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Collapsed Analytics -->
+              <div v-else class="analytics-section" style="padding: 1rem;">
+                <h6 style="margin-bottom: 0;">
+                  <i class='bx bx-bar-chart-alt-2'></i> Your Cooking Journey
+                  <button class="analytics-toggle ms-auto" @click="toggleAnalytics">
+                    <i class='bx bx-chevron-down'></i>
+                  </button>
+                </h6>
+              </div>
+
+              <!-- Search Box -->
+              <div class="search-box">
+                <h5>Got Any leftovers at your fridge ?</h5>
+                <div class="search-input-container">
+                  <i class='bx bx-search search-icon'></i>
+                  <div class="ingredient-input-wrapper" @click="focusInput">
+                    <div v-for="(ingredient, index) in selectedIngredients" :key="index" class="ingredient-tag">
+                      ${ ingredient }
+                      <span class="remove-tag" @click.stop="removeIngredient(index)">&times;</span>
+                    </div>
+                    <input
+                      ref="ingredientInput"
+                      type="text"
+                      v-model="currentInput"
+                      @input="onInputChange"
+                      @keydown="onKeyDown"
+                      @focus="showSuggestions = true"
+                      @blur="hideSuggestions"
+                      class="ingredient-input"
+                      placeholder="Type an ingredient and press Enter..."
+                    >
+                  </div>
+                  <div v-if="showSuggestions && filteredSuggestions.length > 0" class="ingredient-suggestions">
+                    <div
+                      v-for="suggestion in filteredSuggestions"
+                      :key="suggestion"
+                      class="suggestion-item"
+                      @mousedown.prevent="addIngredient(suggestion)"
+                    >
+                      ${ suggestion }
+                    </div>
+                  </div>
+                </div>
+                <div class="filter-tabs">
+                  <div class="filter-tab" :class="{ active: selectedCategory === 'all' }" @click="selectCategory('all')">All</div>
+                  <div class="filter-tab" :class="{ active: selectedCategory === 'rice' }" @click="selectCategory('rice')">Cooked Rice</div>
+                  <div class="filter-tab" :class="{ active: selectedCategory === 'chicken' }" @click="selectCategory('chicken')">Chicken</div>
+                  <div class="filter-tab" :class="{ active: selectedCategory === 'eggs' }" @click="selectCategory('eggs')">Eggs</div>
+                  <div class="filter-tab" :class="{ active: selectedCategory === 'lamb' }" @click="selectCategory('lamb')">Lamb</div>
+                  <div class="filter-tab" :class="{ active: selectedCategory === 'vegetables' }" @click="selectCategory('vegetables')">Vegetables</div>
+                </div>
+
+                <!-- Ingredient History -->
+                <div v-if="ingredientHistory.length > 0" class="ingredient-history">
+                  <h6><i class='bx bx-history'></i> Previously Used Ingredients</h6>
+                  <div class="history-tags">
+                    <div
+                      v-for="ingredient in ingredientHistory"
+                      :key="ingredient"
+                      class="history-tag"
+                      @click="addIngredientFromHistory(ingredient)"
+                    >
+                      ${ ingredient }
+                    </div>
+                  </div>
+                </div>
+
+                <div class="text-center">
+                  <button @click="searchRecipes" :disabled="selectedIngredients.length === 0">
+                    Find Recipe (${ selectedIngredients.length } ingredient${ selectedIngredients.length !== 1 ? 's' : '' })
+                  </button>
+                </div>
+              </div>
+
+              <!-- Recent Searches -->
+              <div class="latest-search">
+                <h6>
+                  <i class='bx bx-history'></i> Recent Searches
+                  <span v-if="recentSearches.length > 0" class="clear-history" @click="clearSearchHistory" title="Clear all search history">
+                    <i class='bx bx-trash'></i>
+                  </span>
+                </h6>
+
+                <div v-if="loadingRecentSearches" class="text-center mt-3">
+                  <div class="spinner-border text-warning" role="status"><span class="visually-hidden">Loading...</span></div>
+                </div>
+                <div v-else-if="recentSearches.length > 0">
+                  <div class="recent-search-item" v-for="(search, index) in recentSearches" :key="index" @click="rerunSearch(search)">
+                    <div class="search-content">
+                      <div class="search-ingredients">
+                        <span class="ingredient-chip" v-for="ingredient in search.ingredientsList" :key="ingredient">
+                          ${ ingredient }
+                        </span>
+                      </div>
+                      <div class="search-meta">
+                        <span class="search-time">${ formatSearchTime(search.timestamp) }</span>
+                        <span class="search-count">${ search.ingredientsList.length } ingredient${ search.ingredientsList.length !== 1 ? 's' : '' }</span>
+                      </div>
+                    </div>
+                    <div class="search-actions">
+                      <button @click.stop="rerunSearch(search)" class="action-btn" title="Search again">
+                        <i class='bx bx-refresh'></i>
+                      </button>
+                      <button @click.stop="removeSearch(index)" class="action-btn remove-btn" title="Remove from history">
+                        <i class='bx bx-x'></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div v-else class="text-center mt-3">
+                  <div class="empty-state">
+                    <i class='bx bx-search-alt-2'></i>
+                    <p>No recent searches</p>
+                    <small>Your search history will appear here</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="col-md-4">
+              <!-- Recommendations -->
+              <div class="recommend-section">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <h5 class="mb-0">Recommend</h5>
+                  <button v-if="recommendedRecipes.length > 0" @click="viewAllRecommendations" class="btn btn-sm" style="background-color: #ea5e18; color: white; border: none; border-radius: 1rem; padding: 0.25rem 0.75rem; font-size: 0.8rem;">
+                    View All
+                  </button>
+                </div>
+                <div v-if="loadingRecommendations" class="text-center">
+                  <div class="spinner-border text-warning" role="status"><span class="visually-hidden">Loading...</span></div>
+                </div>
+                <div v-else>
+                  <div v-if="recommendedRecipes.length > 0">
+                    <div v-for="(recipe, index) in recommendedRecipes" :key="index">
+                      <div class="recommend-card fade-in">
+                        <div class="card-header">
+                          <h6>${ recipe.name }</h6>
+                          <div class="card-actions">
+                            <button @click="saveRecipe(recipe)">
+                              <i :id="'heart-dashboard-' + index" :class="recipe.saved ? 'bx bxs-heart text-danger' : 'bx bx-heart'"></i>
+                            </button>
+                            <button @click="viewRecipeDetails(recipe)">
+                              <i class='bx bx-show'></i>
+                            </button>
+                            <button @click="showRatingModal(recipe)" title="Rate & Review">
+                              <i class='bx bx-star'></i>
+                            </button>
+                            <button @click="viewAllReviews(recipe)" title="View All Reviews" class="comment-btn">
+                              <i class='bx bx-comment'></i>
+                            </button>
+                          </div>
+                        </div>
+
+                        <!-- Rating Display -->
+                        <div v-if="recipe.rating_data && recipe.rating_data.total_reviews > 0" class="recipe-rating mb-2">
+                          <div class="rating-stars">
+                            <span v-for="star in 5" :key="star" class="star" :class="{ 'filled': star <= Math.round(recipe.rating_data.average_rating) }">★</span>
+                            <span class="rating-text">${ recipe.rating_data.average_rating }/5 (${ recipe.rating_data.total_reviews } review${ recipe.rating_data.total_reviews !== 1 ? 's' : '' })</span>
+                          </div>
+                        </div>
+
+                        <!-- Verification Badge -->
+                        <div v-if="recipe.verification_data && recipe.verification_data.verification_count > 0" class="verification-badge mb-2">
+                          <i class='bx bx-check-circle text-success'></i>
+                          <span class="verification-text">Verified by ${ recipe.verification_data.verification_count } user${ recipe.verification_data.verification_count !== 1 ? 's' : '' }</span>
+                        </div>
+
+                        <p><strong>Ingredients:</strong> ${ recipe.ingredients }</p>
+                        <p><strong>Instructions:</strong> ${ recipe.instructions }</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div v-else class="text-center">No recommendations yet. Start searching ingredients!</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer mt-5">
+          <p>&copy; 2025 Sisa Rasa. All rights reserved. <a href="#">Terms of Service</a> | <a href="#">Privacy Policy</a></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rating Modal -->
+    <div v-if="showRatingModalFlag && selectedRecipeForRating" class="rating-modal" @click.self="closeRatingModal">
+      <div class="rating-modal-content">
+        <h5>Rate & Review: ${ selectedRecipeForRating.name }</h5>
+
+        <div class="mb-3">
+          <label class="form-label">Your Rating:</label>
+          <div class="interactive-stars">
+            <span v-for="star in 5" :key="star"
+                  class="interactive-star"
+                  :class="{ 'active': star <= currentRating }"
+                  @click="setRating(star)"
+                  @mouseover="hoverRating = star"
+                  @mouseleave="hoverRating = 0">★</span>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Your Review (optional):</label>
+          <textarea v-model="currentReviewText"
+                    class="review-textarea"
+                    placeholder="Share your experience with this recipe..."></textarea>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">
+            <input type="checkbox" v-model="markAsVerified" class="me-2">
+            I've tried this recipe (mark as verified)
+          </label>
+        </div>
+
+        <div v-if="markAsVerified" class="mb-3">
+          <label class="form-label">Verification Notes (optional):</label>
+          <textarea v-model="verificationNotes"
+                    class="review-textarea"
+                    placeholder="Any tips or modifications you made..."></textarea>
+        </div>
+
+        <div class="modal-buttons">
+          <button class="btn-modal btn-secondary" @click="closeRatingModal">Cancel</button>
+          <button class="btn-modal btn-primary" @click="submitRating" :disabled="currentRating === 0">
+            Submit ${ currentRating > 0 ? 'Rating' : '' }
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+    const storedName = localStorage.getItem('userName');
+    const storedUserId = localStorage.getItem('userId');
+    const token = localStorage.getItem('token');
+
+    // Check if user is logged in
+    if (!token) {
+      window.location.href = '/login';
+    }
+
+    createApp({
+      delimiters: ['${', '}'],
+      data() {
+        return {
+          userName: storedName || "Guest",
+          userInitials: "",
+          profileImageUrl: null,
+          searchQuery: '',
+          selectedIngredients: [],
+          currentInput: '',
+          showSuggestions: false,
+          selectedCategory: 'all',
+          ingredientHistory: [],
+          recentSearches: [],
+          loadingRecentSearches: true,
+          recommendedRecipes: [],
+          loadingRecommendations: true,
+          savedRecipes: [],
+          // Personal Analytics data
+          showAnalytics: true,
+          personalAnalytics: {
+            personal_stats: {
+              total_searches: 0,
+              total_recipe_views: 0,
+              total_recipe_saves: 0,
+              total_reviews_given: 0,
+              unique_ingredients_tried: 0
+            },
+            favorite_ingredients: {},
+            cooking_streak: {
+              current_streak: 0,
+              longest_streak: 0,
+              last_activity_date: null
+            },
+            monthly_activity: {},
+            recent_searches: []
+          },
+          loadingAnalytics: true,
+          // Rating modal data
+          showRatingModalFlag: false,
+          selectedRecipeForRating: null,
+          currentRating: 0,
+          hoverRating: 0,
+          currentReviewText: '',
+          markAsVerified: false,
+          verificationNotes: '',
+          commonIngredients: [
+            'rice', 'chicken', 'egg', 'eggs', 'onion', 'garlic', 'tomato', 'potato', 'carrot',
+            'beef', 'pork', 'fish', 'shrimp', 'tofu', 'mushroom', 'bell pepper', 'broccoli',
+            'spinach', 'lettuce', 'cucumber', 'ginger', 'soy sauce', 'salt', 'pepper', 'oil',
+            'butter', 'milk', 'cheese', 'flour', 'sugar', 'lemon', 'lime', 'coconut milk',
+            'noodles', 'pasta', 'bread', 'corn', 'beans', 'peas', 'cabbage', 'celery',
+            'basil', 'cilantro', 'parsley', 'thyme', 'oregano', 'paprika', 'cumin', 'turmeric',
+            'chili', 'vinegar', 'honey', 'sesame oil', 'green onion', 'scallion', 'leek',
+            'zucchini', 'eggplant', 'cauliflower', 'asparagus', 'green beans', 'sweet potato',
+            'avocado', 'apple', 'banana', 'orange', 'strawberry', 'blueberry', 'mango',
+            'pineapple', 'coconut', 'almond', 'walnut', 'cashew', 'peanut', 'sesame seeds',
+            'quinoa', 'barley', 'oats', 'wheat', 'rye', 'millet', 'buckwheat', 'chia seeds',
+            'flax seeds', 'sunflower seeds', 'pumpkin seeds', 'yogurt', 'cream', 'sour cream',
+            'cottage cheese', 'mozzarella', 'cheddar', 'parmesan', 'feta', 'goat cheese',
+            'salmon', 'tuna', 'cod', 'tilapia', 'mackerel', 'sardines', 'crab', 'lobster',
+            'clams', 'mussels', 'squid', 'octopus', 'duck', 'turkey', 'lamb', 'veal',
+            'bacon', 'ham', 'sausage', 'ground beef', 'ground pork', 'ground turkey'
+          ]
+        }
+      },
+      computed: {
+        filteredSuggestions() {
+          if (!this.currentInput.trim()) return [];
+
+          const input = this.currentInput.toLowerCase().trim();
+          const filtered = this.commonIngredients.filter(ingredient =>
+            ingredient.toLowerCase().includes(input) &&
+            !this.selectedIngredients.includes(ingredient)
+          );
+
+          return filtered.slice(0, 8); // Limit to 8 suggestions
+        },
+        topIngredients() {
+          const ingredients = this.personalAnalytics.favorite_ingredients || {};
+          return Object.entries(ingredients)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 8)
+            .map(([name, count]) => ({ name, count }));
+        }
+      },
+      mounted() {
+        if (!this.userName || this.userName === "Guest") {
+          window.location.href = "/login";
+        }
+        this.userInitials = this.userName.split(' ').map(n => n[0]).join('').toUpperCase();
+        this.fetchProfileImage();
+        this.fetchRecentSearches();
+        this.fetchRecommendations();
+        this.loadSavedRecipes();
+        this.loadIngredientHistory();
+        this.fetchPersonalAnalytics();
+        this.initCharts();
+
+        // Load analytics preference
+        const showAnalytics = localStorage.getItem('showAnalytics');
+        if (showAnalytics !== null) {
+          this.showAnalytics = showAnalytics === 'true';
+        }
+
+        // Set up event listeners for navigation
+        document.getElementById('logoutBtn').addEventListener('click', (e) => {
+          e.preventDefault();
+          localStorage.removeItem('token');
+          localStorage.removeItem('userId');
+          localStorage.removeItem('userName');
+          window.location.href = "/login";
+        });
+      },
+      methods: {
+
+        fetchProfileImage() {
+          // Check if user has a profile image
+          fetch('/api/auth/profile-image/current', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
+          .then(res => {
+            if (!res.ok) {
+              if (res.status !== 404) {
+                // If error other than 404, log it
+                console.error('Error fetching profile image:', res.statusText);
+              }
+              // If 404, we'll just use the initials avatar
+              return null;
+            }
+            return res.json();
+          })
+          .then(data => {
+            if (data && data.status === 'success' && data.profile_image) {
+              // If successful, set the profile image URL (which is now a data URI)
+              this.profileImageUrl = data.profile_image;
+            }
+          })
+          .catch(err => {
+            console.error('Error fetching profile image:', err);
+          });
+        },
+        // New ingredient input methods
+        focusInput() {
+          this.$refs.ingredientInput.focus();
+        },
+        onInputChange() {
+          this.showSuggestions = this.currentInput.trim().length > 0;
+        },
+        onKeyDown(event) {
+          if (event.key === 'Enter' && this.currentInput.trim()) {
+            event.preventDefault();
+            this.addIngredient(this.currentInput.trim());
+          } else if (event.key === 'Backspace' && !this.currentInput && this.selectedIngredients.length > 0) {
+            // Remove last ingredient if input is empty and backspace is pressed
+            this.removeIngredient(this.selectedIngredients.length - 1);
+          }
+        },
+        addIngredient(ingredient) {
+          const cleanIngredient = ingredient.toLowerCase().trim();
+          if (cleanIngredient && !this.selectedIngredients.includes(cleanIngredient)) {
+            this.selectedIngredients.push(cleanIngredient);
+            this.currentInput = '';
+            this.showSuggestions = false;
+            this.saveToIngredientHistory(cleanIngredient);
+          }
+        },
+        addIngredientFromHistory(ingredient) {
+          if (!this.selectedIngredients.includes(ingredient)) {
+            this.selectedIngredients.push(ingredient);
+          }
+        },
+        removeIngredient(index) {
+          this.selectedIngredients.splice(index, 1);
+        },
+        hideSuggestions() {
+          // Delay hiding to allow click events on suggestions
+          setTimeout(() => {
+            this.showSuggestions = false;
+          }, 200);
+        },
+        selectCategory(category) {
+          this.selectedCategory = category;
+          // Add category-specific ingredient if not already selected
+          if (category !== 'all' && !this.selectedIngredients.includes(category)) {
+            this.addIngredient(category);
+          }
+        },
+        loadIngredientHistory() {
+          // Ingredient history is now loaded via fetchRecentSearches from the API
+          // This method is kept for compatibility but does nothing
+        },
+        saveToIngredientHistory(ingredient) {
+          // Add to history if not already there
+          if (!this.ingredientHistory.includes(ingredient)) {
+            this.ingredientHistory.unshift(ingredient);
+            // Keep only last 15 ingredients
+            this.ingredientHistory = this.ingredientHistory.slice(0, 15);
+          }
+          // Note: Ingredient history is now saved automatically when saving search history
+        },
+        searchRecipes() {
+          if (this.selectedIngredients.length === 0) {
+            Swal.fire({
+              icon: 'warning',
+              title: 'No Ingredients',
+              text: 'Please add at least one ingredient',
+              confirmButtonColor: '#ea5e18'
+            });
+            return;
+          }
+
+          // Save this search to recent searches
+          const ingredientsString = this.selectedIngredients.join(', ');
+          this.saveRecentSearch(ingredientsString, 'Search Results');
+
+          // Track analytics event
+          this.trackEvent('search', {
+            ingredients: this.selectedIngredients,
+            ingredient_count: this.selectedIngredients.length
+          });
+
+          // Redirect to search results page with ingredients as URL parameter
+          const ingredientsParam = encodeURIComponent(this.selectedIngredients.join(','));
+          window.location.href = `/search-results?ingredients=${ingredientsParam}`;
+        },
+        fetchRecommendations() {
+          this.loadingRecommendations = true;
+
+          // Get some default recommendations
+          fetch('/api/recommend', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              ingredients: ["egg", "rice", "chicken"], // Default ingredients
+              limit: 5,
+              min_score: 0.05,
+              strict: false
+            })
+          })
+          .then(res => {
+            if (!res.ok) {
+              // If API fails, use fallback data
+              return Promise.resolve({
+                status: 'ok',
+                recipes: [
+                  { id: 'fallback-fried-rice', name: 'Fried Rice', ingredients: ['Rice', 'Egg', 'Soy Sauce'], steps: ['Stir fry everything together.'] },
+                  { id: 'fallback-chicken-salad', name: 'Chicken Salad', ingredients: ['Chicken', 'Lettuce', 'Tomato'], steps: ['Mix all ingredients.'] },
+                  { id: 'fallback-omelette', name: 'Omelette', ingredients: ['Eggs', 'Onion', 'Cheese'], steps: ['Beat eggs and fry with fillings.'] },
+                  { id: 'fallback-pancakes', name: 'Pancakes', ingredients: ['Flour', 'Egg', 'Milk'], steps: ['Mix and fry.'] },
+                  { id: 'fallback-nasi-lemak', name: 'Nasi Lemak', ingredients: ['Rice', 'Coconut Milk', 'Anchovies'], steps: ['Cook together.'] }
+                ]
+              });
+            }
+            return res.json();
+          })
+          .then(data => {
+            this.loadingRecommendations = false;
+            if (data.status === 'ok' && data.recipes && data.recipes.length > 0) {
+              // Format recipes for display and fetch rating data
+              this.recommendedRecipes = data.recipes.map(recipe => {
+                const formattedRecipe = {
+                  id: recipe.id || recipe.name.toLowerCase().replace(/\s+/g, '-'),
+                  name: recipe.name,
+                  ingredients: Array.isArray(recipe.ingredients) ? recipe.ingredients.join(', ') : recipe.ingredients,
+                  instructions: Array.isArray(recipe.steps) ? recipe.steps.join('. ') : recipe.steps,
+                  saved: false,
+                  rating_data: null,
+                  verification_data: null
+                };
+
+                // Fetch rating summary for each recipe
+                this.fetchRecipeRatingData(formattedRecipe);
+
+                return formattedRecipe;
+              });
+            } else {
+              // Fallback data if no recommendations
+              this.recommendedRecipes = [
+                {
+                  id: 'fallback-fried-rice',
+                  name: 'Fried Rice',
+                  ingredients: 'Rice, Egg, Soy Sauce',
+                  instructions: 'Stir fry everything together.',
+                  saved: false,
+                  rating_data: null,
+                  verification_data: null
+                },
+                {
+                  id: 'fallback-chicken-salad',
+                  name: 'Chicken Salad',
+                  ingredients: 'Chicken, Lettuce, Tomato',
+                  instructions: 'Mix all ingredients.',
+                  saved: false,
+                  rating_data: null,
+                  verification_data: null
+                },
+                {
+                  id: 'fallback-omelette',
+                  name: 'Omelette',
+                  ingredients: 'Eggs, Onion, Cheese',
+                  instructions: 'Beat eggs and fry with fillings.',
+                  saved: false,
+                  rating_data: null,
+                  verification_data: null
+                }
+              ];
+            }
+          })
+          .catch(err => {
+            console.error('Error fetching recommendations:', err);
+            this.loadingRecommendations = false;
+            // Fallback data on error
+            this.recommendedRecipes = [
+              {
+                id: 'fallback-fried-rice',
+                name: 'Fried Rice',
+                ingredients: 'Rice, Egg, Soy Sauce',
+                instructions: 'Stir fry everything together.',
+                saved: false,
+                rating_data: null,
+                verification_data: null
+              },
+              {
+                id: 'fallback-chicken-salad',
+                name: 'Chicken Salad',
+                ingredients: 'Chicken, Lettuce, Tomato',
+                instructions: 'Mix all ingredients.',
+                saved: false,
+                rating_data: null,
+                verification_data: null
+              }
+            ];
+          });
+        },
+        fetchRecentSearches() {
+          this.loadingRecentSearches = true;
+
+          // Fetch dashboard data from API
+          fetch('/api/dashboard/data', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
+          .then(res => {
+            if (!res.ok) {
+              throw new Error('Failed to fetch dashboard data');
+            }
+            return res.json();
+          })
+          .then(data => {
+            this.loadingRecentSearches = false;
+            if (data.status === 'success' && data.data) {
+              this.recentSearches = data.data.recent_searches || [];
+              this.ingredientHistory = data.data.ingredient_history || [];
+
+              // Migrate any localStorage data to the database
+              this.migrateLocalStorageData();
+            } else {
+              this.recentSearches = [];
+              this.ingredientHistory = [];
+            }
+          })
+          .catch(err => {
+            console.error('Error fetching dashboard data:', err);
+            this.loadingRecentSearches = false;
+
+            // Fallback to localStorage for migration
+            this.migrateLocalStorageData();
+          });
+        },
+        saveRecentSearch(ingredients, recipeName) {
+          // Create ingredients list from string
+          const ingredientsList = ingredients.split(',').map(i => i.trim()).filter(i => i.length > 0);
+
+          // Create search data
+          const searchData = {
+            title: recipeName,
+            ingredients: ingredients,
+            ingredientsList: ingredientsList,
+            timestamp: new Date().toISOString()
+          };
+
+          // Save to database via API
+          fetch('/api/dashboard/search-history', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(searchData)
+          })
+          .then(res => {
+            if (!res.ok) {
+              throw new Error('Failed to save search history');
+            }
+            return res.json();
+          })
+          .then(data => {
+            if (data.status === 'success') {
+              // Update local data immediately for better UX
+              const existingIndex = this.recentSearches.findIndex(search =>
+                JSON.stringify(search.ingredientsList.sort()) === JSON.stringify(ingredientsList.sort())
+              );
+
+              if (existingIndex !== -1) {
+                this.recentSearches.splice(existingIndex, 1);
+              }
+
+              this.recentSearches.unshift(searchData);
+              this.recentSearches = this.recentSearches.slice(0, 8);
+
+              // Update ingredient history
+              for (const ingredient of ingredientsList) {
+                if (!this.ingredientHistory.includes(ingredient)) {
+                  this.ingredientHistory.unshift(ingredient);
+                }
+              }
+              this.ingredientHistory = this.ingredientHistory.slice(0, 15);
+            }
+          })
+          .catch(err => {
+            console.error('Error saving search history:', err);
+            // Fallback to localStorage if API fails
+            this.saveToLocalStorage(searchData);
+          });
+        },
+        formatSearchTime(timestamp) {
+          const now = new Date();
+          const searchTime = new Date(timestamp);
+          const diffInMinutes = Math.floor((now - searchTime) / (1000 * 60));
+
+          if (diffInMinutes < 1) return 'Just now';
+          if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+
+          const diffInHours = Math.floor(diffInMinutes / 60);
+          if (diffInHours < 24) return `${diffInHours}h ago`;
+
+          const diffInDays = Math.floor(diffInHours / 24);
+          if (diffInDays < 7) return `${diffInDays}d ago`;
+
+          return searchTime.toLocaleDateString();
+        },
+        rerunSearch(search) {
+          // Set the selected ingredients to the search ingredients
+          this.selectedIngredients = [...search.ingredientsList];
+
+          // Scroll to the search box
+          document.querySelector('.search-box').scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+          });
+
+          // Show a brief notification
+          Swal.fire({
+            icon: 'info',
+            title: 'Search Loaded',
+            text: `Loaded ${search.ingredientsList.length} ingredients from your search history`,
+            confirmButtonColor: '#ea5e18',
+            timer: 2000,
+            showConfirmButton: false
+          });
+        },
+        removeSearch(index) {
+          // Remove via API
+          fetch(`/api/dashboard/search-history/${index}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
+          .then(res => {
+            if (!res.ok) {
+              throw new Error('Failed to remove search');
+            }
+            return res.json();
+          })
+          .then(data => {
+            if (data.status === 'success') {
+              // Remove from local array
+              this.recentSearches.splice(index, 1);
+
+              // Show brief confirmation
+              Swal.fire({
+                icon: 'success',
+                title: 'Removed',
+                text: 'Search removed from history',
+                confirmButtonColor: '#ea5e18',
+                timer: 1500,
+                showConfirmButton: false
+              });
+            }
+          })
+          .catch(err => {
+            console.error('Error removing search:', err);
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Failed to remove search from history',
+              confirmButtonColor: '#ea5e18'
+            });
+          });
+        },
+        clearSearchHistory() {
+          Swal.fire({
+            title: 'Clear Search History?',
+            text: 'This will remove all your recent searches. This action cannot be undone.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ea5e18',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, clear all',
+            cancelButtonText: 'Cancel'
+          }).then((result) => {
+            if (result.isConfirmed) {
+              // Clear via API
+              fetch('/api/dashboard/search-history/clear', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                }
+              })
+              .then(res => {
+                if (!res.ok) {
+                  throw new Error('Failed to clear search history');
+                }
+                return res.json();
+              })
+              .then(data => {
+                if (data.status === 'success') {
+                  this.recentSearches = [];
+
+                  Swal.fire({
+                    icon: 'success',
+                    title: 'Cleared',
+                    text: 'Search history has been cleared',
+                    confirmButtonColor: '#ea5e18',
+                    timer: 2000,
+                    showConfirmButton: false
+                  });
+                }
+              })
+              .catch(err => {
+                console.error('Error clearing search history:', err);
+                Swal.fire({
+                  icon: 'error',
+                  title: 'Error',
+                  text: 'Failed to clear search history',
+                  confirmButtonColor: '#ea5e18'
+                });
+              });
+            }
+          });
+        },
+        migrateLocalStorageData() {
+          // Check if there's any localStorage data to migrate
+          const storedSearches = localStorage.getItem('recentSearches');
+          const storedIngredients = localStorage.getItem('ingredientHistory');
+
+          if (storedSearches) {
+            try {
+              let searches = JSON.parse(storedSearches);
+
+              // Migrate old format to new format if needed
+              searches = searches.map(search => {
+                if (!search.ingredientsList && search.ingredients) {
+                  search.ingredientsList = search.ingredients.split(',').map(i => i.trim()).filter(i => i.length > 0);
+                }
+                return search;
+              });
+
+              // Migrate each search to the database
+              searches.forEach(search => {
+                fetch('/api/dashboard/search-history', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                  },
+                  body: JSON.stringify(search)
+                })
+                .catch(err => console.error('Error migrating search:', err));
+              });
+
+              // Update local data
+              this.recentSearches = searches;
+
+              // Clear localStorage after successful migration
+              localStorage.removeItem('recentSearches');
+
+            } catch (e) {
+              console.error('Error migrating localStorage searches:', e);
+            }
+          }
+
+          if (storedIngredients) {
+            try {
+              const ingredients = JSON.parse(storedIngredients);
+              this.ingredientHistory = ingredients;
+
+              // Clear localStorage after migration
+              localStorage.removeItem('ingredientHistory');
+
+            } catch (e) {
+              console.error('Error migrating localStorage ingredients:', e);
+            }
+          }
+        },
+        saveToLocalStorage(searchData) {
+          // Fallback method to save to localStorage if API fails
+          try {
+            let searches = JSON.parse(localStorage.getItem('recentSearches') || '[]');
+
+            const existingIndex = searches.findIndex(search =>
+              JSON.stringify(search.ingredientsList.sort()) === JSON.stringify(searchData.ingredientsList.sort())
+            );
+
+            if (existingIndex !== -1) {
+              searches.splice(existingIndex, 1);
+            }
+
+            searches.unshift(searchData);
+            searches = searches.slice(0, 8);
+
+            localStorage.setItem('recentSearches', JSON.stringify(searches));
+            this.recentSearches = searches;
+
+          } catch (e) {
+            console.error('Error saving to localStorage:', e);
+          }
+        },
+
+        // Personal Analytics Methods
+        fetchPersonalAnalytics() {
+          this.loadingAnalytics = true;
+
+          fetch('/api/analytics/personal', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
+          .then(res => {
+            if (!res.ok) {
+              throw new Error('Failed to fetch analytics');
+            }
+            return res.json();
+          })
+          .then(data => {
+            this.loadingAnalytics = false;
+            if (data.status === 'success' && data.analytics) {
+              this.personalAnalytics = data.analytics;
+            }
+          })
+          .catch(err => {
+            console.error('Error fetching personal analytics:', err);
+            this.loadingAnalytics = false;
+          });
+        },
+
+        toggleAnalytics() {
+          this.showAnalytics = !this.showAnalytics;
+          // Save preference to localStorage
+          localStorage.setItem('showAnalytics', this.showAnalytics.toString());
+        },
+
+        trackEvent(eventType, eventData = {}) {
+          // Track user events for analytics
+          fetch('/api/analytics/track', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              event_type: eventType,
+              event_data: eventData
+            })
+          })
+          .catch(err => {
+            console.error('Error tracking event:', err);
+          });
+        },
+        saveRecipe(recipe) {
+          const userId = localStorage.getItem('userId');
+          if (!userId) {
+            Swal.fire({
+              icon: 'warning',
+              title: 'Login Required',
+              text: 'You must be logged in to save recipes',
+              confirmButtonColor: '#ea5e18'
+            });
+            return;
+          }
+
+          // If recipe has an ID, use it, otherwise use a fallback approach
+          const recipeId = recipe.id || recipe.name.toLowerCase().replace(/\s+/g, '-');
+
+          fetch(`/api/recipe/${recipeId}/save`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          })
+          .then(res => {
+            if (!res.ok) {
+              // If API fails, try alternative approach
+              return fetch("/api/recipes/save", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                  userId: userId,
+                  name: recipe.name,
+                  ingredients: recipe.ingredients,
+                  instructions: recipe.instructions
+                })
+              });
+            }
+            return res.json();
+          })
+          .then(data => {
+            if (data.status === 'success' || data.message === "Recipe saved!") {
+              Swal.fire({
+                icon: 'success',
+                title: 'Recipe Saved',
+                text: 'Recipe has been saved to your account',
+                confirmButtonColor: '#ea5e18',
+                timer: 2000,
+                showConfirmButton: false
+              });
+
+              // Mark recipe as saved
+              recipe.saved = true;
+
+              // Track analytics event
+              this.trackEvent('recipe_save', {
+                recipe_id: recipeId,
+                recipe_name: recipe.name
+              });
+
+              // Refresh saved recipes
+              this.loadSavedRecipes();
+            } else {
+              throw new Error('Failed to save recipe');
+            }
+          })
+          .catch(err => {
+            console.error('Error saving recipe:', err);
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Failed to save recipe. Please try again.',
+              confirmButtonColor: '#ea5e18'
+            });
+          });
+        },
+        loadSavedRecipes() {
+          fetch('/api/recipes/saved', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
+          .then(res => {
+            if (!res.ok) {
+              throw new Error('Failed to get saved recipes');
+            }
+            return res.json();
+          })
+          .then(data => {
+            if (data.status === 'success' && data.recipes && data.recipes.length > 0) {
+              this.savedRecipes = data.recipes;
+
+              // Mark recipes in recommendations as saved if they are in saved recipes
+              this.recommendedRecipes.forEach(recipe => {
+                recipe.saved = this.savedRecipes.some(saved => saved.name === recipe.name);
+              });
+            } else {
+              this.savedRecipes = [];
+            }
+          })
+          .catch(err => {
+            console.error('Error loading saved recipes:', err);
+            this.savedRecipes = [];
+          });
+        },
+        viewAllRecommendations() {
+          // Store current recommendations and redirect to search results
+          const defaultIngredients = ["egg", "rice", "chicken"];
+          localStorage.setItem('lastSearchResults', JSON.stringify({
+            ingredients: defaultIngredients,
+            recipes: this.recommendedRecipes.map(recipe => ({
+              id: recipe.id || recipe.name.toLowerCase().replace(/\s+/g, '-'),
+              name: recipe.name,
+              ingredients: Array.isArray(recipe.ingredients) ? recipe.ingredients : recipe.ingredients.split(', '),
+              steps: Array.isArray(recipe.instructions) ? recipe.instructions : [recipe.instructions],
+              score: 0.8,
+              ingredient_match_percentage: 85,
+              prep_time: 30,
+              cook_time: 45,
+              servings: 4,
+              cuisine: 'International',
+              difficulty: 'Medium',
+              saved: recipe.saved
+            }))
+          }));
+
+          window.location.href = '/search-results';
+        },
+
+        viewRecipeDetails(recipe) {
+          // Track analytics event
+          this.trackEvent('recipe_view', {
+            recipe_id: recipe.id,
+            recipe_name: recipe.name
+          });
+
+          Swal.fire({
+            title: recipe.name,
+            html: `
+              <div style="text-align: left; max-height: 400px; overflow-y: auto;">
+                <h6><strong>Ingredients:</strong></h6>
+                <p style="margin-bottom: 1rem;">${recipe.ingredients}</p>
+
+                <h6><strong>Instructions:</strong></h6>
+                <p>${recipe.instructions}</p>
+              </div>
+            `,
+            width: '600px',
+            confirmButtonColor: '#ea5e18',
+            confirmButtonText: 'Close'
+          });
+        },
+
+        viewAllReviews(recipe) {
+          if (!recipe.id) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Recipe ID not found. Cannot load reviews.',
+              confirmButtonColor: '#ea5e18'
+            });
+            return;
+          }
+
+          // Show loading modal first
+          Swal.fire({
+            title: `Reviews for ${recipe.name}`,
+            html: '<div class="text-center"><div class="spinner-border text-warning" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2">Loading reviews...</p></div>',
+            showConfirmButton: false,
+            allowOutsideClick: false
+          });
+
+          // Fetch reviews for this recipe
+          fetch(`/api/recipe/${recipe.id}/reviews?sort_by=recent&limit=20`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.status === 'success') {
+              const reviews = data.reviews || [];
+
+              if (reviews.length === 0) {
+                Swal.fire({
+                  title: `Reviews for ${recipe.name}`,
+                  html: '<div class="text-center"><p>No reviews yet. Be the first to review this recipe!</p></div>',
+                  confirmButtonColor: '#ea5e18',
+                  confirmButtonText: 'Close'
+                });
+                return;
+              }
+
+              // Build reviews HTML
+              let reviewsHtml = `
+                <div style="text-align: left; max-height: 500px; overflow-y: auto;">
+                  <div style="margin-bottom: 1rem; text-align: center;">
+                    <strong>${reviews.length} review${reviews.length !== 1 ? 's' : ''}</strong>
+                  </div>
+              `;
+
+              reviews.forEach(review => {
+                const stars = '★'.repeat(review.rating) + '☆'.repeat(5 - review.rating);
+                const reviewDate = new Date(review.created_at).toLocaleDateString();
+
+                reviewsHtml += `
+                  <div style="border-bottom: 1px solid #eee; padding: 1rem 0; margin-bottom: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                      <strong style="color: #083640;">${review.user_name}</strong>
+                      <small style="color: #666;">${reviewDate}</small>
+                    </div>
+                    <div style="color: #ffc107; margin-bottom: 0.5rem; font-size: 1.1rem;">
+                      ${stars} <span style="color: #666; font-size: 0.9rem;">(${review.rating}/5)</span>
+                    </div>
+                    ${review.review_text ? `<p style="margin: 0; color: #333; line-height: 1.4;">${review.review_text}</p>` : '<p style="margin: 0; color: #999; font-style: italic;">No written review</p>'}
+                    ${review.helpful_votes > 0 || review.unhelpful_votes > 0 ? `
+                      <div style="margin-top: 0.5rem; font-size: 0.8rem; color: #666;">
+                        👍 ${review.helpful_votes} helpful • 👎 ${review.unhelpful_votes} not helpful
+                      </div>
+                    ` : ''}
+                  </div>
+                `;
+              });
+
+              reviewsHtml += '</div>';
+
+              Swal.fire({
+                title: `Reviews for ${recipe.name}`,
+                html: reviewsHtml,
+                width: '700px',
+                confirmButtonColor: '#ea5e18',
+                confirmButtonText: 'Close',
+                showCancelButton: true,
+                cancelButtonText: 'Add Review',
+                cancelButtonColor: '#6c757d'
+              }).then((result) => {
+                if (result.dismiss === Swal.DismissReason.cancel) {
+                  // User clicked "Add Review" - open rating modal
+                  this.showRatingModal(recipe);
+                }
+              });
+            } else {
+              Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Failed to load reviews. Please try again.',
+                confirmButtonColor: '#ea5e18'
+              });
+            }
+          })
+          .catch(err => {
+            console.error('Error fetching reviews:', err);
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Failed to load reviews. Please try again.',
+              confirmButtonColor: '#ea5e18'
+            });
+          });
+        },
+
+        initCharts() {
+          setTimeout(() => {
+            const ingredientData = {
+              labels: ['Egg', 'Chicken', 'Rice', 'Onion', 'Tofu'],
+              datasets: [{
+                label: 'Most Frequently Searched Ingredients',
+                data: [12, 9, 7, 5, 3],
+                backgroundColor: '#ea5e18'
+              }]
+            };
+
+            const recipeData = {
+              labels: ['Nasi Lemak', 'Fried Rice', 'Omelette', 'Pancakes', 'Chicken Curry'],
+              datasets: [{
+                label: 'Most Saved Recipes',
+                data: [15, 12, 10, 6, 4],
+                backgroundColor: ['#f9c74f', '#f9844a', '#90be6d', '#577590', '#d45087']
+              }]
+            };
+
+            // Only create charts if elements exist
+            const ingredientChart = document.getElementById('ingredientChart');
+            const recipeChart = document.getElementById('recipeChart');
+
+            if (ingredientChart) {
+              new Chart(ingredientChart, {
+                type: 'bar',
+                data: ingredientData,
+                options: {
+                  responsive: true,
+                  plugins: {
+                    title: {
+                      display: true,
+                      text: 'Top 5 Searched Ingredients'
+                    },
+                    legend: { display: false }
+                  }
+                }
+              });
+            }
+
+            if (recipeChart) {
+              new Chart(recipeChart, {
+                type: 'pie',
+                data: recipeData,
+                options: {
+                  responsive: true,
+                  plugins: {
+                    title: {
+                      display: true,
+                      text: 'Top 5 Most Saved Recipes'
+                    }
+                  }
+                }
+              });
+            }
+          }, 1000);
+        },
+
+        fetchRecipeRatingData(recipe) {
+          // Fetch rating summary
+          fetch(`/api/recipe/${recipe.id}/rating-summary`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.status === 'success' && data.total_reviews > 0) {
+              recipe.rating_data = {
+                average_rating: data.average_rating,
+                total_reviews: data.total_reviews,
+                rating_distribution: data.rating_distribution
+              };
+            }
+          })
+          .catch(err => {
+            console.error('Error fetching rating data:', err);
+          });
+
+          // Fetch verification count (this would be part of recipe data in a real implementation)
+          fetch(`/api/recipe/${recipe.id}/verifications?limit=1`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.status === 'success') {
+              recipe.verification_data = {
+                verification_count: data.total_count || 0
+              };
+            }
+          })
+          .catch(err => {
+            console.error('Error fetching verification data:', err);
+          });
+        },
+
+        // Rating and Review Methods
+        showRatingModal(recipe) {
+          console.log('showRatingModal called with recipe:', recipe);
+
+          if (!recipe) {
+            console.error('No recipe provided to showRatingModal');
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Recipe data not available. Please try again.',
+              confirmButtonColor: '#ea5e18'
+            });
+            return;
+          }
+
+          this.selectedRecipeForRating = recipe;
+          this.showRatingModalFlag = true;
+          this.currentRating = 0;
+          this.currentReviewText = '';
+          this.markAsVerified = false;
+          this.verificationNotes = '';
+
+          // Load existing user review if any
+          const recipeId = recipe.id || recipe.name.toLowerCase().replace(/\s+/g, '-');
+          console.log('Loading user review for recipe ID:', recipeId);
+          this.loadUserReview(recipeId);
+        },
+
+        closeRatingModal() {
+          this.showRatingModalFlag = false;
+          this.selectedRecipeForRating = null;
+          this.currentRating = 0;
+          this.currentReviewText = '';
+          this.markAsVerified = false;
+          this.verificationNotes = '';
+        },
+
+        setRating(rating) {
+          this.currentRating = rating;
+        },
+
+        loadUserReview(recipeId) {
+          // Load user's existing review for this recipe
+          fetch(`/api/recipe/${recipeId}/user-review`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.status === 'success' && data.review) {
+              this.currentRating = data.review.rating;
+              this.currentReviewText = data.review.review_text || '';
+            }
+          })
+          .catch(err => {
+            console.error('Error loading user review:', err);
+          });
+
+          // Load user's existing verification for this recipe
+          fetch(`/api/recipe/${recipeId}/user-verification`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.status === 'success' && data.verification) {
+              this.markAsVerified = true;
+              this.verificationNotes = data.verification.notes || '';
+            }
+          })
+          .catch(err => {
+            console.error('Error loading user verification:', err);
+          });
+        },
+
+        submitRating() {
+          console.log('submitRating called');
+          console.log('currentRating:', this.currentRating);
+          console.log('selectedRecipeForRating:', this.selectedRecipeForRating);
+
+          if (this.currentRating === 0) {
+            Swal.fire({
+              icon: 'warning',
+              title: 'Rating Required',
+              text: 'Please select a rating before submitting',
+              confirmButtonColor: '#ea5e18'
+            });
+            return;
+          }
+
+          // Check if selectedRecipeForRating exists
+          if (!this.selectedRecipeForRating) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'No recipe selected. Please try again.',
+              confirmButtonColor: '#ea5e18'
+            });
+            return;
+          }
+
+          const recipeId = this.selectedRecipeForRating.id || this.selectedRecipeForRating.name.toLowerCase().replace(/\s+/g, '-');
+          console.log('recipeId:', recipeId);
+
+          // Check if recipe ID exists
+          if (!recipeId) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Recipe ID not found. Please try refreshing the page.',
+              confirmButtonColor: '#ea5e18'
+            });
+            return;
+          }
+
+          // Submit review
+          const reviewData = {
+            rating: this.currentRating,
+            review_text: this.currentReviewText.trim() || null
+          };
+
+          console.log('reviewData:', reviewData);
+          console.log('API URL:', `/api/recipe/${recipeId}/review`);
+
+          fetch(`/api/recipe/${recipeId}/review`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(reviewData)
+          })
+          .then(res => {
+            console.log('Response status:', res.status);
+            return res.json();
+          })
+          .then(data => {
+            console.log('Response data:', data);
+            if (data.status === 'success') {
+              // If user marked as verified, submit verification
+              if (this.markAsVerified) {
+                return this.submitVerification(recipeId);
+              }
+              return Promise.resolve();
+            } else {
+              throw new Error(data.message || 'Failed to submit review');
+            }
+          })
+          .then(() => {
+            // Track analytics event
+            this.trackEvent('review_given', {
+              recipe_id: recipeId,
+              recipe_name: this.selectedRecipeForRating.name,
+              rating: this.currentRating,
+              has_review_text: !!this.currentReviewText.trim(),
+              is_verified: this.markAsVerified
+            });
+
+            // Refresh recipe data to show updated ratings
+            this.fetchRecommendations();
+
+            Swal.fire({
+              icon: 'success',
+              title: 'Thank You!',
+              text: 'Your rating and review have been submitted successfully',
+              confirmButtonColor: '#ea5e18',
+              timer: 2000,
+              showConfirmButton: false
+            });
+
+            this.closeRatingModal();
+          })
+          .catch(err => {
+            console.error('Error submitting rating:', err);
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Failed to submit rating. Please try again.',
+              confirmButtonColor: '#ea5e18'
+            });
+          });
+        },
+
+        submitVerification(recipeId) {
+          const verificationData = {
+            notes: this.verificationNotes.trim() || null
+          };
+
+          return fetch(`/api/recipe/${recipeId}/verify`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(verificationData)
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.status !== 'success') {
+              throw new Error(data.message || 'Failed to submit verification');
+            }
+          });
+        }
+      }
+    }).mount('#app');
+  </script>
+  <script src="https://unpkg.com/boxicons@2.1.4/dist/boxicons.js"></script>
+</body>
+</html>

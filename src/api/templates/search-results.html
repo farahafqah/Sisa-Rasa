@@ -1,0 +1,2060 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Search Results | Sisa Rasa</title>
+
+  <!-- Styles and Fonts -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&display=swap" rel="stylesheet">
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+
+  <!-- VueJS -->
+  <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+  <!-- SweetAlert for notifications -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: url("{{ url_for('static', filename='images/bg.png') }}") no-repeat center center fixed;
+      background-size: cover;
+      margin: 0;
+      min-height: 100vh;
+    }
+
+    /* Header styles */
+    .header-bar {
+      background-color: #083640;
+      padding: 1rem 2rem;
+      color: white;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .header-bar .logo {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .header-bar .logo img {
+      width: 50px;
+      height: auto;
+    }
+    .header-bar .logo h4 {
+      margin: 0;
+      font-weight: 700;
+      color: #fedf2f;
+    }
+    .header-bar .user-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .header-bar .user-profile {
+      background-color: #ea5e18;
+      border-radius: 2rem;
+      padding: 0.5rem 1rem;
+      display: flex;
+      align-items: center;
+      color: white;
+    }
+    .header-bar .user-profile img {
+      border: 2px solid white;
+      margin-right: 0.5rem;
+    }
+
+    /* Search header */
+    .search-header {
+      background-color: rgba(8, 54, 64, 0.95);
+      padding: 2rem;
+      margin: 2rem 0;
+      border-radius: 1rem;
+      color: white;
+      backdrop-filter: blur(10px);
+    }
+    .search-header h2 {
+      color: #fedf2f;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+    .search-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .ingredients-searched {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .ingredient-tag {
+      background-color: #ea5e18;
+      color: white;
+      padding: 0.25rem 0.75rem;
+      border-radius: 1rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+    .results-count {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    /* Filter and sort controls */
+    .controls-section {
+      background-color: rgba(255, 255, 255, 0.95);
+      padding: 1.5rem;
+      border-radius: 1rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .filter-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .filter-group label {
+      font-weight: 600;
+      color: #083640;
+    }
+    .filter-group select, .filter-group input {
+      border: 2px solid #ddd;
+      border-radius: 0.5rem;
+      padding: 0.5rem;
+      font-size: 0.9rem;
+    }
+    .filter-group select:focus, .filter-group input:focus {
+      border-color: #ea5e18;
+      outline: none;
+    }
+    .filter-group button {
+      background-color: #083640;
+      color: white;
+      border: none;
+      border-radius: 0.5rem;
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .filter-group button:hover {
+      background-color: #0a4550;
+      transform: translateY(-1px);
+    }
+
+    /* Active filters */
+    .active-filters {
+      border-top: 1px solid #ddd;
+      padding-top: 1rem;
+    }
+    .active-filters h6 {
+      color: #083640;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+    .filter-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .filter-tag {
+      background-color: #ea5e18;
+      color: white;
+      padding: 0.25rem 0.75rem;
+      border-radius: 1rem;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .remove-filter {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 0;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.2s;
+    }
+    .remove-filter:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Recipe cards */
+    .recipe-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 2rem;
+      margin-bottom: 3rem;
+    }
+    .recipe-card {
+      background-color: white;
+      border-radius: 1rem;
+      padding: 1.5rem;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .recipe-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    .recipe-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #ea5e18, #fedf2f);
+    }
+    .recipe-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+    }
+    .recipe-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #083640;
+      margin: 0;
+      line-height: 1.3;
+    }
+    .recipe-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .recipe-actions button {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      padding: 0.25rem;
+      border-radius: 0.25rem;
+    }
+    .recipe-actions button:hover {
+      background-color: #f8f9fa;
+      transform: scale(1.1);
+    }
+    .recipe-meta {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+      color: #666;
+    }
+    .match-score {
+      background-color: #ea5e18;
+      color: white;
+      padding: 0.25rem 0.75rem;
+      border-radius: 1rem;
+      font-weight: 600;
+      font-size: 0.8rem;
+    }
+    .recipe-details {
+      margin-bottom: 1rem;
+    }
+    .recipe-details h6 {
+      font-weight: 600;
+      color: #083640;
+      margin-bottom: 0.5rem;
+    }
+    .ingredients-list {
+      font-size: 0.9rem;
+      color: #555;
+      line-height: 1.4;
+      margin-bottom: 1rem;
+    }
+    .instructions-preview {
+      font-size: 0.9rem;
+      color: #666;
+      line-height: 1.4;
+      max-height: 60px;
+      overflow: hidden;
+      position: relative;
+    }
+    .instructions-preview::after {
+      content: '...';
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      background: white;
+      padding-left: 1rem;
+    }
+    .recipe-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid #eee;
+    }
+    .recipe-stats {
+      display: flex;
+      gap: 1rem;
+      font-size: 0.8rem;
+      color: #666;
+    }
+    .recipe-stats span {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .estimated-label {
+      color: #6c757d;
+      font-size: 0.75em;
+      font-style: italic;
+      opacity: 0.8;
+    }
+
+    /* Loading and empty states */
+    .loading-container {
+      text-align: center;
+      padding: 3rem;
+      color: #083640;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      color: #666;
+    }
+    .empty-state i {
+      font-size: 4rem;
+      color: #ddd;
+      margin-bottom: 1rem;
+    }
+
+    /* Back button */
+    .back-button {
+      background-color: #083640;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 2rem;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.3s;
+      margin-bottom: 2rem;
+    }
+    .back-button:hover {
+      background-color: #0a4550;
+      color: white;
+      transform: translateY(-2px);
+    }
+
+    /* Ingredient highlighting styles */
+    .ingredient-matched {
+      background-color: #d4edda;
+      color: #155724;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+      border: 1px solid #c3e6cb;
+    }
+    .ingredient-unmatched {
+      color: #6c757d;
+    }
+
+    /* Footer styles */
+    .footer {
+      background-color: #072a32;
+      color: rgba(255,255,255,0.7);
+      text-align: center;
+      padding: 1rem;
+      margin-top: 3rem;
+      font-size: 0.8rem;
+      border-radius: 0.5rem;
+    }
+    .footer a {
+      color: #fedf2f;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+    .footer a:hover {
+      color: #ea5e18;
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+      .recipe-grid {
+        grid-template-columns: 1fr;
+      }
+      .search-info {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .filter-controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .filter-group {
+        justify-content: space-between;
+      }
+    }
+
+    .fade-in { animation: fadeIn 0.8s ease forwards; opacity: 0; transform: translateY(20px); }
+    @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
+
+    /* Rating and verification styles */
+    .recipe-rating {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .rating-stars {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    .star {
+      color: #ddd;
+      font-size: 1rem;
+      transition: color 0.2s;
+    }
+    .star.filled {
+      color: #ffc107;
+    }
+    .rating-text {
+      font-size: 0.85rem;
+      color: #666;
+      font-weight: 500;
+    }
+    .verification-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .verification-text {
+      font-size: 0.85rem;
+      color: #28a745;
+      font-weight: 500;
+    }
+
+    /* Rating Modal Styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 1rem;
+      max-width: 500px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem;
+      border-bottom: 1px solid #eee;
+    }
+
+    .modal-header h4 {
+      margin: 0;
+      color: #083640;
+      font-weight: 700;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #666;
+      padding: 0;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.2s;
+    }
+
+    .close-btn:hover {
+      background-color: #f8f9fa;
+      color: #333;
+    }
+
+    .modal-body {
+      padding: 1.5rem;
+    }
+
+    .recipe-info h5 {
+      color: #083640;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .rating-section, .review-section, .verification-section {
+      margin-bottom: 1.5rem;
+    }
+
+    .rating-section label, .review-section label, .verification-section label {
+      display: block;
+      font-weight: 600;
+      color: #083640;
+      margin-bottom: 0.5rem;
+    }
+
+    .rating-stars.interactive {
+      margin-bottom: 0.5rem;
+    }
+
+    .rating-stars.interactive .star {
+      font-size: 2rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: #ddd;
+    }
+
+    .rating-stars.interactive .star:hover,
+    .rating-stars.interactive .star.hover {
+      color: #ffc107;
+      transform: scale(1.1);
+    }
+
+    .rating-stars.interactive .star.filled {
+      color: #ffc107;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 0.75rem;
+      border: 2px solid #ddd;
+      border-radius: 0.5rem;
+      font-size: 0.9rem;
+      transition: border-color 0.2s;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: #ea5e18;
+    }
+
+    .form-check {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .form-check-input {
+      width: 18px;
+      height: 18px;
+      margin: 0;
+    }
+
+    .form-check-label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 500;
+      color: #083640;
+      cursor: pointer;
+      margin: 0;
+    }
+
+    .verification-notes {
+      margin-top: 1rem;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 1rem;
+      padding: 1.5rem;
+      border-top: 1px solid #eee;
+    }
+
+    .btn {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-secondary {
+      background-color: #6c757d;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background-color: #5a6268;
+    }
+
+    .btn-primary {
+      background-color: #ea5e18;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: #d54e0f;
+    }
+
+    /* View Reviews Button */
+    .view-reviews-btn {
+      background: none;
+      border: none;
+      color: #ea5e18;
+      font-size: 1rem;
+      cursor: pointer;
+      padding: 0.25rem;
+      margin-left: 0.5rem;
+      border-radius: 0.25rem;
+      transition: all 0.2s;
+    }
+
+    .view-reviews-btn:hover {
+      background-color: #f8f9fa;
+      transform: scale(1.1);
+    }
+
+    /* Reviews Modal Styles */
+    .reviews-modal {
+      max-width: 600px;
+    }
+
+    .overall-rating {
+      margin-top: 0.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid #eee;
+    }
+
+    .reviews-list {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .review-item {
+      padding: 1rem 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .review-item:last-child {
+      border-bottom: none;
+    }
+
+    .review-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.5rem;
+    }
+
+    .reviewer-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .review-rating .star.small {
+      font-size: 0.9rem;
+    }
+
+    .review-date {
+      font-size: 0.8rem;
+      color: #666;
+    }
+
+    .review-text {
+      margin: 0.75rem 0;
+      line-height: 1.5;
+      color: #333;
+    }
+
+    .review-actions {
+      display: flex;
+      gap: 1rem;
+      margin-top: 0.75rem;
+    }
+
+    .vote-btn {
+      background: none;
+      border: 1px solid #ddd;
+      color: #666;
+      padding: 0.25rem 0.75rem;
+      border-radius: 1rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .vote-btn:hover {
+      border-color: #ea5e18;
+      color: #ea5e18;
+    }
+
+    .vote-btn.active {
+      background-color: #ea5e18;
+      border-color: #ea5e18;
+      color: white;
+    }
+
+    .no-reviews {
+      padding: 2rem 1rem;
+    }
+
+    /* Comment Button */
+    .comment-btn {
+      background-color: transparent !important;
+      color: inherit !important;
+      border-radius: 0.25rem !important;
+    }
+    .comment-btn:hover {
+      background-color: #f8f9fa !important;
+      color: inherit !important;
+    }
+
+    /* Spinner */
+    .spinner-border {
+      width: 2rem;
+      height: 2rem;
+      border: 0.25em solid currentColor;
+      border-right-color: transparent;
+      border-radius: 50%;
+      animation: spinner-border 0.75s linear infinite;
+    }
+
+    @keyframes spinner-border {
+      to { transform: rotate(360deg); }
+    }
+
+    .text-primary {
+      color: #ea5e18 !important;
+    }
+
+    .py-4 {
+      padding-top: 1.5rem;
+      padding-bottom: 1.5rem;
+    }
+
+    .mt-2 {
+      margin-top: 0.5rem;
+    }
+
+    .visually-hidden {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      padding: 0 !important;
+      margin: -1px !important;
+      overflow: hidden !important;
+      clip: rect(0, 0, 0, 0) !important;
+      white-space: nowrap !important;
+      border: 0 !important;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <div class="header-bar">
+      <div class="d-flex justify-content-between align-items-center">
+        <div class="logo">
+          <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Sisa Rasa Logo">
+          <h4>Sisa Rasa</h4>
+        </div>
+        <div class="user-info">
+          <a href="{{ url_for('dashboard') }}" class="back-button">
+            <i class='bx bx-arrow-back'></i>
+            Back to Dashboard
+          </a>
+          <div class="user-profile">
+            <img v-if="profileImageUrl" :src="profileImageUrl" class="rounded-circle" alt="User" width="35" height="35" style="object-fit: cover;">
+            <img v-else src="{{ url_for('static', filename='images/logo.png') }}" class="rounded-circle" alt="User" width="35">
+            <span>${ userName }</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container mt-4">
+      <!-- Search Header -->
+      <div class="search-header fade-in">
+        <h2>Recipe Search Results</h2>
+        <div class="search-info">
+          <div>
+            <p class="mb-2">Searched ingredients:</p>
+            <div class="ingredients-searched">
+              <span v-for="ingredient in searchedIngredients" :key="ingredient" class="ingredient-tag">
+                ${ ingredient }
+              </span>
+            </div>
+          </div>
+          <div class="results-count">
+            ${ filteredRecipes.length } recipes found
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter and Sort Controls -->
+      <div class="controls-section fade-in">
+        <div class="filter-controls">
+          <div class="filter-group">
+            <label for="sortBy">Sort by:</label>
+            <select id="sortBy" v-model="sortBy" @change="applyFiltersAndSort">
+              <option value="score">Best Match</option>
+              <option value="match_percentage">Match % (High to Low)</option>
+              <option value="match_percentage_desc">Match % (Low to High)</option>
+              <option value="name">Recipe Name (A-Z)</option>
+              <option value="name_desc">Recipe Name (Z-A)</option>
+              <option value="prep_time">Prep Time (Low to High)</option>
+              <option value="prep_time_desc">Prep Time (High to Low)</option>
+              <option value="cook_time">Cook Time (Low to High)</option>
+              <option value="cook_time_desc">Cook Time (High to Low)</option>
+              <option value="servings">Servings (Low to High)</option>
+              <option value="servings_desc">Servings (High to Low)</option>
+              <option value="ingredients_count">Ingredient Count</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="filterCuisine">Cuisine:</label>
+            <select id="filterCuisine" v-model="filterCuisine" @change="applyFiltersAndSort">
+              <option value="">All Cuisines</option>
+              <option v-for="cuisine in availableCuisines" :key="cuisine" :value="cuisine">
+                ${ cuisine }
+              </option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="filterDifficulty">Difficulty:</label>
+            <select id="filterDifficulty" v-model="filterDifficulty" @change="applyFiltersAndSort">
+              <option value="">All Levels</option>
+              <option value="Easy">Easy</option>
+              <option value="Medium">Medium</option>
+              <option value="Hard">Hard</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="maxPrepTime">Max Prep Time (min):</label>
+            <input type="number" id="maxPrepTime" v-model.number="maxPrepTime" @input="applyFiltersAndSort" min="0" max="300" placeholder="Any">
+          </div>
+          <div class="filter-group">
+            <label for="maxCookTime">Max Cook Time (min):</label>
+            <input type="number" id="maxCookTime" v-model.number="maxCookTime" @input="applyFiltersAndSort" min="0" max="300" placeholder="Any">
+          </div>
+          <div class="filter-group">
+            <label for="minServings">Min Servings:</label>
+            <input type="number" id="minServings" v-model.number="minServings" @input="applyFiltersAndSort" min="1" max="20" placeholder="Any">
+          </div>
+          <div class="filter-group">
+            <label for="maxIngredients">Max Ingredients:</label>
+            <input type="number" id="maxIngredients" v-model.number="maxIngredients" @input="applyFiltersAndSort" min="1" max="50" placeholder="Any">
+          </div>
+          <div class="filter-group">
+            <label for="minMatchPercentage">Min Match (%):</label>
+            <input type="number" id="minMatchPercentage" v-model.number="minMatchPercentage" @input="applyFiltersAndSort" min="1" max="100" placeholder="Any">
+          </div>
+          <div class="filter-group">
+            <button @click="clearAllFilters" class="btn btn-outline-secondary btn-sm">
+              <i class='bx bx-refresh'></i> Clear Filters
+            </button>
+          </div>
+        </div>
+
+        <!-- Active Filters Display -->
+        <div v-if="hasActiveFilters" class="active-filters mt-3">
+          <h6>Active Filters:</h6>
+          <div class="filter-tags">
+            <span v-if="filterCuisine" class="filter-tag">
+              Cuisine: ${ filterCuisine }
+              <button @click="filterCuisine = ''; applyFiltersAndSort()" class="remove-filter">×</button>
+            </span>
+            <span v-if="filterDifficulty" class="filter-tag">
+              Difficulty: ${ filterDifficulty }
+              <button @click="filterDifficulty = ''; applyFiltersAndSort()" class="remove-filter">×</button>
+            </span>
+            <span v-if="maxPrepTime" class="filter-tag">
+              Max Prep: ${ maxPrepTime }min
+              <button @click="maxPrepTime = ''; applyFiltersAndSort()" class="remove-filter">×</button>
+            </span>
+            <span v-if="maxCookTime" class="filter-tag">
+              Max Cook: ${ maxCookTime }min
+              <button @click="maxCookTime = ''; applyFiltersAndSort()" class="remove-filter">×</button>
+            </span>
+            <span v-if="minServings" class="filter-tag">
+              Min Servings: ${ minServings }
+              <button @click="minServings = ''; applyFiltersAndSort()" class="remove-filter">×</button>
+            </span>
+            <span v-if="maxIngredients" class="filter-tag">
+              Max Ingredients: ${ maxIngredients }
+              <button @click="maxIngredients = ''; applyFiltersAndSort()" class="remove-filter">×</button>
+            </span>
+            <span v-if="minMatchPercentage" class="filter-tag">
+              Min Match: ${ minMatchPercentage }%
+              <button @click="minMatchPercentage = ''; applyFiltersAndSort()" class="remove-filter">×</button>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      <div v-if="loading" class="loading-container">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-3">Finding the perfect recipes for you...</p>
+      </div>
+
+      <!-- Empty State -->
+      <div v-else-if="filteredRecipes.length === 0" class="empty-state">
+        <i class='bx bx-search-alt'></i>
+        <h3>No recipes found</h3>
+        <p>Try adjusting your filters or search with different ingredients.</p>
+        <a href="{{ url_for('dashboard') }}" class="back-button mt-3">
+          <i class='bx bx-arrow-back'></i>
+          Try New Search
+        </a>
+      </div>
+
+      <!-- Recipe Grid -->
+      <div v-else class="recipe-grid">
+        <div v-for="(recipe, index) in filteredRecipes" :key="recipe.id" class="recipe-card fade-in" :style="{ animationDelay: (index * 0.1) + 's' }">
+          <!-- Recipe Header -->
+          <div class="recipe-header">
+            <h5 class="recipe-title">${ recipe.name }</h5>
+            <div class="recipe-actions">
+              <button @click="saveRecipe(recipe)" :title="recipe.saved ? 'Remove from saved' : 'Save recipe'">
+                <i :class="recipe.saved ? 'bx bxs-heart text-danger' : 'bx bx-heart text-muted'"></i>
+              </button>
+              <button @click="showRatingModal(recipe)" title="Rate & Review" v-if="token">
+                <i class='bx bx-star text-muted'></i>
+              </button>
+              <button @click="showReviewsModal(recipe)" title="View All Reviews" class="comment-btn">
+                <i class='bx bx-comment'></i>
+              </button>
+              <button @click="shareRecipe(recipe)" title="Share recipe">
+                <i class='bx bx-share-alt text-muted'></i>
+              </button>
+              <button @click="viewRecipeDetails(recipe)" title="View full recipe">
+                <i class='bx bx-show text-muted'></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Recipe Meta -->
+          <div class="recipe-meta">
+            <span class="match-score">${ recipe.ingredient_match_percentage }% match</span>
+            <span class="text-muted">Score: ${ recipe.score.toFixed(2) }</span>
+          </div>
+
+          <!-- Rating Display -->
+          <div v-if="recipe.rating_data && recipe.rating_data.total_reviews > 0" class="recipe-rating">
+            <div class="rating-stars">
+              <span v-for="star in 5" :key="star" class="star" :class="{ 'filled': star <= Math.round(recipe.rating_data.average_rating) }">★</span>
+              <span class="rating-text">${ recipe.rating_data.average_rating }/5 (${ recipe.rating_data.total_reviews } review${ recipe.rating_data.total_reviews !== 1 ? 's' : '' })</span>
+              <button @click="showReviewsModal(recipe)" class="view-reviews-btn" title="View all reviews">
+                <i class='bx bx-comment-detail'></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Verification Badge -->
+          <div v-if="recipe.verification_data && recipe.verification_data.verification_count > 0" class="verification-badge">
+            <i class='bx bx-check-circle text-success'></i>
+            <span class="verification-text">Verified by ${ recipe.verification_data.verification_count } user${ recipe.verification_data.verification_count !== 1 ? 's' : '' }</span>
+          </div>
+
+          <!-- Recipe Details -->
+          <div class="recipe-details">
+            <h6>Ingredients (${ recipe.ingredients.length }):</h6>
+            <div class="ingredients-list" v-html="getIngredientsPreviewWithHighlight(recipe.ingredients, recipe)">
+            </div>
+
+            <h6>Instructions:</h6>
+            <div class="instructions-preview">
+              ${ getInstructionsPreview(recipe.steps) }
+            </div>
+          </div>
+
+          <!-- Recipe Footer -->
+          <div class="recipe-footer">
+            <div class="recipe-stats">
+              <span><i class='bx bx-time'></i> <span v-html="getDisplayValue(recipe.prep_time, recipe.prep_time_estimated, 'min prep')"></span></span>
+              <span><i class='bx bx-timer'></i> <span v-html="getDisplayValue(recipe.cook_time, recipe.cook_time_estimated, 'min cook')"></span></span>
+              <span><i class='bx bx-group'></i> <span v-html="getDisplayValue(recipe.servings, recipe.servings_estimated, 'servings')"></span></span>
+            </div>
+            <div class="recipe-stats">
+              <span><i class='bx bx-world'></i> <span v-html="getDisplayValue(recipe.cuisine, recipe.cuisine_estimated, '')"></span></span>
+              <span><i class='bx bx-trending-up'></i> <span v-html="getDisplayValue(recipe.difficulty, recipe.difficulty_estimated, '')"></span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <p>&copy; 2025 Sisa Rasa. All rights reserved. <a href="#">Terms of Service</a> | <a href="#">Privacy Policy</a></p>
+      </div>
+    </div>
+
+    <!-- Rating Modal -->
+    <div v-if="showRatingModalFlag" class="modal-overlay" @click="closeRatingModal">
+      <div class="modal-content rating-modal" @click.stop>
+        <div class="modal-header">
+          <h4>Rate & Review</h4>
+          <button class="close-btn" @click="closeRatingModal">&times;</button>
+        </div>
+
+        <div class="modal-body">
+          <div v-if="selectedRecipeForRating" class="recipe-info">
+            <h5>${ selectedRecipeForRating.name }</h5>
+            <p class="text-muted">Share your experience with this recipe</p>
+          </div>
+
+          <!-- Rating Stars -->
+          <div class="rating-section">
+            <label>Your Rating *</label>
+            <div class="rating-stars interactive">
+              <span v-for="star in 5" :key="star"
+                    class="star"
+                    :class="{ 'filled': star <= currentRating, 'hover': star <= hoverRating }"
+                    @click="setRating(star)"
+                    @mouseenter="hoverRating = star"
+                    @mouseleave="hoverRating = 0">★</span>
+            </div>
+            <small class="text-muted">Click to rate (1-5 stars)</small>
+          </div>
+
+          <!-- Review Text -->
+          <div class="review-section">
+            <label for="reviewText">Your Review (Optional)</label>
+            <textarea id="reviewText"
+                      v-model="currentReviewText"
+                      class="form-control"
+                      rows="4"
+                      placeholder="Tell others about your experience with this recipe..."></textarea>
+          </div>
+
+          <!-- Verification Section -->
+          <div class="verification-section">
+            <div class="form-check">
+              <input type="checkbox"
+                     id="markAsVerified"
+                     v-model="markAsVerified"
+                     class="form-check-input">
+              <label for="markAsVerified" class="form-check-label">
+                <i class='bx bx-check-circle'></i>
+                I've tried this recipe and can verify it works
+              </label>
+            </div>
+
+            <div v-if="markAsVerified" class="verification-notes">
+              <label for="verificationNotes">Verification Notes (Optional)</label>
+              <textarea id="verificationNotes"
+                        v-model="verificationNotes"
+                        class="form-control"
+                        rows="2"
+                        placeholder="Any tips or modifications you made..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" @click="closeRatingModal">Cancel</button>
+          <button type="button" class="btn btn-primary" @click="submitRating">Submit Rating</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reviews Modal -->
+    <div v-if="showReviewsModalFlag" class="modal-overlay" @click="closeReviewsModal">
+      <div class="modal-content reviews-modal" @click.stop>
+        <div class="modal-header">
+          <h4>Reviews & Ratings</h4>
+          <button class="close-btn" @click="closeReviewsModal">&times;</button>
+        </div>
+
+        <div class="modal-body">
+          <div v-if="selectedRecipeForReviews" class="recipe-info">
+            <h5>${ selectedRecipeForReviews.name }</h5>
+            <div v-if="selectedRecipeForReviews.rating_data" class="overall-rating">
+              <div class="rating-stars">
+                <span v-for="star in 5" :key="star" class="star" :class="{ 'filled': star <= Math.round(selectedRecipeForReviews.rating_data.average_rating) }">★</span>
+                <span class="rating-text">${ selectedRecipeForReviews.rating_data.average_rating }/5 (${ selectedRecipeForReviews.rating_data.total_reviews } review${ selectedRecipeForReviews.rating_data.total_reviews !== 1 ? 's' : '' })</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Loading State -->
+          <div v-if="reviewsLoading" class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading reviews...</span>
+            </div>
+            <p class="mt-2">Loading reviews...</p>
+          </div>
+
+          <!-- Reviews List -->
+          <div v-else-if="recipeReviews.length > 0" class="reviews-list">
+            <div v-for="review in recipeReviews" :key="review._id" class="review-item">
+              <div class="review-header">
+                <div class="reviewer-info">
+                  <strong>${ review.user_name }</strong>
+                  <div class="review-rating">
+                    <span v-for="star in 5" :key="star" class="star small" :class="{ 'filled': star <= review.rating }">★</span>
+                  </div>
+                </div>
+                <div class="review-date">
+                  ${ new Date(review.created_at).toLocaleDateString() }
+                </div>
+              </div>
+
+              <div v-if="review.review_text" class="review-text">
+                ${ review.review_text }
+              </div>
+
+              <div class="review-actions">
+                <button @click="voteOnReview(review._id, 'helpful')" class="vote-btn" :class="{ 'active': review.user_vote === 'helpful' }" v-if="token">
+                  <i class='bx bx-like'></i>
+                  Helpful (${ review.helpful_votes || 0 })
+                </button>
+                <button @click="voteOnReview(review._id, 'unhelpful')" class="vote-btn" :class="{ 'active': review.user_vote === 'unhelpful' }" v-if="token">
+                  <i class='bx bx-dislike'></i>
+                  Not Helpful (${ review.unhelpful_votes || 0 })
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- No Reviews State -->
+          <div v-else class="no-reviews text-center py-4">
+            <i class='bx bx-comment-x' style="font-size: 3rem; color: #ddd;"></i>
+            <h6 class="mt-2">No reviews yet</h6>
+            <p class="text-muted">Be the first to review this recipe!</p>
+            <button @click="closeReviewsModal(); showRatingModal(selectedRecipeForReviews)" class="btn btn-primary" v-if="token">
+              Write a Review
+            </button>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" @click="closeReviewsModal">Close</button>
+          <button type="button" class="btn btn-primary" @click="closeReviewsModal(); showRatingModal(selectedRecipeForReviews)" v-if="token">
+            Write a Review
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+    const token = localStorage.getItem('token');
+    const storedName = localStorage.getItem('userName');
+
+    // Check if user is logged in (optional for search results)
+    // if (!token) {
+    //   window.location.href = '/login';
+    // }
+
+    createApp({
+      delimiters: ['${', '}'],
+      data() {
+        return {
+          userName: storedName || "Guest",
+          profileImageUrl: null,
+          loading: true,
+          searchedIngredients: [],
+          allRecipes: [],
+          filteredRecipes: [],
+          savedRecipes: [],
+          token: token,
+
+          // Rating modal data
+          showRatingModalFlag: false,
+          selectedRecipeForRating: null,
+          currentRating: 0,
+          hoverRating: 0,
+          currentReviewText: '',
+          markAsVerified: false,
+          verificationNotes: '',
+
+          // Reviews modal data
+          showReviewsModalFlag: false,
+          selectedRecipeForReviews: null,
+          recipeReviews: [],
+          reviewsLoading: false,
+
+          // Filter and sort options
+          sortBy: 'score',
+          filterCuisine: '',
+          filterDifficulty: '',
+          maxPrepTime: '',
+          maxCookTime: '',
+          minServings: '',
+          maxIngredients: '',
+          minMatchPercentage: '',
+
+          // Available filter options
+          availableCuisines: [],
+          availableDifficulties: ['Easy', 'Medium', 'Hard']
+        }
+      },
+      computed: {
+        hasActiveFilters() {
+          return this.filterCuisine || this.filterDifficulty || this.maxPrepTime ||
+                 this.maxCookTime || this.minServings || this.maxIngredients || this.minMatchPercentage;
+        }
+      },
+      mounted() {
+        this.fetchProfileImage();
+        this.loadSearchResults();
+        this.loadSavedRecipes();
+      },
+      methods: {
+        fetchProfileImage() {
+          if (!token) {
+            return; // Skip if no token
+          }
+          fetch('/api/auth/profile-image/current', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
+          .then(res => {
+            if (res.ok) {
+              return res.json();
+            }
+            return null;
+          })
+          .then(data => {
+            if (data && data.status === 'success' && data.profile_image) {
+              this.profileImageUrl = data.profile_image;
+            }
+          })
+          .catch(err => {
+            console.error('Error fetching profile image:', err);
+          });
+        },
+
+        loadSearchResults() {
+          // Get search data from URL parameters or localStorage
+          const urlParams = new URLSearchParams(window.location.search);
+          const ingredients = urlParams.get('ingredients');
+          const recipes = urlParams.get('recipes');
+
+          if (ingredients) {
+            this.searchedIngredients = ingredients.split(',').map(i => i.trim());
+          } else {
+            // Try to get from localStorage as fallback
+            const storedSearch = localStorage.getItem('lastSearchResults');
+            if (storedSearch) {
+              const searchData = JSON.parse(storedSearch);
+              this.searchedIngredients = searchData.ingredients || [];
+              this.allRecipes = searchData.recipes || [];
+              this.filteredRecipes = [...this.allRecipes];
+              this.extractAvailableCuisines();
+              this.loading = false;
+              return;
+            }
+          }
+
+          if (this.searchedIngredients.length > 0) {
+            this.searchRecipes();
+          } else {
+            // Redirect back to dashboard if no search data
+            window.location.href = '/dashboard';
+          }
+        },
+
+        searchRecipes() {
+          this.loading = true;
+
+          fetch('/api/recommend', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              ingredients: this.searchedIngredients,
+              limit: 50, // Get more results for the results page
+              min_score: 0.01,
+              strict: false
+            })
+          })
+          .then(res => {
+            if (!res.ok) {
+              throw new Error('Failed to get recommendations');
+            }
+            return res.json();
+          })
+          .then(data => {
+            this.loading = false;
+            if (data.status === 'ok' && data.recipes && data.recipes.length > 0) {
+              this.allRecipes = data.recipes
+                .filter(recipe => (recipe.ingredient_match_percentage || 0) > 0) // Filter out 0% matches
+                .map((recipe, index) => {
+                  // Generate more realistic recipe data
+                  const ingredientCount = Array.isArray(recipe.ingredients) ? recipe.ingredients.length : 1;
+                  const cuisines = ['Italian', 'Chinese', 'Mexican', 'Indian', 'American', 'French', 'Thai', 'Japanese', 'Mediterranean', 'International'];
+                  const difficulties = ['Easy', 'Medium', 'Hard'];
+
+                  // Generate realistic prep and cook times based on ingredient count
+                  const basePrepTime = Math.max(10, Math.min(60, ingredientCount * 3 + Math.random() * 20));
+                  const baseCookTime = Math.max(15, Math.min(120, ingredientCount * 5 + Math.random() * 30));
+
+                  // Check if values are from original data or estimated
+                  const hasOriginalPrepTime = recipe.prep_time && recipe.prep_time !== 30;
+                  const hasOriginalCookTime = recipe.cook_time && recipe.cook_time !== 45;
+                  const hasOriginalServings = recipe.servings && recipe.servings !== 4;
+                  const hasOriginalCuisine = recipe.cuisine && recipe.cuisine !== 'International' && recipe.cuisine !== 'Medium';
+                  const hasOriginalDifficulty = recipe.difficulty && recipe.difficulty !== 'Medium';
+
+                  return {
+                    id: recipe.id,
+                    name: recipe.name,
+                    ingredients: Array.isArray(recipe.ingredients) ? recipe.ingredients : [recipe.ingredients],
+                    steps: Array.isArray(recipe.steps) ? recipe.steps : [recipe.steps],
+                    score: recipe.score || 0,
+                    ingredient_match_percentage: recipe.ingredient_match_percentage || 0,
+                    prep_time: hasOriginalPrepTime ? recipe.prep_time : Math.round(basePrepTime),
+                    prep_time_estimated: !hasOriginalPrepTime,
+                    cook_time: hasOriginalCookTime ? recipe.cook_time : Math.round(baseCookTime),
+                    cook_time_estimated: !hasOriginalCookTime,
+                    servings: hasOriginalServings ? recipe.servings : Math.max(2, Math.min(8, Math.round(ingredientCount / 3) + 2)),
+                    servings_estimated: !hasOriginalServings,
+                    cuisine: hasOriginalCuisine ? recipe.cuisine : cuisines[index % cuisines.length],
+                    cuisine_estimated: !hasOriginalCuisine,
+                    difficulty: hasOriginalDifficulty ? recipe.difficulty : difficulties[Math.floor(ingredientCount / 5) % 3],
+                    difficulty_estimated: !hasOriginalDifficulty,
+                    saved: false
+                  };
+                });
+
+              this.filteredRecipes = [...this.allRecipes];
+              this.extractAvailableCuisines();
+              this.checkSavedStatus();
+
+              // Store search results for future reference
+              localStorage.setItem('lastSearchResults', JSON.stringify({
+                ingredients: this.searchedIngredients,
+                recipes: this.allRecipes
+              }));
+            } else {
+              this.allRecipes = [];
+              this.filteredRecipes = [];
+            }
+          })
+          .catch(err => {
+            console.error('Error searching recipes:', err);
+            this.loading = false;
+            this.allRecipes = [];
+            this.filteredRecipes = [];
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Failed to load search results. Please try again.',
+              confirmButtonColor: '#ea5e18'
+            });
+          });
+        },
+
+        extractAvailableCuisines() {
+          const cuisines = [...new Set(this.allRecipes.map(recipe => recipe.cuisine))];
+          this.availableCuisines = cuisines.sort();
+        },
+
+        applyFiltersAndSort() {
+          // Apply all filters
+          this.filteredRecipes = this.allRecipes.filter(recipe => {
+            // Filter out recipes with 0% match
+            if (recipe.ingredient_match_percentage <= 0) {
+              return false;
+            }
+
+            // Filter by cuisine
+            if (this.filterCuisine && recipe.cuisine !== this.filterCuisine) {
+              return false;
+            }
+
+            // Filter by difficulty
+            if (this.filterDifficulty && recipe.difficulty !== this.filterDifficulty) {
+              return false;
+            }
+
+            // Filter by prep time
+            if (this.maxPrepTime && recipe.prep_time > this.maxPrepTime) {
+              return false;
+            }
+
+            // Filter by cook time
+            if (this.maxCookTime && recipe.cook_time > this.maxCookTime) {
+              return false;
+            }
+
+            // Filter by minimum servings
+            if (this.minServings && recipe.servings < this.minServings) {
+              return false;
+            }
+
+            // Filter by maximum ingredients
+            if (this.maxIngredients && recipe.ingredients.length > this.maxIngredients) {
+              return false;
+            }
+
+            // Filter by minimum match percentage
+            if (this.minMatchPercentage && recipe.ingredient_match_percentage < this.minMatchPercentage) {
+              return false;
+            }
+
+            return true;
+          });
+
+          // Apply sorting
+          this.sortRecipes();
+        },
+
+        sortRecipes() {
+          this.filteredRecipes.sort((a, b) => {
+            switch (this.sortBy) {
+              case 'score':
+                // Sort by ingredient match percentage (best match first)
+                return b.ingredient_match_percentage - a.ingredient_match_percentage;
+              case 'name':
+                return a.name.localeCompare(b.name);
+              case 'name_desc':
+                return b.name.localeCompare(a.name);
+              case 'prep_time':
+                return a.prep_time - b.prep_time;
+              case 'prep_time_desc':
+                return b.prep_time - a.prep_time;
+              case 'cook_time':
+                return a.cook_time - b.cook_time;
+              case 'cook_time_desc':
+                return b.cook_time - a.cook_time;
+              case 'servings':
+                return a.servings - b.servings;
+              case 'servings_desc':
+                return b.servings - a.servings;
+              case 'ingredients_count':
+                return a.ingredients.length - b.ingredients.length;
+              case 'match_percentage':
+                return b.ingredient_match_percentage - a.ingredient_match_percentage;
+              case 'match_percentage_desc':
+                return a.ingredient_match_percentage - b.ingredient_match_percentage;
+              default:
+                // Default to best match (highest ingredient match percentage)
+                return b.ingredient_match_percentage - a.ingredient_match_percentage;
+            }
+          });
+        },
+
+        clearAllFilters() {
+          this.filterCuisine = '';
+          this.filterDifficulty = '';
+          this.maxPrepTime = '';
+          this.maxCookTime = '';
+          this.minServings = '';
+          this.maxIngredients = '';
+          this.minMatchPercentage = '';
+          this.sortBy = 'score';
+          this.applyFiltersAndSort();
+        },
+
+        // Legacy methods for backward compatibility
+        filterRecipes() {
+          this.applyFiltersAndSort();
+        },
+
+        loadSavedRecipes() {
+          if (!token) {
+            return; // Skip if no token
+          }
+          fetch('/api/recipes/saved', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
+          .then(res => {
+            if (res.ok) {
+              return res.json();
+            }
+            return { recipes: [] };
+          })
+          .then(data => {
+            if (data.status === 'success' && data.recipes) {
+              this.savedRecipes = data.recipes;
+              this.checkSavedStatus();
+            }
+          })
+          .catch(err => {
+            console.error('Error loading saved recipes:', err);
+          });
+        },
+
+        checkSavedStatus() {
+          // Mark recipes as saved if they exist in saved recipes
+          this.allRecipes.forEach(recipe => {
+            recipe.saved = this.savedRecipes.some(saved =>
+              saved.name === recipe.name || saved.original_id === recipe.id
+            );
+          });
+          this.filteredRecipes.forEach(recipe => {
+            recipe.saved = this.savedRecipes.some(saved =>
+              saved.name === recipe.name || saved.original_id === recipe.id
+            );
+          });
+        },
+
+        saveRecipe(recipe) {
+          if (!token) {
+            Swal.fire({
+              icon: 'warning',
+              title: 'Login Required',
+              text: 'Please login to save recipes',
+              confirmButtonColor: '#ea5e18'
+            });
+            return;
+          }
+
+          const recipeId = recipe.id || recipe.name.toLowerCase().replace(/\s+/g, '-');
+
+          if (recipe.saved) {
+            // Remove from saved recipes
+            fetch(`/api/recipe/${recipeId}/unsave`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              }
+            })
+            .then(res => res.json())
+            .then(data => {
+              if (data.status === 'success') {
+                recipe.saved = false;
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Recipe Removed',
+                  text: 'Recipe removed from your saved recipes',
+                  confirmButtonColor: '#ea5e18',
+                  timer: 2000,
+                  showConfirmButton: false
+                });
+                this.loadSavedRecipes();
+              }
+            })
+            .catch(err => {
+              console.error('Error removing recipe:', err);
+            });
+          } else {
+            // Save recipe
+            fetch(`/api/recipe/${recipeId}/save`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              }
+            })
+            .then(res => res.json())
+            .then(data => {
+              if (data.status === 'success') {
+                recipe.saved = true;
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Recipe Saved',
+                  text: 'Recipe added to your saved recipes',
+                  confirmButtonColor: '#ea5e18',
+                  timer: 2000,
+                  showConfirmButton: false
+                });
+                this.loadSavedRecipes();
+              }
+            })
+            .catch(err => {
+              console.error('Error saving recipe:', err);
+              Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Failed to save recipe. Please try again.',
+                confirmButtonColor: '#ea5e18'
+              });
+            });
+          }
+        },
+
+        shareRecipe(recipe) {
+          if (navigator.share) {
+            navigator.share({
+              title: recipe.name,
+              text: `Check out this recipe: ${recipe.name}`,
+              url: window.location.href
+            });
+          } else {
+            // Fallback: copy to clipboard
+            const shareText = `Check out this recipe: ${recipe.name}\n\nIngredients: ${recipe.ingredients.slice(0, 5).join(', ')}${recipe.ingredients.length > 5 ? '...' : ''}`;
+            navigator.clipboard.writeText(shareText).then(() => {
+              Swal.fire({
+                icon: 'success',
+                title: 'Copied!',
+                text: 'Recipe details copied to clipboard',
+                confirmButtonColor: '#ea5e18',
+                timer: 2000,
+                showConfirmButton: false
+              });
+            });
+          }
+        },
+
+        viewRecipeDetails(recipe) {
+          // Create highlighted ingredients list for the popup
+          const highlightedIngredientsList = recipe.ingredients.map(ing => {
+            const isMatched = this.isIngredientMatched(ing, recipe);
+            if (isMatched) {
+              return `<li><span class="ingredient-matched">${ing}</span></li>`;
+            } else {
+              return `<li><span class="ingredient-unmatched">${ing}</span></li>`;
+            }
+          }).join('');
+
+          Swal.fire({
+            title: recipe.name,
+            html: `
+              <div style="text-align: left; max-height: 400px; overflow-y: auto;">
+                <h6><strong>Ingredients (${recipe.ingredients.length}):</strong></h6>
+                <ul style="margin-bottom: 1rem;">
+                  ${highlightedIngredientsList}
+                </ul>
+
+                <h6><strong>Instructions:</strong></h6>
+                <ol>
+                  ${recipe.steps.map(step => `<li style="margin-bottom: 0.5rem;">${step}</li>`).join('')}
+                </ol>
+
+                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #eee;">
+                  <p><strong>Prep Time:</strong> ${this.getDisplayValueForModal(recipe.prep_time, recipe.prep_time_estimated, 'minutes')}</p>
+                  <p><strong>Cook Time:</strong> ${this.getDisplayValueForModal(recipe.cook_time, recipe.cook_time_estimated, 'minutes')}</p>
+                  <p><strong>Servings:</strong> ${this.getDisplayValueForModal(recipe.servings, recipe.servings_estimated, '')}</p>
+                  <p><strong>Cuisine:</strong> ${this.getDisplayValueForModal(recipe.cuisine, recipe.cuisine_estimated, '')}</p>
+                  <p><strong>Difficulty:</strong> ${this.getDisplayValueForModal(recipe.difficulty, recipe.difficulty_estimated, '')}</p>
+                  <p><strong>Match Score:</strong> ${recipe.ingredient_match_percentage}%</p>
+                </div>
+              </div>
+              <style>
+                .ingredient-matched {
+                  background-color: #d4edda;
+                  color: #155724;
+                  padding: 2px 6px;
+                  border-radius: 4px;
+                  font-weight: 600;
+                  border: 1px solid #c3e6cb;
+                }
+                .ingredient-unmatched {
+                  color: #6c757d;
+                }
+              </style>
+            `,
+            width: '600px',
+            confirmButtonColor: '#ea5e18',
+            confirmButtonText: 'Close'
+          });
+        },
+
+        getIngredientsPreview(ingredients) {
+          if (!ingredients || ingredients.length === 0) return 'No ingredients listed';
+
+          const maxShow = 6;
+          if (ingredients.length <= maxShow) {
+            return ingredients.join(', ');
+          }
+
+          return ingredients.slice(0, maxShow).join(', ') + ` and ${ingredients.length - maxShow} more...`;
+        },
+
+        getIngredientsPreviewWithHighlight(ingredients, recipe) {
+          if (!ingredients || ingredients.length === 0) return 'No ingredients listed';
+
+          const maxShow = 6;
+          const ingredientsToShow = ingredients.length <= maxShow ? ingredients : ingredients.slice(0, maxShow);
+
+          // Debug: log what we're working with
+          console.log('Searched ingredients:', this.searchedIngredients);
+          console.log('Recipe ingredients:', ingredientsToShow);
+
+          // Create highlighted ingredient list
+          const highlightedIngredients = ingredientsToShow.map(ingredient => {
+            const isMatched = this.isIngredientMatched(ingredient, recipe);
+            console.log(`Ingredient "${ingredient}" matched: ${isMatched}`);
+
+            if (isMatched) {
+              return `<span class="ingredient-matched">${ingredient}</span>`;
+            } else {
+              return `<span class="ingredient-unmatched">${ingredient}</span>`;
+            }
+          });
+
+          let result = highlightedIngredients.join(', ');
+
+          if (ingredients.length > maxShow) {
+            result += ` <span class="ingredient-unmatched">and ${ingredients.length - maxShow} more...</span>`;
+          }
+
+          console.log('Final highlighted result:', result);
+          return result;
+        },
+
+        isIngredientMatched(recipeIngredient, recipe) {
+          // Simple frontend matching - check if any user ingredient is contained in recipe ingredient
+          return this.searchedIngredients.some(userIngredient => {
+            const userIng = userIngredient.toLowerCase().trim();
+            const recipeIng = recipeIngredient.toLowerCase().trim();
+
+            // Simple contains check (both directions)
+            return recipeIng.includes(userIng) || userIng.includes(recipeIng);
+          });
+        },
+
+        fuzzyMatch(str1, str2, threshold = 0.6) {
+          // Simple fuzzy matching for ingredient names
+          const longer = str1.length > str2.length ? str1 : str2;
+          const shorter = str1.length > str2.length ? str2 : str1;
+
+          if (longer.length === 0) return true;
+
+          const editDistance = this.levenshteinDistance(longer, shorter);
+          const similarity = (longer.length - editDistance) / longer.length;
+
+          return similarity >= threshold;
+        },
+
+        levenshteinDistance(str1, str2) {
+          const matrix = [];
+
+          for (let i = 0; i <= str2.length; i++) {
+            matrix[i] = [i];
+          }
+
+          for (let j = 0; j <= str1.length; j++) {
+            matrix[0][j] = j;
+          }
+
+          for (let i = 1; i <= str2.length; i++) {
+            for (let j = 1; j <= str1.length; j++) {
+              if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+                matrix[i][j] = matrix[i - 1][j - 1];
+              } else {
+                matrix[i][j] = Math.min(
+                  matrix[i - 1][j - 1] + 1,
+                  matrix[i][j - 1] + 1,
+                  matrix[i - 1][j] + 1
+                );
+              }
+            }
+          }
+
+          return matrix[str2.length][str1.length];
+        },
+
+        getInstructionsPreview(steps) {
+          if (!steps || steps.length === 0) return 'No instructions available';
+
+          const firstStep = Array.isArray(steps) ? steps[0] : steps;
+          if (firstStep.length > 120) {
+            return firstStep.substring(0, 120) + '...';
+          }
+
+          return firstStep;
+        },
+
+        getDisplayValue(value, isEstimated, suffix) {
+          if (isEstimated) {
+            return `~${value}${suffix ? ' ' + suffix : ''} <span class="estimated-label">(est.)</span>`;
+          }
+          return `${value}${suffix ? ' ' + suffix : ''}`;
+        },
+
+        getDisplayValueForModal(value, isEstimated, suffix) {
+          if (isEstimated) {
+            return `~${value}${suffix ? ' ' + suffix : ''} (estimated)`;
+          }
+          return `${value}${suffix ? ' ' + suffix : ''}`;
+        },
+
+        showRatingModal(recipe) {
+          if (!this.token) {
+            Swal.fire({
+              icon: 'warning',
+              title: 'Login Required',
+              text: 'Please login to rate and review recipes',
+              confirmButtonColor: '#ea5e18'
+            });
+            return;
+          }
+
+          // Show rating modal directly
+          this.selectedRecipeForRating = recipe;
+          this.showRatingModalFlag = true;
+          this.currentRating = 0;
+          this.currentReviewText = '';
+          this.markAsVerified = false;
+          this.verificationNotes = '';
+
+          // Load existing user review if any
+          this.loadUserReview(recipe.id);
+        },
+
+        closeRatingModal() {
+          this.showRatingModalFlag = false;
+          this.selectedRecipeForRating = null;
+          this.currentRating = 0;
+          this.currentReviewText = '';
+          this.markAsVerified = false;
+          this.verificationNotes = '';
+        },
+
+        setRating(rating) {
+          this.currentRating = rating;
+        },
+
+        loadUserReview(recipeId) {
+          // Load user's existing review for this recipe
+          fetch(`/api/recipe/${recipeId}/user-review`, {
+            headers: {
+              'Authorization': `Bearer ${this.token}`
+            }
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.status === 'success' && data.review) {
+              this.currentRating = data.review.rating;
+              this.currentReviewText = data.review.review_text || '';
+            }
+          })
+          .catch(err => {
+            console.error('Error loading user review:', err);
+          });
+
+          // Load user's existing verification for this recipe
+          fetch(`/api/recipe/${recipeId}/user-verification`, {
+            headers: {
+              'Authorization': `Bearer ${this.token}`
+            }
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.status === 'success' && data.verification) {
+              this.markAsVerified = true;
+              this.verificationNotes = data.verification.notes || '';
+            }
+          })
+          .catch(err => {
+            console.error('Error loading user verification:', err);
+          });
+        },
+
+        submitRating() {
+          if (this.currentRating === 0) {
+            Swal.fire({
+              icon: 'warning',
+              title: 'Rating Required',
+              text: 'Please select a rating before submitting',
+              confirmButtonColor: '#ea5e18'
+            });
+            return;
+          }
+
+          const recipeId = this.selectedRecipeForRating.id;
+
+          // Submit review
+          const reviewData = {
+            rating: this.currentRating,
+            review_text: this.currentReviewText.trim() || null
+          };
+
+          fetch(`/api/recipe/${recipeId}/review`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${this.token}`
+            },
+            body: JSON.stringify(reviewData)
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.status === 'success') {
+              // If user marked as verified, submit verification
+              if (this.markAsVerified) {
+                return this.submitVerification(recipeId);
+              }
+              return Promise.resolve();
+            } else {
+              throw new Error(data.message || 'Failed to submit review');
+            }
+          })
+          .then(() => {
+            // Refresh recipe data to show updated ratings
+            this.searchRecipes();
+
+            Swal.fire({
+              icon: 'success',
+              title: 'Thank You!',
+              text: 'Your rating and review have been submitted successfully',
+              confirmButtonColor: '#ea5e18',
+              timer: 2000,
+              showConfirmButton: false
+            });
+
+            this.closeRatingModal();
+          })
+          .catch(err => {
+            console.error('Error submitting rating:', err);
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Failed to submit rating. Please try again.',
+              confirmButtonColor: '#ea5e18'
+            });
+          });
+        },
+
+        submitVerification(recipeId) {
+          const verificationData = {
+            notes: this.verificationNotes.trim() || null
+          };
+
+          return fetch(`/api/recipe/${recipeId}/verify`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${this.token}`
+            },
+            body: JSON.stringify(verificationData)
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.status !== 'success') {
+              throw new Error(data.message || 'Failed to submit verification');
+            }
+          });
+        },
+
+        showReviewsModal(recipe) {
+          this.selectedRecipeForReviews = recipe;
+          this.showReviewsModalFlag = true;
+          this.loadRecipeReviews(recipe.id);
+        },
+
+        closeReviewsModal() {
+          this.showReviewsModalFlag = false;
+          this.selectedRecipeForReviews = null;
+          this.recipeReviews = [];
+        },
+
+        loadRecipeReviews(recipeId) {
+          this.reviewsLoading = true;
+          this.recipeReviews = [];
+
+          fetch(`/api/recipe/${recipeId}/reviews`, {
+            headers: this.token ? {
+              'Authorization': `Bearer ${this.token}`
+            } : {}
+          })
+          .then(res => res.json())
+          .then(data => {
+            this.reviewsLoading = false;
+            if (data.status === 'success' && data.reviews) {
+              this.recipeReviews = data.reviews;
+            }
+          })
+          .catch(err => {
+            console.error('Error loading reviews:', err);
+            this.reviewsLoading = false;
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Failed to load reviews. Please try again.',
+              confirmButtonColor: '#ea5e18'
+            });
+          });
+        },
+
+        voteOnReview(reviewId, voteType) {
+          if (!this.token) {
+            Swal.fire({
+              icon: 'warning',
+              title: 'Login Required',
+              text: 'Please login to vote on reviews',
+              confirmButtonColor: '#ea5e18'
+            });
+            return;
+          }
+
+          fetch(`/api/review/${reviewId}/vote`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${this.token}`
+            },
+            body: JSON.stringify({ vote_type: voteType })
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.status === 'success') {
+              // Reload reviews to show updated vote counts
+              this.loadRecipeReviews(this.selectedRecipeForReviews.id);
+            } else {
+              throw new Error(data.message || 'Failed to vote');
+            }
+          })
+          .catch(err => {
+            console.error('Error voting on review:', err);
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Failed to vote on review. Please try again.',
+              confirmButtonColor: '#ea5e18'
+            });
+          });
+        }
+      }
+    }).mount('#app');
+  </script>
+  <script src="https://unpkg.com/boxicons@2.1.4/dist/boxicons.js"></script>
+</body>
+</html>

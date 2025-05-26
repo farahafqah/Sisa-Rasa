@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SisaRasa API Documentation</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .api-docs {
+            padding: 60px 0;
+        }
+
+        .endpoint {
+            background-color: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .endpoint h3 {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .method {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 5px;
+            color: white;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .get {
+            background-color: #61affe;
+        }
+
+        .post {
+            background-color: #49cc90;
+        }
+
+        .endpoint-url {
+            font-family: monospace;
+            font-size: 1.1rem;
+        }
+
+        .description {
+            margin-bottom: 20px;
+        }
+
+        .params-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .params {
+            background-color: #f8f8f8;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .param {
+            margin-bottom: 10px;
+        }
+
+        .param-name {
+            font-family: monospace;
+            font-weight: bold;
+        }
+
+        .param-type {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .example {
+            background-color: #272822;
+            color: #f8f8f2;
+            border-radius: 5px;
+            padding: 15px;
+            font-family: monospace;
+            overflow-x: auto;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 30px;
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .back-link i {
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">Sisa<span>Rasa</span></div>
+                <nav>
+                    <a href="/" class="btn">Home</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <section class="api-docs">
+        <div class="container">
+            <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> Back to Home</a>
+            <h1 class="section-title">API Documentation</h1>
+            <p class="description">
+                Welcome to the SisaRasa Recipe Recommendation API. This API allows you to get recipe recommendations
+                based on ingredients you have available. Below you'll find detailed information about each endpoint.
+            </p>
+
+            <div class="endpoint">
+                <h3><span class="method get">GET</span> <span class="endpoint-url">/api/health</span></h3>
+                <div class="description">
+                    Check the health status of the API and get information about loaded recipes and ingredients.
+                </div>
+                <div class="example">
+                    <pre>// Response
+{
+  "status": "ok",
+  "message": "API is running",
+  "recipes_loaded": 10000,
+  "ingredients_loaded": 500
+}</pre>
+                </div>
+            </div>
+
+            <div class="endpoint">
+                <h3><span class="method get">GET</span> <span class="endpoint-url">/api/ingredients</span></h3>
+                <div class="description">
+                    Get a list of available ingredients that can be used for recipe recommendations.
+                </div>
+                <div class="params">
+                    <div class="params-title">Query Parameters:</div>
+                    <div class="param">
+                        <span class="param-name">search</span> <span class="param-type">(string, optional)</span>:
+                        Search term to filter ingredients by name
+                    </div>
+                    <div class="param">
+                        <span class="param-name">limit</span> <span class="param-type">(integer, optional, default: 100)</span>:
+                        Maximum number of ingredients to return
+                    </div>
+                </div>
+                <div class="example">
+                    <pre>// Response
+{
+  "status": "ok",
+  "count": 10,
+  "ingredients": [
+    {
+      "id": "1",
+      "name": "egg"
+    },
+    {
+      "id": "2",
+      "name": "chicken"
+    },
+    ...
+  ]
+}</pre>
+                </div>
+            </div>
+
+            <div class="endpoint">
+                <h3><span class="method post">POST</span> <span class="endpoint-url">/api/recommend</span></h3>
+                <div class="description">
+                    Get recipe recommendations based on ingredients you have available.
+                </div>
+                <div class="params">
+                    <div class="params-title">Request Body:</div>
+                    <div class="param">
+                        <span class="param-name">ingredients</span> <span class="param-type">(array of strings, required)</span>:
+                        List of ingredient names
+                    </div>
+                    <div class="param">
+                        <span class="param-name">limit</span> <span class="param-type">(integer, optional, default: 10)</span>:
+                        Maximum number of recipes to return
+                    </div>
+                    <div class="param">
+                        <span class="param-name">min_score</span> <span class="param-type">(float, optional, default: 0.05)</span>:
+                        Minimum similarity score for recommendations
+                    </div>
+                    <div class="param">
+                        <span class="param-name">strict</span> <span class="param-type">(boolean, optional, default: false)</span>:
+                        Whether to only include recipes that contain all specified ingredients
+                    </div>
+                </div>
+                <div class="example">
+                    <pre>// Request
+{
+  "ingredients": ["egg", "chicken", "rice"],
+  "limit": 5,
+  "min_score": 0.1,
+  "strict": false
+}
+
+// Response
+{
+  "status": "ok",
+  "count": 3,
+  "recipes": [
+    {
+      "id": "123",
+      "name": "Chicken Fried Rice",
+      "ingredients": ["egg", "chicken", "rice", "soy sauce", "onion"],
+      "steps": ["Step 1...", "Step 2..."],
+      "techniques": ["frying", "boiling"],
+      "calorie_level": 1,
+      "score": 0.85,
+      "ingredient_match_percentage": 75.0
+    },
+    ...
+  ]
+}</pre>
+                </div>
+            </div>
+
+            <div class="endpoint">
+                <h3><span class="method get">GET</span> <span class="endpoint-url">/api/recipe/{recipe_id}</span></h3>
+                <div class="description">
+                    Get detailed information about a specific recipe.
+                </div>
+                <div class="params">
+                    <div class="params-title">Path Parameters:</div>
+                    <div class="param">
+                        <span class="param-name">recipe_id</span> <span class="param-type">(string, required)</span>:
+                        ID of the recipe to retrieve
+                    </div>
+                </div>
+                <div class="example">
+                    <pre>// Response
+{
+  "status": "ok",
+  "recipe": {
+    "id": "123",
+    "name": "Chicken Fried Rice",
+    "ingredients": ["egg", "chicken", "rice", "soy sauce", "onion"],
+    "steps": ["Step 1...", "Step 2..."],
+    "techniques": ["frying", "boiling"],
+    "calorie_level": 1
+  }
+}</pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">Sisa<span>Rasa</span></div>
+                <div class="footer-links">
+                    <a href="/">Home</a>
+                    <a href="/#features">Features</a>
+                    <a href="/api/docs">API</a>
+                    <a href="https://github.com/yourusername/sisarasa" target="_blank">GitHub</a>
+                </div>
+                <div class="copyright">
+                    &copy; 2025 SisaRasa Recipe Recommendation System. All rights reserved.
+                </div>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

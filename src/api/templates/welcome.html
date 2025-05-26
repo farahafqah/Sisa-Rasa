@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <!-- =====BOX ICONS===== -->
+        <link href='https://cdn.jsdelivr.net/npm/boxicons@2.0.5/css/boxicons.min.css' rel='stylesheet'>
+
+        <!-- ===== CSS ===== -->
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+        <!-- Google Fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&display=swap" rel="stylesheet">
+        <!-- Optional: Animate.css for card reveal -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css">
+
+        <title>Sisa Rasa</title>
+
+        <style>
+            /* About Cards Styles */
+            .about__cards {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+                margin-top: 2rem;
+            }
+
+            .card {
+                border: none;
+                border-radius: 1rem;
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+                background-color: #fff;
+                padding: 1.5rem;
+                transition: transform 0.3s ease;
+            }
+
+            .card:hover {
+                transform: translateY(-5px);
+            }
+
+            .card__title {
+                color: #222;
+                font-weight: 600;
+                margin-bottom: 1rem;
+                font-size: 1.2rem;
+            }
+
+            .card__text {
+                color: #444;
+                font-size: 0.95rem;
+            }
+
+            /* Footer Styles */
+            .footer {
+                padding: 3rem 0 1rem;
+                text-align: center;
+                background-color: var(--first-color);
+            }
+
+            .footer__container {
+                row-gap: 2rem;
+            }
+
+            .footer__copy {
+                font-size: 0.875rem;
+                color: #666;
+            }
+
+            @media screen and (min-width: 768px) {
+                .about__cards {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+
+                .footer {
+                    padding: 4rem 0 2rem;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!--===== HEADER =====-->
+        <header class="l-header">
+            <nav class="nav bd-grid">
+                <div>
+                   <br><br> <a href="#" class="nav__logo"><img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" width="120" height="auto"></a>
+
+                </div>
+
+                <div class="nav__toggle" id="nav-toggle">
+                    <i class='bx bx-menu'></i>
+                </div>
+
+                <div class="nav__menu" id="nav-menu">
+                    <div class="nav__close" id="nav-close">
+                        <i class='bx bx-x'></i>
+                    </div>
+
+                    <ul class="nav__list">
+                        <li class="nav__item"><a href="#home" class="nav__link active">Home</a></li>
+                        <li class="nav__item"><a href="#about" class="nav__link">About</a></li>
+                        <li class="nav__item"><a href="/login" class="nav__link">Login</a></li>
+                        <li class="nav__item"><a href="#contact" class="nav__link">Contact</a></li>
+                    </ul>
+                </div>
+            </nav>
+        </header>
+
+        <main class="l-main">
+            <!--===== HOME =====-->
+            <section class="home" id="home">
+                <div class="home__container bd-grid">
+                    <div class="home__img">
+                        <img src="{{ url_for('static', filename='images/imgA.png') }}" alt="" data-speed="-2" class="move">
+                        <img src="{{ url_for('static', filename='images/imgB.png') }}" alt="" data-speed="2" class="move">
+                        <img src="{{ url_for('static', filename='images/imgC.png') }}" alt="" data-speed="2" class="move">
+                        <img src="{{ url_for('static', filename='images/imgD.png') }}" alt="" data-speed="-2" class="move">
+                        <img src="{{ url_for('static', filename='images/imgE.png') }}" alt="" data-speed="-2" class="move">
+                        <img src="{{ url_for('static', filename='images/imgF.png') }}" alt="" data-speed="2" class="move">
+                    </div>
+
+                    <div class="home__data">
+                        <h1 class="home__title">SISA<br> RASA</h1>
+                        <p class="home__description">Rasa baru dari Sisa Lama. </p>
+                        <a href="#about" class="home__button">Get Started</a>
+                    </div>
+                </div>
+            </section>
+
+            <!--===== ABOUT =====-->
+            <section class="about" id="about">
+                <div class="about__container bd-grid">
+                    <div class="about__data">
+                        <h2 class="section__title">About SisaRasa</h2>
+                        <p class="about__description">
+                            Rasa baru dari sisa lama. Kami memperjuangkan kelestarian dengan menggabungkan inovasi makanan dan pengurangan pembaziran bahan dapur.
+                        </p>
+
+                        <!-- About Cards Section -->
+                        <div class="about__cards">
+                            <div class="card">
+                                <div class="card__body">
+                                    <h5 class="card__title">🌱 Misi Kami</h5>
+                                    <p class="card__text">
+                                        Membantu masyarakat memanfaatkan sepenuhnya bahan makanan yang tersisa melalui teknologi cadangan resipi pintar, sekaligus mengurangkan pembaziran makanan.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div class="card__body">
+                                    <h5 class="card__title">👨‍🍳 Apa Itu Sisa Rasa?</h5>
+                                    <p class="card__text">
+                                        Sebuah sistem yang menggunakan algoritma KNN untuk mencadangkan resipi mengikut bahan lebihan di rumah, serta mencadangkan bahan tambahan jika perlu.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!--===== CONTACT =====-->
+            <section class="contact" id="contact">
+                <div class="contact__container bd-grid">
+                    <div class="contact__data">
+                        <h2 class="section__title">Contact Us</h2>
+                        <p class="contact__description">Have questions about our recipe recommendation system? Feel free to reach out to us!</p>
+                        <div class="contact__info">
+                            <div class="contact__item">
+                                <i class='bx bx-envelope'></i>
+                                <p>contact@sisarasa.com</p>
+                            </div>
+                            <div class="contact__item">
+                                <i class='bx bx-phone'></i>
+                                <p>01135723003</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!--===== FOOTER =====-->
+            <footer class="footer">
+                <div class="footer__container bd-grid">
+                    <p class="footer__copy">© 2025 Sisa Rasa. All rights reserved.</p>
+                </div>
+            </footer>
+        </main>
+
+        <!--===== GSAP =====-->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.5.1/gsap.min.js"></script>
+
+        <!--===== MAIN JS =====-->
+        <script src="{{ url_for('static', filename='main.js') }}"></script>
+
+        <!-- Optional: Confetti JS -->
+        <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+        <!-- Card Animation Script -->
+        <script>
+            // === Scroll fade-in for cards ===
+            document.addEventListener('DOMContentLoaded', function() {
+                const cards = document.querySelectorAll('.card');
+
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('animate__animated', 'animate__fadeInUp');
+                            observer.unobserve(entry.target);
+                        }
+                    });
+                }, {
+                    threshold: 0.2
+                });
+
+                cards.forEach(card => {
+                    observer.observe(card);
+                });
+
+                // === Fun: Confetti on heading click ===
+                document.querySelector('.section__title').addEventListener('click', () => {
+                    confetti();
+                });
+            });
+        </script>
+    </body>
+</html>

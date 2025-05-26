@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Redirect</title>
+</head>
+<body>
+  <h1>Test Redirect Functionality</h1>
+  
+  <div>
+    <input type="text" id="ingredients" placeholder="Enter ingredients (e.g., chicken, rice, tomato)" style="width: 300px; padding: 10px;">
+    <button onclick="testRedirect()" style="padding: 10px 20px; background: #ea5e18; color: white; border: none; cursor: pointer;">
+      Test Redirect
+    </button>
+  </div>
+  
+  <div style="margin-top: 20px;">
+    <button onclick="directRedirect()" style="padding: 10px 20px; background: #083640; color: white; border: none; cursor: pointer;">
+      Direct Redirect to Search Results
+    </button>
+  </div>
+  
+  <script>
+    function testRedirect() {
+      const ingredients = document.getElementById('ingredients').value.trim();
+      if (!ingredients) {
+        alert('Please enter some ingredients');
+        return;
+      }
+      
+      const ingredientsArray = ingredients.split(',').map(i => i.trim()).filter(i => i.length > 0);
+      const ingredientsParam = encodeURIComponent(ingredientsArray.join(','));
+      
+      console.log('Redirecting to:', `/search-results?ingredients=${ingredientsParam}`);
+      window.location.href = `/search-results?ingredients=${ingredientsParam}`;
+    }
+    
+    function directRedirect() {
+      console.log('Direct redirect to search results');
+      window.location.href = '/search-results?ingredients=chicken,rice,tomato';
+    }
+  </script>
+</body>
+</html>
