@@ -27,7 +27,7 @@ jwt_expires_value = jwt_expires_env.split('#')[0].strip()
 JWT_ACCESS_TOKEN_EXPIRES = int(jwt_expires_value)  # 24 hours
 
 # API Configuration
-DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 't')
+DEBUG = os.getenv('RAILWAY_ENVIRONMENT') != 'production'
 HOST = os.getenv('HOST', '0.0.0.0')
 PORT = int(os.getenv('PORT', 5000))
 
@@ -39,3 +39,4 @@ MAIL_USE_SSL = os.getenv('MAIL_USE_SSL', 'False').lower() in ('true', '1', 't')
 MAIL_USERNAME = os.getenv('MAIL_USERNAME', '')
 MAIL_PASSWORD = os.getenv('MAIL_PASSWORD', '')
 MAIL_DEFAULT_SENDER = os.getenv('MAIL_DEFAULT_SENDER', MAIL_USERNAME)
+
