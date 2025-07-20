@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <!-- =====BOX ICONS===== -->
+        <link href='https://cdn.jsdelivr.net/npm/boxicons@2.0.5/css/boxicons.min.css' rel='stylesheet'>
+
+        <!-- ===== CSS ===== -->
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+        <!-- Google Fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+        <!-- Optional: Animate.css for card reveal -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css">
+        <!-- Bootstrap for enhanced styling -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+        <title>Sisa Rasa - Home</title>
+
+        <style>
+            /* CSS Variables */
+            :root {
+                --header-height: 3rem;
+                --first-color: #f1ead1;
+                --first-color-dark: #e1cc7f;
+                --first-color-darken: #f9e59a;
+                --white-color: #0b0a0a;
+            }
+
+            /* Proper Google Fonts Integration */
+            body {
+                font-family: 'Poppins', sans-serif;
+                font-weight: 400;
+                line-height: 1.6;
+                margin: var(--header-height) 0 0 0;
+                padding: 0;
+            }
+
+            /* Header Navigation Styles */
+            .l-header {
+                width: 100%;
+                position: fixed;
+                top: 0;
+                left: 0;
+                z-index: 100;
+                background-color: var(--first-color);
+                box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            }
+
+            .nav {
+                height: var(--header-height);
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0 1rem;
+                max-width: 1200px;
+                margin: 0 auto;
+            }
+
+            .nav__logo img {
+                transition: transform 0.3s ease;
+            }
+
+            .nav__logo:hover img {
+                transform: scale(1.05);
+            }
+
+            .nav__list {
+                display: flex;
+                padding: 0;
+                list-style: none;
+                margin: 0;
+            }
+
+            .nav__item {
+                margin-left: 2rem;
+            }
+
+            .nav__link {
+                font-weight: 600;
+                color: var(--white-color);
+                text-decoration: none;
+                transition: color 0.3s;
+                font-family: 'Poppins', sans-serif;
+            }
+
+            .nav__link:hover, .nav__link.active {
+                color: var(--first-color-dark);
+            }
+
+            h1, h2, h3, h4, h5, h6 {
+                font-family: 'Poppins', sans-serif;
+                font-weight: 600;
+                line-height: 1.2;
+            }
+
+            .section__title {
+                font-family: 'Poppins', sans-serif;
+                font-weight: 600;
+                font-size: 2rem;
+                line-height: 1.2;
+            }
+
+            .section__subtitle {
+                font-family: 'Poppins', sans-serif;
+                font-weight: 400;
+                font-size: 1.1rem;
+                line-height: 1.4;
+            }
+
+            /* Responsive Typography */
+            @media (max-width: 768px) {
+                .section__title {
+                    font-size: 1.8rem;
+                }
+                
+                .section__subtitle {
+                    font-size: 1rem;
+                }
+                
+                body {
+                    font-size: 0.9rem;
+                    line-height: 1.5;
+                }
+            }
+
+            @media (max-width: 480px) {
+                .section__title {
+                    font-size: 1.5rem;
+                }
+                
+                .section__subtitle {
+                    font-size: 0.9rem;
+                }
+                
+                body {
+                    font-size: 0.85rem;
+                    line-height: 1.4;
+                }
+            }
+
+            /* Enhanced Home Section Styling */
+            .home {
+                background-color: var(--first-color);
+                overflow: hidden;
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+            }
+
+            .home__container {
+                height: calc(100vh - var(--header-height));
+                grid-template-rows: repeat(2, max-content);
+                row-gap: 1.5rem;
+                align-items: center;
+            }
+
+            .home__img {
+                position: relative;
+                padding-top: 1.5rem;
+                justify-self: center;
+                width: 302px;
+                height: 233px;
+            }
+
+            .home__img img {
+                position: absolute;
+                top: 0;
+                left: 0;
+                transition: transform 0.3s ease;
+            }
+
+            .home__data {
+                color: var(--white-color);
+                text-align: center;
+            }
+
+            .home__title {
+                font-size: var(--big-font-size);
+                line-height: 1.3;
+                margin-bottom: 1rem;
+                font-family: 'Poppins', sans-serif;
+                font-weight: 600;
+            }
+
+            .home__description {
+                margin-bottom: 2.5rem;
+                font-family: 'Poppins', sans-serif;
+                font-weight: 400;
+                font-size: 1.1rem;
+            }
+
+            .home__button {
+                display: inline-block;
+                background-color: var(--first-color-dark);
+                color: var(--white-color);
+                padding: 1.125rem 2rem;
+                border-radius: .5rem;
+                font-family: 'Poppins', sans-serif;
+                font-weight: 500;
+                text-decoration: none;
+                transition: all 0.3s ease;
+                border: 2px solid var(--first-color-dark);
+            }
+
+            .home__button:hover {
+                background-color: var(--first-color-darken);
+                color: var(--white-color);
+                transform: translateY(-2px);
+                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            }
+
+            /* Parallax Animation */
+            .move {
+                animation: float 6s ease-in-out infinite;
+            }
+
+            .move:nth-child(1) { animation-delay: 0s; }
+            .move:nth-child(2) { animation-delay: 1s; }
+            .move:nth-child(3) { animation-delay: 2s; }
+            .move:nth-child(4) { animation-delay: 3s; }
+            .move:nth-child(5) { animation-delay: 4s; }
+            .move:nth-child(6) { animation-delay: 5s; }
+
+            @keyframes float {
+                0%, 100% {
+                    transform: translateY(0px);
+                }
+                50% {
+                    transform: translateY(-20px);
+                }
+            }
+
+            /* Footer Styles */
+            .footer {
+                padding: 3rem 0 1rem;
+                text-align: center;
+                background-color: var(--first-color);
+            }
+
+            .footer__container {
+                row-gap: 2rem;
+            }
+
+            .footer__copy {
+                font-size: 0.875rem;
+                color: #666;
+                font-family: 'Poppins', sans-serif;
+                font-weight: 400;
+            }
+
+            /* Responsive Design */
+            @media screen and (min-width: 768px) {
+                :root {
+                    --header-height: 4rem;
+                }
+
+                .nav__list {
+                    display: flex;
+                }
+
+                .nav__item {
+                    margin-left: 3rem;
+                }
+
+                .home__container {
+                    height: 100vh;
+                    grid-template-columns: repeat(2, max-content);
+                    grid-template-rows: 1fr;
+                    row-gap: 0;
+                    align-items: center;
+                    justify-content: center;
+                }
+
+                .home__img {
+                    order: 1;
+                    width: 375px;
+                    height: 289px;
+                }
+
+                .home__img img {
+                    width: 375px;
+                }
+
+                .home__data {
+                    text-align: left;
+                }
+
+                .footer {
+                    padding: 4rem 0 2rem;
+                }
+            }
+
+            @media (max-width: 768px) {
+                .nav__item {
+                    margin-left: 1rem;
+                }
+
+                .nav__link {
+                    font-size: 0.9rem;
+                }
+            }
+
+            @media screen and (min-width: 1024px) {
+                .home__container {
+                    justify-content: initial;
+                    column-gap: 4.5rem;
+                }
+
+                .home__img {
+                    width: 604px;
+                    height: 466px;
+                }
+
+                .home__img img {
+                    width: 604px;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!--===== HEADER =====-->
+        <header class="l-header">
+            <nav class="nav container">
+                <a href="/" class="nav__logo">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Sisa Rasa Logo" width="100" height="auto">
+                </a>
+
+                <ul class="nav__list">
+                    <li class="nav__item"><a href="/" class="nav__link active">Home</a></li>
+                    <li class="nav__item"><a href="/welcome" class="nav__link">About</a></li>
+                    <li class="nav__item"><a href="/login" class="nav__link">Login</a></li>
+                    <li class="nav__item"><a href="/welcome#contact" class="nav__link">Contact</a></li>
+                </ul>
+            </nav>
+        </header>
+
+        <main class="l-main">
+            <!--===== HOME =====-->
+            <section class="home" id="home">
+                <div class="home__container bd-grid">
+                    <div class="home__img">
+                        <img src="{{ url_for('static', filename='images/imgA.png') }}" alt="" data-speed="-2" class="move">
+                        <img src="{{ url_for('static', filename='images/imgB.png') }}" alt="" data-speed="2" class="move">
+                        <img src="{{ url_for('static', filename='images/imgC.png') }}" alt="" data-speed="2" class="move">
+                        <img src="{{ url_for('static', filename='images/imgD.png') }}" alt="" data-speed="-2" class="move">
+                        <img src="{{ url_for('static', filename='images/imgE.png') }}" alt="" data-speed="-2" class="move">
+                        <img src="{{ url_for('static', filename='images/imgF.png') }}" alt="" data-speed="2" class="move">
+                    </div>
+
+                    <div class="home__data">
+                        <h1 class="home__title">SISA<br> RASA</h1>
+                        <p class="home__description">Rasa baru dari Sisa Lama.</p>
+                        <a href="/welcome" class="home__button">Get Started</a>
+                    </div>
+                </div>
+            </section>
+
+            <!--===== FOOTER =====-->
+            <footer class="footer">
+                <div class="footer__container bd-grid">
+                    <p class="footer__copy">© 2025 Sisa Rasa. All rights reserved.</p>
+                </div>
+            </footer>
+        </main>
+
+        <!--===== GSAP =====-->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.5.1/gsap.min.js"></script>
+
+        <!--===== MAIN JS =====-->
+        <script src="{{ url_for('static', filename='main.js') }}"></script>
+    </body>
+</html>

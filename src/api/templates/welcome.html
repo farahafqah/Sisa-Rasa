@@ -7,20 +7,982 @@
         <link href='https://cdn.jsdelivr.net/npm/boxicons@2.0.5/css/boxicons.min.css' rel='stylesheet'>
 
         <!-- ===== CSS ===== -->
-        <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+        <!-- <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}"> -->
         <!-- Google Fonts -->
-        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
         <!-- Optional: Animate.css for card reveal -->
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css">
+        <!-- Bootstrap 5 CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 
-        <title>Sisa Rasa</title>
+        <!-- Preload critical JavaScript resources -->
+        <link rel="preload" href="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js" as="script">
+        <link rel="preload" href="https://cdn.jsdelivr.net/npm/chart.js" as="script">
+        <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" as="script">
+
+        <title>Sisa Rasa - About & Recipes</title>
+
+        <style>
+            /* CSS Variables */
+            :root {
+                --header-height: 4rem;
+                --first-color: #f1ead1;
+                --first-color-dark: #e1cc7f;
+                --first-color-darken: #f9e59a;
+                --white-color: #0b0a0a;
+                --normal-font-size: 1rem;
+            }
+
+            /* Proper Google Fonts Integration */
+            body {
+                font-family: 'Poppins', sans-serif;
+                font-weight: 400;
+                line-height: 1.6;
+                margin: var(--header-height) 0 0 0;
+                padding: 0;
+                min-height: 100vh;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .l-main {
+                flex: 1;
+            }
+
+            /* Header Navigation Styles */
+            .l-header {
+                width: 100%;
+                position: fixed;
+                top: 0;
+                left: 0;
+                z-index: 1000;
+                background-color: var(--first-color);
+                box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            }
+
+            /* Bootstrap navbar integration */
+            .navbar {
+                padding: 1rem 0;
+                background-color: var(--first-color) !important;
+                min-height: var(--header-height);
+                border-bottom: 1px solid rgba(0,0,0,0.1);
+            }
+
+            .navbar-brand {
+                padding-top: 0;
+                padding-bottom: 0;
+                margin-right: 1rem;
+                font-size: 1.25rem;
+                text-decoration: none;
+                white-space: nowrap;
+                display: flex;
+                align-items: center;
+            }
+
+            .navbar-brand img {
+                transition: transform 0.3s ease;
+                max-height: 50px;
+                width: auto;
+            }
+
+            .navbar-brand:hover img {
+                transform: scale(1.05);
+            }
+
+            .navbar-brand span {
+                color: var(--white-color) !important;
+                font-weight: 600;
+                font-family: 'Poppins', sans-serif;
+                font-size: 1.5rem;
+                text-decoration: none;
+            }
+
+            .navbar-brand:hover span {
+                color: var(--first-color-dark) !important;
+            }
+
+            .navbar-toggler {
+                border: 1px solid rgba(0,0,0,.1);
+                border-radius: 0.375rem;
+                padding: 0.25rem 0.75rem;
+                font-size: 1.25rem;
+                line-height: 1;
+                background-color: transparent;
+            }
+
+            .navbar-toggler:focus {
+                text-decoration: none;
+                outline: 0;
+                box-shadow: 0 0 0 0.25rem;
+            }
+
+            .navbar-toggler-icon {
+                display: inline-block;
+                width: 1.5em;
+                height: 1.5em;
+                vertical-align: middle;
+                background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%2833, 37, 41, 0.75%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+                background-repeat: no-repeat;
+                background-position: center;
+                background-size: 100%;
+            }
+
+            /* Bootstrap navbar nav styles */
+            .navbar-nav {
+                display: flex;
+                flex-direction: column;
+                padding-left: 0;
+                margin-bottom: 0;
+                list-style: none;
+            }
+
+            .navbar-nav .nav-link {
+                color: var(--white-color) !important;
+                font-weight: 600;
+                font-family: 'Poppins', sans-serif;
+                transition: color 0.3s;
+                padding: 0.5rem 1rem;
+                text-decoration: none;
+                display: block;
+            }
+
+            .navbar-nav .nav-link:hover,
+            .navbar-nav .nav-link.active {
+                color: var(--first-color-dark) !important;
+            }
+
+            .nav-item {
+                margin-left: 0.5rem;
+            }
+
+            h1, h2, h3, h4, h5, h6 {
+                font-family: 'Poppins', sans-serif;
+                font-weight: 600;
+                line-height: 1.2;
+            }
+
+            .section__title {
+                font-family: 'Poppins', sans-serif;
+                font-weight: 600;
+                font-size: 2rem;
+                line-height: 1.2;
+            }
+
+            .section__subtitle {
+                font-family: 'Poppins', sans-serif;
+                font-weight: 400;
+                font-size: 1.1rem;
+                line-height: 1.4;
+            }
+
+            /* Responsive Typography */
+            @media (max-width: 768px) {
+                .section__title {
+                    font-size: 1.8rem;
+                }
+
+                .section__subtitle {
+                    font-size: 1rem;
+                }
+
+                body {
+                    font-size: 0.9rem;
+                    line-height: 1.5;
+                }
+            }
+
+            @media (max-width: 480px) {
+                .section__title {
+                    font-size: 1.5rem;
+                }
+
+                .section__subtitle {
+                    font-size: 0.9rem;
+                }
+
+                body {
+                    font-size: 0.85rem;
+                    line-height: 1.4;
+                }
+            }
+
+            /* Prescriptive Analytics Styles - Proper Google Fonts */
+            .trending, .leftovers, .most-searched-leftovers {
+                padding: 4rem 0;
+                background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                font-family: 'Poppins', sans-serif;
+            }
+
+            /* Most Searched Leftovers Section */
+            .most-searched-leftovers {
+                background: linear-gradient(135deg, #fff5f5 0%, #fef2f2 100%);
+            }
+
+            /* Remove conflicting container styles - let Bootstrap handle it */
+
+            .trending__content, .leftovers__content, .most-searched-leftovers__content {
+                text-align: center;
+            }
+
+            .trending__subtitle, .leftovers__subtitle, .most-searched-leftovers__subtitle {
+                color: #6c757d;
+                font-size: var(--normal-font-size);
+                margin-bottom: 3rem;
+                font-family: 'Poppins', sans-serif;
+                font-weight: 400;
+            }
+
+            /* Ensure section titles use proper Google Fonts */
+            .trending .section__title, .leftovers .section__title, .most-searched-leftovers .section__title {
+                font-size: 2rem;
+                color: var(--white-color);
+                margin-bottom: 1.5rem;
+                text-align: center;
+                font-family: 'Poppins', sans-serif;
+                font-weight: 600;
+            }
+
+            /* Recipe Showcase */
+            .recipe-showcase, .leftover-showcase, .analytics-showcase {
+                display: grid;
+                gap: 3rem;
+                margin-bottom: 3rem;
+            }
+
+            /* Analytics Showcase - now handled by Bootstrap grid */
+
+            .recipe-section, .leftover-section {
+                background: white;
+                border-radius: 1rem;
+                padding: 2rem;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+                transition: transform 0.3s ease;
+            }
+
+            .recipe-section:hover, .leftover-section:hover {
+                transform: translateY(-5px);
+            }
+
+            .recipe-section-title, .leftover-section-title {
+                color: var(--white-color);
+                font-size: 1.5rem;
+                font-weight: 600;
+                margin-bottom: 1.5rem;
+                text-align: left;
+                font-family: 'Poppins', sans-serif;
+            }
+
+            /* Recipe Cards */
+            .recipe-cards {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                gap: 1.5rem;
+            }
+
+            .recipe-card {
+                background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+                border-radius: 0.75rem;
+                padding: 1.5rem;
+                position: relative;
+                overflow: hidden;
+                transition: all 0.3s ease;
+                border: 2px solid transparent;
+                cursor: pointer;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            }
+
+            .recipe-card:hover {
+                border-color: #ea5e18;
+                transform: translateY(-5px);
+                box-shadow: 0 8px 25px rgba(234, 94, 24, 0.2);
+            }
+
+            .recipe-card-title {
+                color: var(--white-color);
+                font-size: 1.1rem;
+                font-weight: 600;
+                margin-bottom: 0.75rem;
+                font-family: 'Poppins', sans-serif;
+            }
+
+            .recipe-card-description {
+                color: #6c757d;
+                font-size: var(--normal-font-size);
+                margin-bottom: 1rem;
+                font-family: 'Poppins', sans-serif;
+                font-weight: 400;
+            }
+
+            .recipe-card-meta {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                font-size: 0.8rem;
+                color: #6c757d;
+                font-weight: 500;
+                font-family: 'Poppins', sans-serif;
+            }
+
+            .recipe-card-ingredients {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.25rem;
+                margin-bottom: 1rem;
+            }
+
+            .ingredient-chip {
+                background: rgba(234, 94, 24, 0.8);
+                color: white;
+                padding: 0.2rem 0.5rem;
+                border-radius: 0.5rem;
+                font-size: 0.7rem;
+                font-weight: 500;
+                font-family: 'Poppins', sans-serif;
+            }
+
+            /* Chart Section */
+            .chart-section {
+                background: white;
+                border-radius: 1rem;
+                padding: 2rem;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+                transition: transform 0.3s ease;
+            }
+
+            .chart-section:hover {
+                transform: translateY(-5px);
+            }
+
+            .chart-container {
+                position: relative;
+                height: 300px;
+                width: 100%;
+                margin: 1rem 0;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+
+            .chart-legend {
+                margin-top: 1rem;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                justify-content: center;
+            }
+
+            .legend-item {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                font-size: 0.9rem;
+                font-family: 'Poppins', sans-serif;
+                font-weight: 500;
+            }
+
+            .legend-color {
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+            }
+
+            /* Insights Section */
+            .insights-section {
+                background: white;
+                border-radius: 1rem;
+                padding: 2rem;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+                transition: transform 0.3s ease;
+            }
+
+            .insights-section:hover {
+                transform: translateY(-5px);
+            }
+
+            .insights-title {
+                color: var(--white-color);
+                font-size: 1.5rem;
+                font-weight: 600;
+                margin-bottom: 1.5rem;
+                text-align: left;
+                font-family: 'Poppins', sans-serif;
+            }
+
+            .insights-content {
+                margin-bottom: 2rem;
+            }
+
+            .insight-item {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 1rem;
+                margin-bottom: 0.75rem;
+                background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+                border-radius: 0.75rem;
+                border-left: 4px solid #ea5e18;
+                transition: all 0.3s ease;
+            }
+
+            .insight-item:hover {
+                transform: translateX(5px);
+                box-shadow: 0 4px 15px rgba(234, 94, 24, 0.2);
+            }
+
+            .insight-ingredient {
+                font-weight: 600;
+                color: var(--white-color);
+                font-family: 'Poppins', sans-serif;
+            }
+
+            .insight-stats {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                font-size: 0.9rem;
+                color: #6c757d;
+                font-family: 'Poppins', sans-serif;
+            }
+
+            .insight-percentage {
+                background: #ea5e18;
+                color: white;
+                padding: 0.25rem 0.75rem;
+                border-radius: 1rem;
+                font-weight: 500;
+                font-size: 0.8rem;
+            }
+
+            .insights-footer {
+                border-top: 1px solid #e9ecef;
+                padding-top: 1.5rem;
+                margin-top: 1.5rem;
+            }
+
+            .insights-note {
+                background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+                border: 1px solid #ffeaa7;
+                border-radius: 0.75rem;
+                padding: 1rem;
+                margin: 0;
+                font-size: 0.9rem;
+                color: #856404;
+                font-family: 'Poppins', sans-serif;
+                font-weight: 400;
+                line-height: 1.5;
+            }
+
+            /* Skeleton for insights */
+            .insight-skeleton {
+                min-height: 200px;
+                border-radius: 1rem;
+            }
+
+            /* Leftover Ingredients */
+            .ingredient-tags {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 1rem;
+                justify-content: center;
+            }
+
+            .ingredient-tag {
+                background: linear-gradient(135deg, #ea5e18, #fedf2f);
+                color: white;
+                padding: 0.75rem 1.5rem;
+                border-radius: 2rem;
+                font-weight: 500;
+                font-size: 0.9rem;
+                font-family: 'Poppins', sans-serif;
+                transition: all 0.3s ease;
+                cursor: pointer;
+                position: relative;
+                overflow: hidden;
+            }
+
+            .ingredient-tag:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 6px 20px rgba(234, 94, 24, 0.3);
+            }
+
+            .ingredient-tag::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: -100%;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+                transition: left 0.5s;
+            }
+
+            .ingredient-tag:hover::before {
+                left: 100%;
+            }
+
+            /* Combination Cards */
+            .combination-cards {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 1.5rem;
+            }
+
+            .combination-card {
+                background: linear-gradient(135deg, #083640, #0a4550);
+                color: white;
+                border-radius: 1rem;
+                padding: 1.5rem;
+                text-align: center;
+                transition: all 0.3s ease;
+                position: relative;
+                overflow: hidden;
+            }
+
+            .combination-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 30px rgba(8, 54, 64, 0.3);
+            }
+
+            .combination-card::before {
+                content: '';
+                position: absolute;
+                top: -50%;
+                left: -50%;
+                width: 200%;
+                height: 200%;
+                background: radial-gradient(circle, rgba(254, 223, 47, 0.1) 0%, transparent 70%);
+                transition: all 0.3s ease;
+                opacity: 0;
+            }
+
+            .combination-card:hover::before {
+                opacity: 1;
+                transform: scale(1.1);
+            }
+
+            .combination-title {
+                font-size: 1.1rem;
+                font-weight: 600;
+                font-family: 'Poppins', sans-serif;
+                margin-bottom: 0.75rem;
+                position: relative;
+                z-index: 1;
+            }
+
+            .combination-description {
+                font-size: 0.9rem;
+                font-family: 'Poppins', sans-serif;
+                font-weight: 400;
+                opacity: 0.9;
+                margin-bottom: 1rem;
+                position: relative;
+                z-index: 1;
+            }
+
+            .combination-recipes {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                justify-content: center;
+                position: relative;
+                z-index: 1;
+            }
+
+            .recipe-chip {
+                background: rgba(254, 223, 47, 0.2);
+                color: #fedf2f;
+                padding: 0.25rem 0.75rem;
+                border-radius: 1rem;
+                font-size: 0.8rem;
+                font-family: 'Poppins', sans-serif;
+                font-weight: 500;
+                border: 1px solid rgba(254, 223, 47, 0.3);
+            }
+
+            /* Login Gate */
+            .login-gate {
+                position: relative;
+                margin-top: 2rem;
+            }
+
+            .gate-overlay {
+                background: rgba(8, 54, 64, 0.95);
+                border-radius: 1rem;
+                padding: 3rem 2rem;
+                text-align: center;
+                color: white;
+                backdrop-filter: blur(10px);
+            }
+
+            .gate-icon {
+                font-size: 3rem;
+                color: #fedf2f;
+                margin-bottom: 1rem;
+            }
+
+            .gate-overlay h4 {
+                color: #fedf2f;
+                font-size: 1.5rem;
+                font-weight: 600;
+                font-family: 'Poppins', sans-serif;
+                margin-bottom: 1rem;
+            }
+
+            .gate-overlay p {
+                color: rgba(255, 255, 255, 0.9);
+                font-size: 1.1rem;
+                font-family: 'Poppins', sans-serif;
+                font-weight: 400;
+                margin-bottom: 2rem;
+            }
+
+            .gate-button {
+                display: inline-block;
+                background: #ea5e18;
+                color: white;
+                padding: 0.75rem 2rem;
+                border-radius: 2rem;
+                text-decoration: none;
+                font-weight: 500;
+                font-family: 'Poppins', sans-serif;
+                margin: 0 0.5rem;
+                transition: all 0.3s ease;
+                border: 2px solid #ea5e18;
+            }
+
+            .gate-button:hover {
+                background: transparent;
+                color: #ea5e18;
+                transform: translateY(-2px);
+            }
+
+            .gate-button.secondary {
+                background: transparent;
+                color: #fedf2f;
+                border-color: #fedf2f;
+            }
+
+            .gate-button.secondary:hover {
+                background: #fedf2f;
+                color: #083640;
+            }
+
+            /* Skeleton Loaders */
+            .skeleton-loader {
+                background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+                background-size: 200% 100%;
+                animation: loading 1.5s infinite;
+                border-radius: 0.5rem;
+                height: 150px;
+            }
+
+            @keyframes loading {
+                0% { background-position: 200% 0; }
+                100% { background-position: -200% 0; }
+            }
+
+            .recipe-card-skeleton, .combination-card-skeleton, .ingredient-tag-skeleton {
+                min-height: 150px;
+                border-radius: 1rem;
+                overflow: hidden;
+            }
+
+            /* Responsive Design */
+            @media screen and (min-width: 992px) {
+                :root {
+                    --header-height: 4rem;
+                }
+
+                body {
+                    margin: var(--header-height) 0 0 0;
+                }
+
+                /* Bootstrap navbar responsive behavior for lg and up */
+                .navbar-expand-lg .navbar-collapse {
+                    display: flex !important;
+                    flex-basis: auto;
+                }
+
+                .navbar-expand-lg .navbar-toggler {
+                    display: none;
+                }
+
+                .navbar-expand-lg .navbar-nav {
+                    flex-direction: row;
+                }
+
+                .navbar-expand-lg .navbar-nav .nav-link {
+                    padding-right: 1rem;
+                    padding-left: 1rem;
+                }
+
+                .navbar-expand-lg .navbar-nav .nav-item {
+                    margin-left: 0;
+                }
+            }
+
+            @media (max-width: 991px) {
+                .recipe-cards {
+                    grid-template-columns: 1fr;
+                }
+
+                .combination-cards {
+                    grid-template-columns: 1fr;
+                }
+
+                .ingredient-tags {
+                    justify-content: center;
+                }
+
+                .gate-button {
+                    display: block;
+                    margin: 0.5rem 0;
+                }
+
+                /* Mobile navbar styles */
+                .navbar-collapse {
+                    background-color: var(--first-color);
+                    border-radius: 0.5rem;
+                    margin-top: 0.5rem;
+                    padding: 1rem;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+                }
+
+                .navbar-nav {
+                    text-align: center;
+                    width: 100%;
+                    flex-direction: column;
+                }
+
+                .navbar-nav .nav-item {
+                    margin: 0.25rem 0;
+                }
+
+                .navbar-nav .nav-link {
+                    padding: 0.75rem 1rem;
+                    border-radius: 0.5rem;
+                    transition: all 0.3s ease;
+                    display: block;
+                }
+
+                .navbar-nav .nav-link:hover {
+                    background-color: rgba(255,255,255,0.1);
+                }
+            }
+
+            /* Animation Classes */
+            .fade-in-up {
+                animation: fadeInUp 0.8s ease forwards;
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            @keyframes fadeInUp {
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .stagger-1 { animation-delay: 0.1s; }
+            .stagger-2 { animation-delay: 0.2s; }
+            .stagger-3 { animation-delay: 0.3s; }
+            .stagger-4 { animation-delay: 0.4s; }
+            .stagger-5 { animation-delay: 0.5s; }
+
+            /* Bootstrap Integration Fixes */
+            .container, .container-fluid {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+
+            /* Ensure sections have proper spacing */
+            section {
+                padding: 4rem 0;
+            }
+
+            /* Contact section styling */
+            .contact__item {
+                font-family: 'Poppins', sans-serif;
+                color: var(--white-color);
+            }
+
+            .contact__item i {
+                color: var(--first-color-dark);
+                font-size: 1.2rem;
+            }
+
+            /* Responsive image fixes */
+            img {
+                max-width: 100%;
+                height: auto;
+            }
+
+            /* Bootstrap Grid System Fixes */
+            .row {
+                --bs-gutter-x: 1.5rem;
+                --bs-gutter-y: 0;
+                display: flex;
+                flex-wrap: wrap;
+                margin-top: calc(-1 * var(--bs-gutter-y));
+                margin-right: calc(-0.5 * var(--bs-gutter-x));
+                margin-left: calc(-0.5 * var(--bs-gutter-x));
+            }
+
+            .row > * {
+                flex-shrink: 0;
+                width: 100%;
+                max-width: 100%;
+                padding-right: calc(var(--bs-gutter-x) * 0.5);
+                padding-left: calc(var(--bs-gutter-x) * 0.5);
+                margin-top: var(--bs-gutter-y);
+            }
+
+            /* Column classes */
+            .col-12 {
+                flex: 0 0 auto;
+                width: 100%;
+            }
+
+            .col-md-6 {
+                flex: 0 0 auto;
+                width: 100%;
+            }
+
+            .col-lg-6 {
+                flex: 0 0 auto;
+                width: 100%;
+            }
+
+            /* Responsive column behavior */
+            @media (min-width: 768px) {
+                .col-md-6 {
+                    width: 50%;
+                }
+            }
+
+            @media (min-width: 992px) {
+                .col-lg-6 {
+                    width: 50%;
+                }
+            }
+
+            /* Bootstrap utility classes */
+            .text-center {
+                text-align: center !important;
+            }
+
+            .mb-0 {
+                margin-bottom: 0 !important;
+            }
+
+            .mb-4 {
+                margin-bottom: 1.5rem !important;
+            }
+
+            .mb-5 {
+                margin-bottom: 3rem !important;
+            }
+
+            .me-2 {
+                margin-right: 0.5rem !important;
+            }
+
+            .d-flex {
+                display: flex !important;
+            }
+
+            .align-items-center {
+                align-items: center !important;
+            }
+
+            .justify-content-center {
+                justify-content: center !important;
+            }
+
+            .flex-wrap {
+                flex-wrap: wrap !important;
+            }
+
+            .gap-4 {
+                gap: 1.5rem !important;
+            }
+
+            .g-4 > * {
+                padding-right: calc(1.5rem * 0.5);
+                padding-left: calc(1.5rem * 0.5);
+                margin-top: 1.5rem;
+            }
+
+            .h-100 {
+                height: 100% !important;
+            }
+
+            .mt-4 {
+                margin-top: 1.5rem !important;
+            }
+
+            .mt-5 {
+                margin-top: 3rem !important;
+            }
+
+            .p-0 {
+                padding: 0 !important;
+            }
+
+            .p-1 {
+                padding: 0.25rem !important;
+            }
+
+            .p-2 {
+                padding: 0.5rem !important;
+            }
+
+            .p-3 {
+                padding: 1rem !important;
+            }
+
+            .p-4 {
+                padding: 1.5rem !important;
+            }
+
+            .p-5 {
+                padding: 3rem !important;
+            }
+
+            /* Fix specific layout issues */
+            .about__cards.row {
+                margin-top: 2rem;
+            }
+
+            .analytics-showcase.row {
+                display: flex;
+                flex-wrap: wrap;
+                margin-bottom: 0;
+            }
+
+            /* Ensure proper Bootstrap card behavior */
+            .card {
+                position: relative;
+                display: flex;
+                flex-direction: column;
+                min-width: 0;
+                word-wrap: break-word;
+                background-color: #fff;
+                background-clip: border-box;
+                border: 1px solid rgba(0,0,0,.125);
+                border-radius: 0.375rem;
+            }
+
+            .card-body {
+                flex: 1 1 auto;
+                padding: 1rem 1rem;
+            }
+        </style>
 
         <style>
             /* About Cards Styles */
             .about__cards {
-                display: grid;
-                grid-template-columns: 1fr;
-                gap: 1.5rem;
                 margin-top: 2rem;
             }
 
@@ -28,8 +990,7 @@
                 border: none;
                 border-radius: 1rem;
                 box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-                background-color: #fff;
-                padding: 1.5rem;
+                background-color: #dfe0cf;
                 transition: transform 0.3s ease;
             }
 
@@ -37,32 +998,190 @@
                 transform: translateY(-5px);
             }
 
-            .card__title {
+            .card-body {
+                padding: 1.5rem;
+            }
+
+            .card__title, .card-title {
                 color: #222;
                 font-weight: 600;
+                font-family: 'Poppins', sans-serif;
                 margin-bottom: 1rem;
                 font-size: 1.2rem;
             }
 
-            .card__text {
+            .card__text, .card-text {
                 color: #444;
                 font-size: 0.95rem;
+                font-family: 'Poppins', sans-serif;
+                font-weight: 400;
+                line-height: 1.6;
+            }
+
+            /* Tips Section Styles */
+            .tips {
+                padding: 4rem 0;
+                background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            }
+
+            .tips__container {
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 0 1rem;
+            }
+
+            .tips__content {
+                text-align: center;
+            }
+
+            .tips__subtitle {
+                color: #666;
+                font-size: 1.1rem;
+                margin-bottom: 2rem;
+                font-weight: 400;
+            }
+
+            .tips__card {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 2rem;
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 2rem;
+                background: white;
+                border-radius: 2rem;
+                box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+                transition: transform 0.3s ease;
+            }
+
+            .tips__card:hover {
+                transform: translateY(-5px);
+            }
+
+            .tips__character {
+                flex-shrink: 0;
+            }
+
+            .tips__img {
+                width: 150px;
+                height: 150px;
+                object-fit: contain;
+                animation: bounce 2s infinite;
+                opacity: 0;
+                transition: opacity 0.3s ease-in-out;
+            }
+
+            .tips__img.loaded {
+                opacity: 1;
+            }
+
+            .image-fallback {
+                width: 150px;
+                height: 150px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+                border-radius: 50%;
+                border: 4px solid #ea5e18;
+                box-shadow: 0 4px 15px rgba(234, 94, 24, 0.3);
+            }
+
+            .tips__bubble {
+                flex: 1;
+                position: relative;
+                background: var(--first-color);
+                padding: 1.5rem;
+                border-radius: 1.5rem;
+                border: 3px solid var(--first-color-dark);
+            }
+
+            .tips__bubble::before {
+                content: '';
+                position: absolute;
+                left: -15px;
+                top: 50%;
+                transform: translateY(-50%);
+                width: 0;
+                height: 0;
+                border-top: 15px solid transparent;
+                border-bottom: 15px solid transparent;
+                border-right: 15px solid var(--first-color-dark);
+            }
+
+            .tips__text {
+                font-size: 1.1rem;
+                color: #333;
+                line-height: 1.6;
+                margin-bottom: 1rem;
+                font-weight: 500;
+                transition: opacity 0.3s ease;
+                min-height: 3em;
+                display: flex;
+                align-items: center;
+            }
+
+            .tips__button {
+                background: var(--first-color-dark);
+                color: #333;
+                border: none;
+                padding: 0.5rem 1rem;
+                border-radius: 25px;
+                cursor: pointer;
+                font-size: 0.9rem;
+                font-weight: 600;
+                transition: all 0.3s ease;
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .tips__button:hover {
+                background: var(--first-color-darken);
+                transform: scale(1.05);
+            }
+
+            @keyframes bounce {
+                0%, 20%, 50%, 80%, 100% {
+                    transform: translateY(0);
+                }
+                40% {
+                    transform: translateY(-10px);
+                }
+                60% {
+                    transform: translateY(-5px);
+                }
             }
 
             /* Footer Styles */
             .footer {
-                padding: 3rem 0 1rem;
+                padding: 3rem 0 2rem;
                 text-align: center;
                 background-color: var(--first-color);
+                margin-top: 4rem;
+                border-top: 2px solid var(--first-color-dark);
+                width: 100%;
+                position: relative;
+                z-index: 10;
+                clear: both;
             }
 
             .footer__container {
                 row-gap: 2rem;
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 0 1rem;
             }
 
             .footer__copy {
-                font-size: 0.875rem;
-                color: #666;
+                font-size: 1rem;
+                color: var(--white-color);
+                margin: 0;
+                font-family: 'Poppins', sans-serif;
+                font-weight: 500;
+                text-shadow: 0 1px 2px rgba(0,0,0,0.1);
             }
 
             @media screen and (min-width: 768px) {
@@ -71,85 +1190,271 @@
                 }
 
                 .footer {
-                    padding: 4rem 0 2rem;
+                    padding: 4rem 0 3rem;
+                }
+
+                .footer__copy {
+                    font-size: 1.1rem;
+                }
+
+                .tips__card {
+                    gap: 3rem;
+                    padding: 3rem;
+                }
+
+                .tips__img {
+                    width: 200px;
+                    height: 200px;
+                }
+            }
+
+            @media screen and (max-width: 768px) {
+                .tips__card {
+                    flex-direction: column;
+                    text-align: center;
+                    gap: 1.5rem;
+                }
+
+                .tips__bubble::before {
+                    display: none;
+                }
+
+                .tips__img {
+                    width: 120px;
+                    height: 120px;
                 }
             }
         </style>
     </head>
     <body>
-        <!--===== HEADER =====-->
-        <header class="l-header">
-            <nav class="nav bd-grid">
-                <div>
-                   <br><br> <a href="#" class="nav__logo"><img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" width="120" height="auto"></a>
+        <div id="app">
+            <!--===== HEADER =====-->
+            <header class="l-header">
+                <nav class="navbar navbar-expand-lg navbar-light">
+                    <div class="container">
+                        <a class="navbar-brand nav__logo" href="/">
+                            <img src="{{ url_for('static', filename='images/logo.png') }}"
+                                 alt="Sisa Rasa Logo"
+                                 style="height: 50px; width: auto; max-width: 200px;"
+                                 onerror="console.log('Logo failed to load, trying fallback...'); this.src='/static/images/logo.png'; this.onerror=function(){this.style.display='none'; this.nextElementSibling.style.display='inline-block';};"
+                                 onload="console.log('Logo loaded successfully'); this.style.display='inline-block'; this.nextElementSibling.style.display='none';">
+                            <span style="display: inline-block; font-weight: 600; color: var(--white-color); font-size: 1.5rem; font-family: 'Poppins', sans-serif;">
+                                SISA RASA
+                            </span>
+                        </a>
 
-                </div>
+                        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                            <span class="navbar-toggler-icon"></span>
+                        </button>
 
-                <div class="nav__toggle" id="nav-toggle">
-                    <i class='bx bx-menu'></i>
-                </div>
-
-                <div class="nav__menu" id="nav-menu">
-                    <div class="nav__close" id="nav-close">
-                        <i class='bx bx-x'></i>
+                        <div class="collapse navbar-collapse" id="navbarNav">
+                            <ul class="navbar-nav ms-auto">
+                                <li class="nav-item">
+                                    <a class="nav-link" href="/">Home</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link active" href="#about">About</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="/login">Login</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="#contact">Contact</a>
+                                </li>
+                            </ul>
+                        </div>
                     </div>
-
-                    <ul class="nav__list">
-                        <li class="nav__item"><a href="#home" class="nav__link active">Home</a></li>
-                        <li class="nav__item"><a href="#about" class="nav__link">About</a></li>
-                        <li class="nav__item"><a href="/login" class="nav__link">Login</a></li>
-                        <li class="nav__item"><a href="#contact" class="nav__link">Contact</a></li>
-                    </ul>
-                </div>
-            </nav>
-        </header>
+                </nav>
+            </header>
 
         <main class="l-main">
-            <!--===== HOME =====-->
-            <section class="home" id="home">
-                <div class="home__container bd-grid">
-                    <div class="home__img">
-                        <img src="{{ url_for('static', filename='images/imgA.png') }}" alt="" data-speed="-2" class="move">
-                        <img src="{{ url_for('static', filename='images/imgB.png') }}" alt="" data-speed="2" class="move">
-                        <img src="{{ url_for('static', filename='images/imgC.png') }}" alt="" data-speed="2" class="move">
-                        <img src="{{ url_for('static', filename='images/imgD.png') }}" alt="" data-speed="-2" class="move">
-                        <img src="{{ url_for('static', filename='images/imgE.png') }}" alt="" data-speed="-2" class="move">
-                        <img src="{{ url_for('static', filename='images/imgF.png') }}" alt="" data-speed="2" class="move">
+
+            <!--===== ABOUT =====-->
+            <section class="about" id="about">
+                <div class="container">
+                    <!-- Logo Section -->
+                    <div class="row">
+                        <div class="col-12 text-center mb-5" style="padding-top: 2rem;">
+                            <img src="{{ url_for('static', filename='images/logo.png') }}"
+                                 alt="Sisa Rasa Logo"
+                                 style="width: 300px; height: auto; max-width: 100%; transition: transform 0.3s ease;"
+                                 onmouseover="this.style.transform='scale(1.05)'"
+                                 onmouseout="this.style.transform='scale(1)'">
+                        </div>
                     </div>
 
-                    <div class="home__data">
-                        <h1 class="home__title">SISA<br> RASA</h1>
-                        <p class="home__description">Rasa baru dari Sisa Lama. </p>
-                        <a href="#about" class="home__button">Get Started</a>
+                    <div class="row">
+                        <div class="col-12">
+                            <h2 class="section__title text-center">About SisaRasa</h2>
+                            <p class="about__description text-center">
+                                Rasa baru dari sisa lama. At Sisa Rasa, we believe that every ingredient has potential. By combining smart technology with creative cooking, we're changing how people think about food waste. Our goal ? To make eating easier, smarter, and more delicious.
+                                Whether you're a seasoned chef or simply aiming to use up what's in your fridge, Sisa Rasa is your partner in creating delicious meals.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- About Cards Section -->
+                    <div class="row g-4 mt-4">
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">🌱 Our Missions </h5>
+                                    <p class="card-text">
+                                        Our mission is to encourage households to utilise the most of their leftover ingredients rather than letting them go to waste. We help consumers in transforming their pantry or refrigerator leftovers into mouthwatering dinners with the support of our intelligent recipe recommendation system.
+                                        <br><br>By doing this, we hope to not only reduce food waste at home but also inspire small, meaningful steps toward a more sustainable future.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">👨‍🍳 What is Sisa Rasa?</h5>
+                                    <p class="card-text">
+                                        Sisa Rasa is an AI-powered web application that helps users discover recipes based on the leftover ingredients they already have. Using the K-Nearest Neighbors (KNN) algorithm, the system analyzes your input and recommends the closest matching recipes, maximizing usage and minimizing waste.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
 
-            <!--===== ABOUT =====-->
-            <section class="about" id="about">
-                <div class="about__container bd-grid">
-                    <div class="about__data">
-                        <h2 class="section__title">About SisaRasa</h2>
-                        <p class="about__description">
-                            Rasa baru dari sisa lama. Kami memperjuangkan kelestarian dengan menggabungkan inovasi makanan dan pengurangan pembaziran bahan dapur.
-                        </p>
+            <!--===== POPULAR RECIPES =====-->
+            <section class="trending" id="trending">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="trending__content text-center">
+                                <h2 class="section__title">Most Popular Recipes</h2>
+                                <p class="trending__subtitle">Discover the community's favorite recipes!</p>
 
-                        <!-- About Cards Section -->
-                        <div class="about__cards">
-                            <div class="card">
-                                <div class="card__body">
-                                    <h5 class="card__title">🌱 Misi Kami</h5>
-                                    <p class="card__text">
-                                        Membantu masyarakat memanfaatkan sepenuhnya bahan makanan yang tersisa melalui teknologi cadangan resipi pintar, sekaligus mengurangkan pembaziran makanan.
-                                    </p>
+                                <div class="recipe-showcase">
+                                    <!-- Popular Recipes -->
+                                    <div class="recipe-section">
+                                        <h3 class="recipe-section-title">⭐ Most Popular</h3>
+                                        <div class="recipe-cards" id="popularRecipes">
+                                            <!-- Popular recipes will be loaded here -->
+                                            <div class="recipe-card-skeleton">
+                                                <div class="skeleton-loader"></div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="card">
-                                <div class="card__body">
-                                    <h5 class="card__title">👨‍🍳 Apa Itu Sisa Rasa?</h5>
-                                    <p class="card__text">
-                                        Sebuah sistem yang menggunakan algoritma KNN untuk mencadangkan resipi mengikut bahan lebihan di rumah, serta mencadangkan bahan tambahan jika perlu.
-                                    </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!--===== SMART LEFTOVER SOLUTIONS =====-->
+            <section class="leftovers" id="leftovers">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="leftovers__content text-center">
+                                <h2 class="section__title">Smart Leftover Solutions</h2>
+                                <p class="leftovers__subtitle">Turn your leftovers into delicious meals!</p>
+
+                                <div class="leftover-showcase">
+                                    <!-- Leftover Combinations -->
+                                    <div class="leftover-section">
+                                        <h3 class="leftover-section-title">💡 Smart Combinations</h3>
+                                        <div class="combination-cards" id="leftoverCombinations">
+                                            <!-- Leftover combinations will be loaded here -->
+                                            <div class="combination-card-skeleton">
+                                                <div class="skeleton-loader"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!--===== MOST SEARCHED LEFTOVERS =====-->
+            <section class="most-searched-leftovers" id="most-searched-leftovers">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="most-searched-leftovers__content text-center">
+                                <h2 class="section__title">Most Searched Leftovers</h2>
+                                <p class="most-searched-leftovers__subtitle">
+                                    Discover what ingredients our community commonly searches for - these are the leftovers that need your attention!
+                                </p>
+
+                                <div class="row g-4">
+                                    <!-- Chart Section -->
+                                    <div class="col-lg-6">
+                                        <div class="chart-section">
+                                            <div class="chart-container">
+                                                <canvas id="leftoverChart" width="400" height="400"></canvas>
+                                            </div>
+                                            <div class="chart-legend" id="chartLegend">
+                                                <!-- Legend will be populated by JavaScript -->
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Insights Section -->
+                                    <div class="col-lg-6">
+                                        <div class="insights-section">
+                                            <h3 class="insights-title">🔍 Community Insights</h3>
+                                            <div class="insights-content" id="leftoverInsights">
+                                                <!-- Insights will be loaded here -->
+                                                <div class="insight-skeleton">
+                                                    <div class="skeleton-loader"></div>
+                                                </div>
+                                            </div>
+                                            <div class="insights-footer">
+                                                <p class="insights-note">
+                                                    💡 <strong>Reduce Food Waste:</strong> These ingredients are frequently searched because they often go unused.
+                                                    Help reduce food waste by using these ingredients in your next meal!
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!--===== FOOD WASTE TIPS =====-->
+            <section class="tips" id="tips">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="tips__content text-center">
+                                <h2 class="section__title">Food Waste Reduction Tips</h2>
+                                <p class="tips__subtitle">Mr. Bob shares amazing facts to reduce food waste at home!</p>
+
+                                <div class="tips__card">
+                                    <div class="tips__character">
+                                        <img src="{{ url_for('static', filename='images/mrTips.png') }}"
+                                             alt="Mr. Tips"
+                                             class="tips__img"
+                                             loading="lazy"
+                                             onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+                                             onload="this.style.opacity='1';">
+                                        <div class="image-fallback" style="display: none; text-align: center; padding: 20px;">
+                                            <i class='bx bx-user-circle' style="font-size: 4rem; color: #ea5e18;"></i>
+                                            <p style="margin: 0; font-size: 0.9rem; color: #6c757d;">Mr. Tips</p>
+                                        </div>
+                                    </div>
+                                    <div class="tips__bubble">
+                                        <div class="tips__text" id="tipText">
+                                            <!-- Random tip will be loaded here -->
+                                        </div>
+                                        <div class="tips__refresh">
+                                            <button class="tips__button" onclick="getNewTip()">
+                                                <i class='bx bx-refresh'></i> New Tip
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -159,47 +1464,618 @@
 
             <!--===== CONTACT =====-->
             <section class="contact" id="contact">
-                <div class="contact__container bd-grid">
-                    <div class="contact__data">
-                        <h2 class="section__title">Contact Us</h2>
-                        <p class="contact__description">Have questions about our recipe recommendation system? Feel free to reach out to us!</p>
-                        <div class="contact__info">
-                            <div class="contact__item">
-                                <i class='bx bx-envelope'></i>
-                                <p>contact@sisarasa.com</p>
-                            </div>
-                            <div class="contact__item">
-                                <i class='bx bx-phone'></i>
-                                <p>01135723003</p>
+                <div class="container">
+                    <div class="row">
+                        <div class="col-12 text-center">
+                            <h2 class="section__title">Contact Us</h2>
+                            <p class="contact__description">Have questions about our recipe recommendation system? Feel free to reach out to us!</p>
+                            <div class="contact__info d-flex justify-content-center flex-wrap gap-4">
+                                <div class="contact__item d-flex align-items-center">
+                                    <i class='bx bx-envelope me-2'></i>
+                                    <p class="mb-0">contact@sisarasa.com</p>
+                                </div>
+                                <div class="contact__item d-flex align-items-center">
+                                    <i class='bx bx-phone me-2'></i>
+                                    <p class="mb-0">01135723003</p>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!--===== FOOTER =====-->
-            <footer class="footer">
-                <div class="footer__container bd-grid">
-                    <p class="footer__copy">© 2025 Sisa Rasa. All rights reserved.</p>
-                </div>
-            </footer>
         </main>
+
+        <!--===== FOOTER =====-->
+        <footer class="footer">
+            <div class="container">
+                <div class="row">
+                    <div class="col-12 text-center">
+                        <p class="footer__copy mb-0">© 2025 Sisa Rasa. All rights reserved.</p>
+                    </div>
+                </div>
+            </div>
+        </footer>
+        </div> <!-- End Vue App -->
+
+        <!-- Bootstrap 5 JavaScript Bundle - Load First -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
+        <!-- VueJS for dynamic content -->
+        <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+
+        <!-- Chart.js for analytics visualization -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
         <!--===== GSAP =====-->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.5.1/gsap.min.js"></script>
 
-        <!--===== MAIN JS =====-->
-        <script src="{{ url_for('static', filename='main.js') }}"></script>
-
         <!-- Optional: Confetti JS -->
         <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
-        <!-- Card Animation Script -->
+        <!--===== MAIN JS (Fixed with null checks) =====-->
         <script>
-            // === Scroll fade-in for cards ===
+            // Override main.js functions to prevent errors on welcome page
             document.addEventListener('DOMContentLoaded', function() {
-                const cards = document.querySelectorAll('.card');
+                // Disable GSAP animations that reference non-existent elements
+                if (typeof gsap !== 'undefined') {
+                    // Only run animations if elements exist
+                    const navLogo = document.querySelector('.nav__logo');
+                    const navToggle = document.querySelector('.nav__toggle');
+                    if (navLogo || navToggle) {
+                        gsap.from('.nav__logo, .nav__toggle', {opacity: 0, duration: 1, delay:0.5, y: 10});
+                    }
 
+                    const navItems = document.querySelectorAll('.nav__item');
+                    if (navItems.length > 0) {
+                        gsap.from('.nav__item', {opacity: 0, duration: 1, delay: 0.6, y: 30, stagger: 0.2});
+                    }
+
+                    const footerCopy = document.querySelector('.footer__copy');
+                    if (footerCopy) {
+                        gsap.from('.footer__copy', {opacity: 0, duration: 1, delay: 1, y: 10});
+                    }
+                }
+            });
+        </script>
+
+        <!-- Dependency Loading and Initialization System -->
+        <script>
+            // Global loading state management
+            window.SisaRasaApp = {
+                dependencies: {
+                    vue: false,
+                    chart: false,
+                    bootstrap: false,
+                    gsap: false,
+                    confetti: false
+                },
+                initialized: false,
+                retryCount: 0,
+                maxRetries: 3
+            };
+
+            // Dependency checker
+            function checkDependencies() {
+                window.SisaRasaApp.dependencies.vue = typeof Vue !== 'undefined';
+                window.SisaRasaApp.dependencies.chart = typeof Chart !== 'undefined';
+                window.SisaRasaApp.dependencies.bootstrap = typeof bootstrap !== 'undefined';
+                window.SisaRasaApp.dependencies.gsap = typeof gsap !== 'undefined';
+                window.SisaRasaApp.dependencies.confetti = typeof confetti !== 'undefined';
+
+                const allLoaded = Object.values(window.SisaRasaApp.dependencies).every(dep => dep);
+                console.log('📦 Dependencies status:', window.SisaRasaApp.dependencies);
+
+                return allLoaded;
+            }
+
+            // Initialize application when all dependencies are ready
+            function initializeApp() {
+                if (window.SisaRasaApp.initialized) return;
+
+                console.log('🚀 Initializing Sisa Rasa App...');
+
+                try {
+                    // Initialize Vue app
+                    const { createApp } = Vue;
+
+                    const app = createApp({
+                        delimiters: ['${', '}'],
+                        data() {
+                            return {
+                                loading: true,
+                                analyticsData: {
+                                    trending_recipes: [],
+                                    popular_recipes: [],
+                                    leftover_solutions: {
+                                        top_leftover_ingredients: [],
+                                        common_combinations: {}
+                                    }
+                                },
+                                leftoverAnalytics: {
+                                    most_searched_leftovers: [],
+                                    total_searches: 0,
+                                    last_updated: null
+                                },
+                                leftoverChart: null
+                            }
+                        },
+                        mounted() {
+                            console.log('🚀 Vue app mounted! Loading analytics...');
+                            // Add small delay to ensure DOM is fully ready
+                            setTimeout(() => {
+                                this.loadPrescriptiveAnalytics();
+                                this.loadLeftoverAnalytics();
+                                this.setupAnalyticsRefresh();
+                            }, 100);
+                        },
+                        methods: {
+                            async loadPrescriptiveAnalytics() {
+                                try {
+                                    console.log('Loading prescriptive analytics...');
+
+                                    // Add timeout to prevent hanging
+                                    const controller = new AbortController();
+                                    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+                                    const response = await fetch('http://127.0.0.1:5000/api/analytics/prescriptive', {
+                                        signal: controller.signal
+                                    });
+                                    clearTimeout(timeoutId);
+
+                                    console.log('Response status:', response.status);
+
+                                    if (!response.ok) {
+                                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                                    }
+
+                                    const data = await response.json();
+                                    console.log('Analytics data received:', data);
+
+                                    if (data.status === 'success') {
+                                        this.analyticsData = data.data;
+                                        await this.renderPopularRecipes();
+                                        await this.renderLeftoverCombinations();
+                                    } else {
+                                        console.error('API returned error:', data.message);
+                                        this.loadFallbackData();
+                                    }
+                                } catch (error) {
+                                    if (error.name === 'AbortError') {
+                                        console.warn('Analytics request timed out, using fallback data');
+                                    } else {
+                                        console.error('Error loading prescriptive analytics:', error);
+                                    }
+                                    this.loadFallbackData();
+                                } finally {
+                                    this.loading = false;
+                                }
+                            },
+
+                            loadFallbackData() {
+                                // Fallback data if API fails
+                                this.analyticsData = {
+                                    popular_recipes: [
+                                        {
+                                            id: 'popular-1',
+                                            name: 'Classic Chicken Curry',
+                                            ingredients: ['chicken', 'curry powder', 'coconut milk'],
+                                            description: 'Highly rated recipe (4.8/5 stars)',
+                                            avg_rating: 4.8,
+                                            review_count: 156,
+                                            prep_time: 45,
+                                            difficulty: 'Medium'
+                                        },
+                                        {
+                                            id: 'popular-2',
+                                            name: 'Homemade Fried Rice',
+                                            ingredients: ['rice', 'egg', 'soy sauce', 'vegetables'],
+                                            description: 'Community favorite (4.6/5 stars)',
+                                            avg_rating: 4.6,
+                                            review_count: 89,
+                                            prep_time: 20,
+                                            difficulty: 'Easy'
+                                        },
+                                        {
+                                            id: 'popular-3',
+                                            name: 'Simple Pasta Marinara',
+                                            ingredients: ['pasta', 'tomato sauce', 'garlic', 'basil'],
+                                            description: 'Quick and delicious (4.4/5 stars)',
+                                            avg_rating: 4.4,
+                                            review_count: 67,
+                                            prep_time: 25,
+                                            difficulty: 'Easy'
+                                        }
+                                    ],
+                                    leftover_solutions: {
+                                        top_leftover_ingredients: [
+                                            { name: 'rice', usage_count: 245 },
+                                            { name: 'chicken', usage_count: 189 },
+                                            { name: 'egg', usage_count: 167 },
+                                            { name: 'pasta', usage_count: 134 },
+                                            { name: 'vegetables', usage_count: 112 }
+                                        ],
+                                        common_combinations: {
+                                            'rice_egg': {
+                                                ingredients: ['rice', 'egg'],
+                                                recipes: ['Fried Rice', 'Egg Rice Bowl', 'Rice Omelette'],
+                                                description: 'Perfect for using leftover rice'
+                                            },
+                                            'pasta_sauce': {
+                                                ingredients: ['pasta', 'tomato sauce'],
+                                                recipes: ['Pasta Marinara', 'Spaghetti Bolognese', 'Pasta Bake'],
+                                                description: 'Quick pasta solutions'
+                                            }
+                                        }
+                                    }
+                                };
+                                this.renderPopularRecipes();
+                                this.renderLeftoverCombinations();
+                            },
+
+
+
+                            async renderPopularRecipes() {
+                                return new Promise((resolve) => {
+                                    try {
+                                        const container = document.getElementById('popularRecipes');
+                                        if (!container) {
+                                            console.warn('Popular recipes container not found');
+                                            resolve();
+                                            return;
+                                        }
+
+                                        const recipes = this.analyticsData.popular_recipes.slice(0, 3);
+                                        container.innerHTML = recipes.map((recipe, index) => `
+                                            <div class="recipe-card fade-in-up stagger-${index + 1}" onclick="handleRecipeClick('${recipe.id || recipe.name.toLowerCase().replace(/\\s+/g, '-')}', '${recipe.name}')">
+                                                <div class="recipe-card-title">${recipe.name}</div>
+                                                <div class="recipe-card-description">${recipe.description}</div>
+                                                <div class="recipe-card-ingredients">
+                                                    ${recipe.ingredients.slice(0, 4).map(ing =>
+                                                        `<span class="ingredient-chip">${ing}</span>`
+                                                    ).join('')}
+                                                </div>
+                                                <div class="recipe-card-meta">
+                                                    <span><i class='bx bx-time'></i> ${recipe.prep_time} min</span>
+                                                    <span><i class='bx bx-star'></i> ${recipe.avg_rating ? recipe.avg_rating.toFixed(1) : 'N/A'}</span>
+                                                </div>
+                                            </div>
+                                        `).join('');
+
+                                        console.log('✅ Popular recipes rendered successfully');
+                                        resolve();
+                                    } catch (error) {
+                                        console.error('Error rendering popular recipes:', error);
+                                        resolve();
+                                    }
+                                });
+                            },
+
+                            async renderLeftoverCombinations() {
+                                return new Promise((resolve) => {
+                                    try {
+                                        const combinationsContainer = document.getElementById('leftoverCombinations');
+                                        if (!combinationsContainer) {
+                                            console.warn('Leftover combinations container not found');
+                                            resolve();
+                                            return;
+                                        }
+
+                                        const combinations = Object.values(this.analyticsData.leftover_solutions.common_combinations);
+                                        combinationsContainer.innerHTML = combinations.map((combo, index) => `
+                                            <div class="combination-card fade-in-up stagger-${index + 1}">
+                                                <div class="combination-title">
+                                                    ${combo.ingredients.join(' + ')}
+                                                </div>
+                                                <div class="combination-description">
+                                                    ${combo.description}
+                                                </div>
+                                                <div class="combination-recipes">
+                                                    ${combo.recipes.map(recipe =>
+                                                        `<span class="recipe-chip" onclick="handleRecipeSearch('${recipe}')" style="cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">${recipe}</span>`
+                                                    ).join('')}
+                                                </div>
+                                            </div>
+                                        `).join('');
+
+                                        console.log('✅ Leftover combinations rendered successfully');
+                                        resolve();
+                                    } catch (error) {
+                                        console.error('Error rendering leftover combinations:', error);
+                                        resolve();
+                                    }
+                                });
+                            },
+
+                            async loadLeftoverAnalytics() {
+                                try {
+                                    console.log('Loading leftover analytics...');
+
+                                    const controller = new AbortController();
+                                    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+                                    const response = await fetch('http://127.0.0.1:5000/api/analytics/leftover-ingredients', {
+                                        signal: controller.signal
+                                    });
+                                    clearTimeout(timeoutId);
+
+                                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                                    const data = await response.json();
+                                    if (data.status === 'success') {
+                                        this.leftoverAnalytics = data.data;
+                                        this.renderLeftoverChart();
+                                        this.renderLeftoverInsights();
+                                    } else {
+                                        this.loadFallbackLeftoverData();
+                                    }
+                                } catch (error) {
+                                    if (error.name === 'AbortError') {
+                                        console.warn('Leftover analytics request timed out');
+                                    }
+                                    this.loadFallbackLeftoverData();
+                                }
+                            },
+
+                            loadFallbackLeftoverData() {
+                                this.leftoverAnalytics = {
+                                    most_searched_leftovers: [
+                                        { name: 'Chicken', count: 245, percentage: 22.1 },
+                                        { name: 'Rice', count: 189, percentage: 17.0 },
+                                        { name: 'Tomatoes', count: 167, percentage: 15.1 },
+                                        { name: 'Onions', count: 134, percentage: 12.1 },
+                                        { name: 'Carrots', count: 112, percentage: 10.1 }
+                                    ],
+                                    total_searches: 847,
+                                    last_updated: new Date().toISOString()
+                                };
+                                this.renderLeftoverChart();
+                                this.renderLeftoverInsights();
+                            },
+
+                            renderLeftoverChart() {
+                                try {
+                                    const canvas = document.getElementById('leftoverChart');
+                                    if (!canvas || typeof Chart === 'undefined') return;
+
+                                    const ctx = canvas.getContext('2d');
+                                    if (this.leftoverChart) this.leftoverChart.destroy();
+
+                                    const data = this.leftoverAnalytics.most_searched_leftovers;
+                                    const colors = ['#B388EB', '#A0E7E5', '#FDCBBA', '#FFDAC1', '#8D6E63'];
+
+                                    this.leftoverChart = new Chart(ctx, {
+                                        type: 'doughnut',
+                                        data: {
+                                            labels: data.map(item => item.name),
+                                            datasets: [{
+                                                data: data.map(item => item.percentage),
+                                                backgroundColor: colors.slice(0, data.length),
+                                                borderWidth: 2,
+                                                borderColor: '#ffffff'
+                                            }]
+                                        },
+                                        options: {
+                                            responsive: true,
+                                            maintainAspectRatio: false,
+                                            plugins: { legend: { display: false } },
+                                            cutout: '60%'
+                                        }
+                                    });
+                                    this.renderChartLegend(data, colors);
+                                } catch (error) {
+                                    console.error('Error rendering chart:', error);
+                                }
+                            },
+
+                            renderChartLegend(data, colors) {
+                                const legendContainer = document.getElementById('chartLegend');
+                                if (!legendContainer) return;
+                                legendContainer.innerHTML = data.map((item, index) => `
+                                    <div class="legend-item">
+                                        <div class="legend-color" style="background-color: ${colors[index]}"></div>
+                                        <span>${item.name} (${item.percentage}%)</span>
+                                    </div>
+                                `).join('');
+                            },
+
+                            renderLeftoverInsights() {
+                                const container = document.getElementById('leftoverInsights');
+                                if (!container) return;
+                                const data = this.leftoverAnalytics.most_searched_leftovers;
+                                container.innerHTML = data.map(item => `
+                                    <div class="insight-item">
+                                        <div class="insight-ingredient">${item.name}</div>
+                                        <div class="insight-stats">
+                                            <span>${item.count} searches</span>
+                                            <span class="insight-percentage">${item.percentage}%</span>
+                                        </div>
+                                    </div>
+                                `).join('');
+                            },
+
+                            setupAnalyticsRefresh() {
+                                setInterval(() => {
+                                    if (!document.hidden) this.loadLeftoverAnalytics();
+                                }, 30000);
+
+                                document.addEventListener('visibilitychange', () => {
+                                    if (!document.hidden) this.loadLeftoverAnalytics();
+                                });
+                            }
+                        }
+                    });
+
+                    // Mount the app
+                    app.mount('#app');
+                    window.SisaRasaApp.initialized = true;
+                    console.log('✅ Sisa Rasa App initialized successfully');
+
+                } catch (error) {
+                    console.error('❌ Failed to initialize app:', error);
+                    if (window.SisaRasaApp.retryCount < window.SisaRasaApp.maxRetries) {
+                        window.SisaRasaApp.retryCount++;
+                        console.log(`🔄 Retrying initialization (${window.SisaRasaApp.retryCount}/${window.SisaRasaApp.maxRetries})...`);
+                        setTimeout(initializeApp, 1000);
+                    }
+                }
+            }
+
+            // Wait for dependencies and DOM to be ready
+            function waitForDependencies() {
+                if (checkDependencies() && document.readyState === 'complete') {
+                    initializeApp();
+                } else {
+                    setTimeout(waitForDependencies, 100);
+                }
+            }
+
+            // Start the initialization process
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', waitForDependencies);
+            } else {
+                waitForDependencies();
+            }
+        </script>
+
+        <!-- All duplicate scripts removed - functionality moved to main script below -->
+
+        <!-- Essential JavaScript Functions -->
+        <script>
+            // Recipe Navigation Functions
+            function handleRecipeClick(recipeId, recipeName) {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    const returnUrl = encodeURIComponent(window.location.href);
+                    window.location.href = `/login?return=${returnUrl}&recipe=${encodeURIComponent(recipeName)}`;
+                    return;
+                }
+                navigateToRecipeDetails(recipeId, recipeName);
+            }
+
+            function handleRecipeSearch(recipeName) {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    const returnUrl = encodeURIComponent(window.location.href);
+                    window.location.href = `/login?return=${returnUrl}&search=${encodeURIComponent(recipeName)}`;
+                    return;
+                }
+                searchForRecipe(recipeName);
+            }
+
+            function navigateToRecipeDetails(recipeId, recipeName) {
+                fetch(`/api/recipe/${recipeId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'ok') {
+                            showRecipeModal(data.recipe);
+                        } else {
+                            searchForRecipe(recipeName);
+                        }
+                    })
+                    .catch(() => searchForRecipe(recipeName));
+            }
+
+            function searchForRecipe(recipeName) {
+                const searchTerms = recipeName.toLowerCase()
+                    .replace(/recipe|dish|food/g, '')
+                    .split(/[\s,]+/)
+                    .filter(term => term.length > 2)
+                    .slice(0, 3);
+
+                if (searchTerms.length > 0) {
+                    const searchQuery = searchTerms.join(',');
+                    window.location.href = `/search-results?ingredients=${encodeURIComponent(searchQuery)}`;
+                } else {
+                    window.location.href = '/dashboard';
+                }
+            }
+
+            function showRecipeModal(recipe) {
+                const modalHtml = `
+                    <div style="text-align: left; max-height: 500px; overflow-y: auto;">
+                        <h6><strong>Ingredients (${recipe.ingredients.length}):</strong></h6>
+                        <ul style="margin-bottom: 1.5rem;">
+                            ${recipe.ingredients.map(ing => `<li>${ing}</li>`).join('')}
+                        </ul>
+                        <h6><strong>Instructions:</strong></h6>
+                        <ol>
+                            ${recipe.steps.map(step => `<li style="margin-bottom: 0.5rem;">${step}</li>`).join('')}
+                        </ol>
+                    </div>
+                `;
+
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: recipe.name,
+                        html: modalHtml,
+                        width: '700px',
+                        confirmButtonColor: '#ea5e18',
+                        confirmButtonText: 'Close'
+                    });
+                } else {
+                    alert(`Recipe: ${recipe.name}\n\nIngredients: ${recipe.ingredients.join(', ')}`);
+                }
+            }
+
+            // Food Waste Tips
+            const foodWasteTips = [
+                "💡 Did you know? Every year, 1.3 billion tons of food is wasted worldwide!",
+                "🥬 Store leafy greens in airtight containers with damp paper towels to keep them fresh longer.",
+                "🍌 Overripe bananas? Use them to make delicious smoothies or banana bread!",
+                "❄️ Freeze fresh herbs in ice cubes with olive oil for future cooking use.",
+                "🍞 Stale bread can be turned into breadcrumbs or tasty French toast!",
+                "🥕 Potato and carrot peels can be roasted into healthy, crispy chips.",
+                "🍅 Soft tomatoes are still perfect for sauces, soups, or stir-fry dishes.",
+                "🧅 Store onions in a cool, dry place - not in the refrigerator!",
+                "🥛 Milk about to expire? Use it to make pancakes, cakes, or smoothies.",
+                "🍋 Squeeze lemon juice and freeze it in ice trays for long-term use."
+            ];
+
+            function getNewTip() {
+                const tipText = document.getElementById('tipText');
+                if (!tipText) return;
+
+                const randomIndex = Math.floor(Math.random() * foodWasteTips.length);
+                tipText.style.opacity = '0';
+
+                setTimeout(() => {
+                    tipText.textContent = foodWasteTips[randomIndex];
+                    tipText.style.opacity = '1';
+                }, 300);
+            }
+
+            // Initialize tips and animations when DOM is ready
+            document.addEventListener('DOMContentLoaded', function() {
+                // Load initial tip
+                setTimeout(getNewTip, 500);
+
+                // Auto-refresh tip every 10 seconds
+                setInterval(getNewTip, 10000);
+
+                // Handle image loading
+                const images = document.querySelectorAll('img[loading="lazy"]');
+                images.forEach(img => {
+                    if (img.complete) {
+                        img.style.opacity = '1';
+                        img.classList.add('loaded');
+                    } else {
+                        img.addEventListener('load', function() {
+                            this.style.opacity = '1';
+                            this.classList.add('loaded');
+                        });
+                        img.addEventListener('error', function() {
+                            this.style.display = 'none';
+                            const fallback = this.nextElementSibling;
+                            if (fallback && fallback.classList.contains('image-fallback')) {
+                                fallback.style.display = 'flex';
+                            }
+                        });
+                    }
+                });
+
+                // Scroll animations
+                const cards = document.querySelectorAll('.card, .tips__card');
                 const observer = new IntersectionObserver((entries) => {
                     entries.forEach(entry => {
                         if (entry.isIntersecting) {
@@ -207,17 +2083,16 @@
                             observer.unobserve(entry.target);
                         }
                     });
-                }, {
-                    threshold: 0.2
-                });
+                }, { threshold: 0.2 });
 
-                cards.forEach(card => {
-                    observer.observe(card);
-                });
+                cards.forEach(card => observer.observe(card));
 
-                // === Fun: Confetti on heading click ===
-                document.querySelector('.section__title').addEventListener('click', () => {
-                    confetti();
+                // Confetti on title click
+                const sectionTitles = document.querySelectorAll('.section__title');
+                sectionTitles.forEach(title => {
+                    title.addEventListener('click', () => {
+                        if (typeof confetti !== 'undefined') confetti();
+                    });
                 });
             });
         </script>

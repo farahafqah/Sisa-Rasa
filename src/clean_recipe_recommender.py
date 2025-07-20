@@ -169,7 +169,12 @@ class EnhancedKNNRecipeRecommender:
                     self.ingredient_names.add(ingredient_clean)
                     self.ingredient_to_recipes[ingredient_clean].append(len(self.recipes) - 1)
 
-            print(f"Successfully loaded {len(self.recipes)} recipes")
+            print(f"Successfully loaded {len(self.recipes)} recipes from JSON")
+
+            # Load community recipes from database
+            self._load_community_recipes()
+
+            print(f"Total recipes loaded: {len(self.recipes)}")
             print(f"Found {len(self.ingredient_names)} unique ingredients")
 
             # Calculate ingredient importance scores
@@ -181,6 +186,69 @@ class EnhancedKNNRecipeRecommender:
         except Exception as e:
             print(f"Error loading recipes: {e}")
             raise
+
+    def _load_community_recipes(self):
+        """Load community recipes from MongoDB database."""
+        try:
+            import pymongo
+            from bson.objectid import ObjectId
+
+            # Connect to MongoDB using environment configuration
+            import os
+            from dotenv import load_dotenv
+
+            # Load environment variables
+            load_dotenv()
+            mongo_uri = os.getenv('MONGO_URI', 'mongodb://localhost:27017/sisarasa')
+
+            # Extract database name from URI or use default
+            if 'sisarasa' in mongo_uri:
+                db_name = 'sisarasa'
+            else:
+                db_name = 'sisarasa'  # fallback
+
+            client = pymongo.MongoClient(mongo_uri)
+            db = client[db_name]
+
+            # Get approved community recipes
+            community_recipes = list(db.recipes.find({
+                'is_community_recipe': True,
+                'submission_status': 'approved'
+            }))
+
+            print(f"Found {len(community_recipes)} community recipes")
+
+            for recipe in community_recipes:
+                # Convert MongoDB recipe to our format
+                recipe_data = {
+                    'id': recipe['original_id'],
+                    'name': recipe['name'],
+                    'ingredients': recipe['ingredients'],
+                    'instructions': recipe.get('instructions', []),
+                    'prep_time': recipe.get('prep_time', 30),
+                    'cook_time': recipe.get('cook_time', 45),
+                    'servings': recipe.get('servings', 4),
+                    'cuisine': recipe.get('cuisine', 'International'),
+                    'difficulty': recipe.get('difficulty', 'Medium'),
+                    'is_community_recipe': True,
+                    'contributed_by': str(recipe.get('contributed_by', '')),
+                    'submission_date': recipe.get('submission_date')
+                }
+
+                self.recipes.append(recipe_data)
+
+                # Index ingredients
+                for ingredient in recipe['ingredients']:
+                    ingredient_clean = ingredient.lower().strip()
+                    self.ingredient_names.add(ingredient_clean)
+                    self.ingredient_to_recipes[ingredient_clean].append(len(self.recipes) - 1)
+
+            print(f"Successfully integrated {len(community_recipes)} community recipes")
+
+        except Exception as e:
+            print(f"Error loading community recipes: {e}")
+            # Don't fail the entire loading process if community recipes can't be loaded
+            pass
 
     def _calculate_ingredient_importance(self):
         """Calculate enhanced importance scores for ingredients based on frequency, category, and uniqueness."""
@@ -788,7 +856,13 @@ class EnhancedKNNRecipeRecommender:
                 'cook_time': recipe['cook_time'],
                 'servings': recipe['servings'],
                 'cuisine': recipe['cuisine'],
-                'difficulty': recipe['difficulty']
+                'difficulty': recipe['difficulty'],
+                'is_community_recipe': recipe.get('is_community_recipe', False),  # Add community recipe flag
+                'contributed_by': recipe.get('contributed_by', None),  # Add contributor ID
+                'contributor_name': recipe.get('contributor_name', None),  # Add contributor name
+                'submission_status': recipe.get('submission_status', None),  # Add submission status
+                'created_at': recipe.get('created_at', None),  # Add creation date
+                'description': recipe.get('description', None)  # Add description
             }
 
             recommendations.append(recommendation)

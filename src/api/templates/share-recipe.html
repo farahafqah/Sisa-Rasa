@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Share Recipe | Sisa Rasa</title>
+
+  <!-- Styles and Fonts -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&display=swap" rel="stylesheet">
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+
+  <!-- Vue -->
+  <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+
+  <!-- SweetAlert for notifications -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: url("{{ url_for('static', filename='images/bg.png') }}") no-repeat center center fixed;
+      background-size: cover;
+      margin: 0;
+    }
+    
+    /* Sidebar styles */
+    .sidebar {
+      background-color: #083640;
+      min-height: 100vh;
+      padding-top: 1rem;
+      color: white;
+      border-right: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    /* Logo styles */
+    .logo-container {
+      background-color: #072a32;
+      padding: 1.5rem 1rem;
+      margin-bottom: 2rem;
+      text-align: center;
+      border-radius: 0 0 10px 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    .logo-container img {
+      width: 80px;
+      height: auto;
+      margin-bottom: 0.75rem;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+      transition: transform 0.3s ease;
+    }
+
+    .logo-container:hover img {
+      transform: scale(1.05);
+    }
+
+    .logo-container h5 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+      color: white;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .logo-container small {
+      font-size: 0.8rem;
+      opacity: 0.9;
+      display: block;
+      color: #fedf2f;
+    }
+    
+    /* Navigation styles */
+    .nav-links {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      padding-left: 0;
+      margin-top: 2rem;
+    }
+
+    .nav-links a {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1.5rem;
+      font-weight: 600;
+      text-decoration: none;
+      color: white;
+      border-radius: 0;
+      transition: background 0.3s;
+      border-left: 4px solid transparent;
+    }
+
+    .nav-links a.active {
+      background-color: #ea5e18;
+      border-left: 4px solid #fedf2f;
+    }
+
+    .nav-links a:hover:not(.active) {
+      background-color: rgba(234, 94, 24, 0.3);
+    }
+    
+    /* Main content styles */
+    .main-content {
+      background-color: transparent;
+      min-height: 100vh;
+      padding: 1rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .content-header {
+      background: linear-gradient(135deg, rgba(234, 94, 24, 0.9) 0%, rgba(234, 94, 24, 0.8) 100%);
+      padding: 1.25rem 1.5rem;
+      border-radius: 12px;
+      color: white;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 4px 12px rgba(234, 94, 24, 0.2);
+    }
+
+    .content-header h1 {
+      color: #fedf2f;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      font-size: 1.75rem;
+    }
+
+    .content-header p {
+      color: rgba(255, 255, 255, 0.95);
+      margin: 0;
+      font-size: 0.95rem;
+      line-height: 1.4;
+    }
+    
+    /* Form styles */
+    .recipe-form {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      color: #2c3e50;
+      border: 1px solid rgba(225, 204, 127, 0.3);
+      position: relative;
+      overflow: hidden;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .recipe-form::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #f1ead1 0%, #e1cc7f 50%, #f9e59a 100%);
+      background-size: 200% 100%;
+      animation: shimmer 4s ease-in-out infinite;
+    }
+
+    @keyframes shimmer {
+      0%, 100% { background-position: -200% 0; }
+      50% { background-position: 200% 0; }
+    }
+
+    .form-section {
+      margin-bottom: 1.5rem;
+      padding: 1.25rem;
+      background: rgba(241, 234, 209, 0.15);
+      border-radius: 12px;
+      border: 1px solid rgba(225, 204, 127, 0.2);
+      transition: all 0.3s ease;
+    }
+
+    .form-section:hover {
+      background: rgba(241, 234, 209, 0.25);
+      border-color: rgba(225, 204, 127, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .form-section-title {
+      color: #2c3e50;
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .form-section-title i {
+      font-size: 1.2rem;
+      color: #ea5e18;
+    }
+
+    .form-label {
+      color: #34495e;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    .form-label i {
+      color: #e1cc7f;
+      font-size: 1rem;
+    }
+
+    .form-label .required {
+      color: #e74c3c;
+      font-size: 0.75rem;
+    }
+
+    .form-control, .form-select {
+      background-color: white;
+      border: 1px solid rgba(225, 204, 127, 0.4);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      font-family: 'Poppins', sans-serif;
+      color: #2c3e50;
+      font-weight: 400;
+      font-size: 0.9rem;
+      transition: all 0.3s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .form-control:focus, .form-select:focus {
+      outline: none;
+      border-color: #e1cc7f;
+      box-shadow: 0 0 0 3px rgba(225, 204, 127, 0.2), 0 2px 8px rgba(0,0,0,0.1);
+      background-color: white;
+    }
+
+    .form-control::placeholder {
+      color: rgba(44, 62, 80, 0.6);
+      font-style: normal;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #ea5e18 0%, #ff7f3f 100%);
+      border: none;
+      border-radius: 25px;
+      padding: 0.75rem 2rem;
+      font-weight: 600;
+      color: white;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      box-shadow: 0 3px 12px rgba(234, 94, 24, 0.25);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-primary::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    .btn-primary:hover:not(:disabled)::before {
+      left: 100%;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: linear-gradient(135deg, #ff7f3f 0%, #ea5e18 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(234, 94, 24, 0.35);
+    }
+
+    .btn-primary:disabled {
+      background: #95a5a6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: 0 2px 8px rgba(149, 165, 166, 0.2);
+    }
+
+    .btn-secondary {
+      background: rgba(225, 204, 127, 0.15);
+      border: 1px solid #e1cc7f;
+      border-radius: 8px;
+      padding: 0.6rem 1.25rem;
+      color: #2c3e50;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: all 0.3s ease;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(225, 204, 127, 0.25);
+      transform: translateY(-1px);
+      color: #2c3e50;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      border-color: #e1cc7f;
+    }
+
+    .btn-add {
+      background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+      border: none;
+      border-radius: 8px;
+      padding: 0.6rem 1.25rem;
+      color: white;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(39, 174, 96, 0.25);
+    }
+
+    .btn-add:hover {
+      background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 3px 12px rgba(39, 174, 96, 0.35);
+      color: white;
+    }
+
+    .btn-add:disabled {
+      background: #bdc3c7;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: 0 1px 3px rgba(189, 195, 199, 0.2);
+    }
+
+    /* Dynamic list styles */
+    .ingredient-item, .instruction-item {
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(225, 204, 127, 0.3);
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.3s ease;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .ingredient-item::before, .instruction-item::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: linear-gradient(180deg, #e1cc7f 0%, #f9e59a 100%);
+      transition: width 0.3s ease;
+    }
+
+    .ingredient-item:hover, .instruction-item:hover {
+      background: rgba(255, 255, 255, 0.95);
+      border-color: #e1cc7f;
+      transform: translateX(3px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    }
+
+    .ingredient-item:hover::before, .instruction-item:hover::before {
+      width: 5px;
+    }
+
+    .item-content {
+      flex: 1;
+      font-weight: 500;
+      color: #2c3e50;
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+
+    .item-number {
+      background: linear-gradient(135deg, #e1cc7f 0%, #f9e59a 100%);
+      color: #2c3e50;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-right: 0.75rem;
+      flex-shrink: 0;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .remove-btn {
+      background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+      border: none;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 1px 4px rgba(231, 76, 60, 0.25);
+      flex-shrink: 0;
+      font-size: 0.8rem;
+    }
+
+    .remove-btn:hover {
+      background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%);
+      transform: scale(1.05) rotate(90deg);
+      box-shadow: 0 2px 8px rgba(231, 76, 60, 0.35);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 1.5rem;
+      color: rgba(44, 62, 80, 0.6);
+      font-style: italic;
+      background: rgba(241, 234, 209, 0.1);
+      border-radius: 8px;
+      border: 1px dashed rgba(225, 204, 127, 0.3);
+    }
+
+    .empty-state i {
+      font-size: 2.5rem;
+      color: rgba(225, 204, 127, 0.4);
+      margin-bottom: 0.75rem;
+    }
+
+    .text-muted {
+      color: rgba(44, 62, 80, 0.6) !important;
+      font-size: 0.85rem;
+    }
+    
+    /* Footer styles */
+    .footer {
+      background-color: #083640;
+      color: white;
+      text-align: center;
+      padding: 1rem;
+      margin-top: 2rem;
+    }
+    
+    .footer a {
+      color: #f1ead1;
+      text-decoration: none;
+    }
+    
+    .footer a:hover {
+      color: #e1cc7f;
+    }
+    
+    /* Image Upload Styles */
+    .image-upload-container {
+      position: relative;
+      border: 2px dashed rgba(225, 204, 127, 0.4);
+      border-radius: 10px;
+      padding: 1rem;
+      text-align: center;
+      transition: all 0.3s ease;
+      background-color: rgba(241, 234, 209, 0.1);
+    }
+
+    .image-upload-container:hover {
+      border-color: #e1cc7f;
+      background-color: rgba(241, 234, 209, 0.2);
+    }
+
+    .image-upload-container input[type="file"] {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+      z-index: 2;
+    }
+
+    .upload-placeholder {
+      padding: 1.5rem 1rem;
+      color: rgba(44, 62, 80, 0.7);
+    }
+
+    .upload-placeholder i {
+      font-size: 2.5rem;
+      color: #e1cc7f;
+      margin-bottom: 0.75rem;
+    }
+
+    .upload-placeholder p {
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      font-size: 0.9rem;
+    }
+
+    .upload-placeholder small {
+      color: rgba(44, 62, 80, 0.5);
+      font-size: 0.8rem;
+    }
+
+    .image-preview {
+      position: relative;
+      display: inline-block;
+      max-width: 100%;
+    }
+
+    .preview-image {
+      max-width: 100%;
+      max-height: 300px;
+      border-radius: 0.5rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    .remove-image-btn {
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      background-color: #dc3545;
+      border: none;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      z-index: 3;
+    }
+
+    .remove-image-btn:hover {
+      background-color: #c82333;
+      transform: scale(1.1);
+    }
+
+    /* Loading state */
+    .loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+    
+    /* Responsive design */
+    @media (max-width: 768px) {
+      .main-content {
+        padding: 0.75rem;
+      }
+
+      .content-header {
+        padding: 1rem 1.25rem;
+        margin-bottom: 1rem;
+      }
+
+      .content-header h1 {
+        font-size: 1.5rem;
+      }
+
+      .recipe-form {
+        padding: 1rem;
+        margin: 0 0.5rem;
+        max-width: none;
+      }
+
+      .form-section {
+        padding: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .form-section-title {
+        font-size: 1rem;
+      }
+
+      .form-label {
+        font-size: 0.85rem;
+      }
+
+      .form-control, .form-select {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.85rem;
+      }
+
+      .btn-primary {
+        padding: 0.6rem 1.5rem;
+        font-size: 0.9rem;
+      }
+
+      .ingredient-item, .instruction-item {
+        padding: 0.6rem 0.8rem;
+      }
+
+      .item-content {
+        font-size: 0.85rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .recipe-form {
+        margin: 0;
+        border-radius: 12px;
+      }
+
+      .form-section {
+        padding: 0.75rem;
+      }
+
+      .upload-placeholder {
+        padding: 1rem;
+      }
+
+      .upload-placeholder i {
+        font-size: 2rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app" class="container-fluid">
+    <div class="row">
+      <!-- Sidebar -->
+      <div class="col-md-2 sidebar">
+        <div class="logo-container">
+          <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Sisa Rasa Logo">
+          <h5>Sisa Rasa</h5>
+          <small>Rasa Baru</small>
+          <small>Sisa Lama</small>
+        </div>
+        <nav class="nav-links">
+          <a href="{{ url_for('main.dashboard') }}"><i class='bx bx-grid-alt'></i>Dashboard</a>
+          <a href="{{ url_for('main.save_recipe_page') }}"><i class='bx bx-book-heart'></i>Save Recipe</a>
+          <a href="{{ url_for('main.share_recipe_page') }}" class="active"><i class='bx bx-share-alt'></i>Share Recipe</a>
+          <a href="{{ url_for('main.community_recipes_page') }}"><i class='bx bx-group'></i>Community</a>
+          <a href="{{ url_for('main.profile_page') }}"><i class='bx bx-user'></i>Profile</a>
+          <a href="{{ url_for('main.home') }}" id="logoutBtn"><i class='bx bx-log-out'></i>Log Out</a>
+        </nav>
+      </div>
+
+      <!-- Main Content -->
+      <div class="col-md-10 main-content">
+        <!-- Header -->
+        <div class="content-header">
+          <h1><i class='bx bx-share-alt'></i> Share Your Recipe</h1>
+          <p>Share your favorite recipes with the Sisa Rasa community and help reduce food waste!</p>
+        </div>
+
+        <!-- Recipe Form -->
+        <div class="recipe-form">
+          <form @submit.prevent="submitRecipe" :class="{ loading: isSubmitting }">
+            <!-- Basic Information Section -->
+            <div class="form-section">
+              <div class="form-section-title">
+                <i class='bx bx-edit-alt'></i>
+                Basic Information
+              </div>
+
+              <!-- Recipe Name -->
+              <div class="mb-3">
+                <label for="recipeName" class="form-label">
+                  <i class='bx bx-food-menu'></i>
+                  Recipe Name <span class="required">*</span>
+                </label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="recipeName"
+                  v-model="recipe.name"
+                  placeholder="What's the name of your delicious recipe?"
+                  required
+                >
+              </div>
+
+              <!-- Description -->
+              <div class="mb-3">
+                <label for="recipeDescription" class="form-label">
+                  <i class='bx bx-text'></i>
+                  Description
+                </label>
+                <textarea
+                  class="form-control"
+                  id="recipeDescription"
+                  rows="3"
+                  v-model="recipe.description"
+                  placeholder="Tell us what makes this recipe special..."
+                ></textarea>
+              </div>
+
+              <!-- Cuisine -->
+              <div class="mb-3">
+                <label for="cuisine" class="form-label">
+                  <i class='bx bx-world'></i>
+                  Cuisine Type
+                </label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="cuisine"
+                  v-model="recipe.cuisine"
+                  placeholder="e.g., Italian, Chinese, Indonesian, Fusion"
+                >
+              </div>
+            </div>
+
+            <!-- Recipe Image Section -->
+            <div class="form-section">
+              <div class="form-section-title">
+                <i class='bx bx-image'></i>
+                Recipe Image
+              </div>
+
+              <div class="mb-3">
+                <label for="recipeImage" class="form-label">
+                  <i class='bx bx-camera'></i>
+                  Upload Photo (Optional)
+                </label>
+                <div class="image-upload-container">
+                  <input
+                    type="file"
+                    class="form-control"
+                    id="recipeImage"
+                    @change="handleImageUpload"
+                    accept="image/*"
+                    ref="imageInput"
+                  >
+                  <div v-if="imagePreview" class="image-preview">
+                    <img :src="imagePreview" alt="Recipe preview" class="preview-image">
+                    <button type="button" class="remove-image-btn" @click="removeImage">
+                      <i class='bx bx-x'></i>
+                    </button>
+                  </div>
+                  <div v-if="!imagePreview" class="upload-placeholder">
+                    <i class='bx bx-image-add'></i>
+                    <p>Click to upload a recipe image</p>
+                    <small>Supported formats: JPG, PNG, GIF (Max 5MB)</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Ingredients Section -->
+            <div class="form-section">
+              <div class="form-section-title">
+                <i class='bx bx-basket'></i>
+                Ingredients
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">
+                  <i class='bx bx-list-ul'></i>
+                  Recipe Ingredients <span class="required">*</span>
+                </label>
+                <div class="input-group mb-3">
+                  <input
+                    type="text"
+                    class="form-control"
+                    v-model="newIngredient"
+                    placeholder="e.g., 2 cups rice, 3 eggs, 1 tbsp soy sauce"
+                    @keyup.enter="addIngredient"
+                  >
+                  <button
+                    type="button"
+                    class="btn btn-add"
+                    @click="addIngredient"
+                    :disabled="!newIngredient.trim()"
+                  >
+                    <i class='bx bx-plus'></i> Add
+                  </button>
+                </div>
+
+                <div v-if="recipe.ingredients.length > 0">
+                  <div v-for="(ingredient, index) in recipe.ingredients" :key="index" class="ingredient-item">
+                    <div class="item-number">${ index + 1 }</div>
+                    <div class="item-content">${ ingredient }</div>
+                    <button type="button" class="remove-btn" @click="removeIngredient(index)">
+                      <i class='bx bx-trash'></i>
+                    </button>
+                  </div>
+                </div>
+
+                <div v-else class="empty-state">
+                  <i class='bx bx-basket'></i>
+                  <p>No ingredients added yet. Start by adding your first ingredient!</p>
+                </div>
+
+                <small class="text-muted">
+                  <i class='bx bx-info-circle'></i>
+                  Add ingredients with quantities (e.g., "2 cups rice" instead of just "rice")
+                </small>
+              </div>
+            </div>
+
+            <!-- Instructions Section -->
+            <div class="form-section">
+              <div class="form-section-title">
+                <i class='bx bx-list-ol'></i>
+                Cooking Instructions
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">
+                  <i class='bx bx-book-open'></i>
+                  Step-by-Step Instructions <span class="required">*</span>
+                </label>
+                <div class="input-group mb-3">
+                  <textarea
+                    class="form-control"
+                    v-model="newInstruction"
+                    placeholder="Describe the cooking step in detail..."
+                    rows="3"
+                    @keyup.ctrl.enter="addInstruction"
+                  ></textarea>
+                  <button
+                    type="button"
+                    class="btn btn-add"
+                    @click="addInstruction"
+                    :disabled="!newInstruction.trim()"
+                  >
+                    <i class='bx bx-plus'></i> Add Step
+                  </button>
+                </div>
+
+                <div v-if="recipe.instructions.length > 0">
+                  <div v-for="(instruction, index) in recipe.instructions" :key="index" class="instruction-item">
+                    <div class="item-number">${ index + 1 }</div>
+                    <div class="item-content">${ instruction }</div>
+                    <button type="button" class="remove-btn" @click="removeInstruction(index)">
+                      <i class='bx bx-trash'></i>
+                    </button>
+                  </div>
+                </div>
+
+                <div v-else class="empty-state">
+                  <i class='bx bx-book-open'></i>
+                  <p>No cooking steps added yet. Add your first instruction!</p>
+                </div>
+
+                <small class="text-muted">
+                  <i class='bx bx-info-circle'></i>
+                  Be detailed in your instructions. Press Ctrl+Enter to add quickly.
+                </small>
+              </div>
+            </div>
+
+            <!-- Recipe Details Section -->
+            <div class="form-section">
+              <div class="form-section-title">
+                <i class='bx bx-time'></i>
+                Recipe Details
+              </div>
+
+              <div class="row mb-3">
+                <div class="col-md-3">
+                  <label for="prepTime" class="form-label">
+                    <i class='bx bx-timer'></i>
+                    Prep Time (minutes)
+                  </label>
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="prepTime"
+                    v-model.number="recipe.prep_time"
+                    min="1"
+                    placeholder="30"
+                  >
+                </div>
+                <div class="col-md-3">
+                  <label for="cookTime" class="form-label">
+                    <i class='bx bx-dish'></i>
+                    Cook Time (minutes)
+                  </label>
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="cookTime"
+                    v-model.number="recipe.cook_time"
+                    min="1"
+                    placeholder="45"
+                  >
+                </div>
+                <div class="col-md-3">
+                  <label for="servings" class="form-label">
+                    <i class='bx bx-group'></i>
+                    Servings
+                  </label>
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="servings"
+                    v-model.number="recipe.servings"
+                    min="1"
+                    placeholder="4"
+                  >
+                </div>
+                <div class="col-md-3">
+                  <label for="difficulty" class="form-label">
+                    <i class='bx bx-trending-up'></i>
+                    Difficulty
+                  </label>
+                  <select class="form-select" id="difficulty" v-model="recipe.difficulty">
+                    <option value="Easy">🟢 Easy</option>
+                    <option value="Medium">🟡 Medium</option>
+                    <option value="Hard">🔴 Hard</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Submit Section -->
+            <div class="form-section">
+              <div class="text-center">
+                <div class="mb-3">
+                  <p class="text-muted">
+                    <i class='bx bx-info-circle'></i>
+                    By sharing your recipe, you're helping the Sisa Rasa community reduce food waste!
+                  </p>
+                </div>
+
+                <button
+                  type="submit"
+                  class="btn btn-primary btn-lg"
+                  :disabled="!canSubmit || isSubmitting"
+                >
+                  <i class='bx bx-share-alt' v-if="!isSubmitting"></i>
+                  <i class='bx bx-loader-alt bx-spin' v-if="isSubmitting"></i>
+                  ${ isSubmitting ? 'Sharing Recipe...' : 'Share Recipe with Community' }
+                </button>
+
+                <div class="mt-3">
+                  <small class="text-muted">
+                    <i class='bx bx-shield-check'></i>
+                    Your recipe will be reviewed and published to help others discover great meals.
+                  </small>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p>&copy; 2024 Sisa Rasa. All rights reserved. | <a href="/welcome">About</a></p>
+    </div>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+    const token = localStorage.getItem('token');
+
+    // Check if user is logged in
+    if (!token) {
+      window.location.href = '/login';
+    }
+
+    createApp({
+      delimiters: ['${', '}'],
+      data() {
+        return {
+          recipe: {
+            name: '',
+            description: '',
+            ingredients: [],
+            instructions: [],
+            prep_time: 30,
+            cook_time: 45,
+            servings: 4,
+            cuisine: '',
+            difficulty: 'Medium'
+          },
+          newIngredient: '',
+          newInstruction: '',
+          isSubmitting: false,
+
+          // Image upload data
+          selectedImage: null,
+          imagePreview: null,
+          uploadingImage: false
+        }
+      },
+      computed: {
+        canSubmit() {
+          return this.recipe.name.trim() &&
+                 this.recipe.ingredients.length > 0 &&
+                 this.recipe.instructions.length > 0;
+        }
+      },
+      methods: {
+        addIngredient() {
+          if (this.newIngredient.trim()) {
+            this.recipe.ingredients.push(this.newIngredient.trim());
+            this.newIngredient = '';
+          }
+        },
+
+        removeIngredient(index) {
+          this.recipe.ingredients.splice(index, 1);
+        },
+
+        addInstruction() {
+          if (this.newInstruction.trim()) {
+            this.recipe.instructions.push(this.newInstruction.trim());
+            this.newInstruction = '';
+          }
+        },
+
+        removeInstruction(index) {
+          this.recipe.instructions.splice(index, 1);
+        },
+
+        handleImageUpload(event) {
+          const file = event.target.files[0];
+          if (!file) return;
+
+          // Validate file type
+          const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+          if (!allowedTypes.includes(file.type)) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Invalid File Type',
+              text: 'Please select a valid image file (JPG, PNG, or GIF).',
+              confirmButtonColor: '#ea5e18'
+            });
+            return;
+          }
+
+          // Validate file size (5MB limit)
+          const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+          if (file.size > maxSize) {
+            Swal.fire({
+              icon: 'error',
+              title: 'File Too Large',
+              text: 'Please select an image smaller than 5MB.',
+              confirmButtonColor: '#ea5e18'
+            });
+            return;
+          }
+
+          this.selectedImage = file;
+
+          // Create preview
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            this.imagePreview = e.target.result;
+          };
+          reader.readAsDataURL(file);
+        },
+
+        removeImage() {
+          this.selectedImage = null;
+          this.imagePreview = null;
+          this.$refs.imageInput.value = '';
+        },
+
+        async submitRecipe() {
+          if (!this.canSubmit) {
+            Swal.fire({
+              icon: 'warning',
+              title: 'Missing Information',
+              text: 'Please fill in the recipe name, add at least one ingredient, and one instruction step.',
+              confirmButtonColor: '#ea5e18'
+            });
+            return;
+          }
+
+          this.isSubmitting = true;
+
+          try {
+            let imageUrl = null;
+
+            // Upload image first if selected
+            if (this.selectedImage) {
+              this.uploadingImage = true;
+              const imageFormData = new FormData();
+              imageFormData.append('image', this.selectedImage);
+
+              const imageResponse = await fetch('/api/community/upload-image', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                },
+                body: imageFormData
+              });
+
+              const imageResult = await imageResponse.json();
+
+              if (imageResult.status === 'success') {
+                imageUrl = imageResult.image_url;
+              } else {
+                throw new Error(imageResult.message || 'Failed to upload image');
+              }
+
+              this.uploadingImage = false;
+            }
+
+            // Prepare recipe data with image URL
+            const recipeData = {
+              ...this.recipe,
+              image_url: imageUrl
+            };
+
+            const response = await fetch('/api/community/submit-recipe', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify(recipeData)
+            });
+
+            const result = await response.json();
+
+            if (result.status === 'success') {
+              await Swal.fire({
+                icon: 'success',
+                title: 'Recipe Shared!',
+                text: 'Your recipe has been successfully shared with the community.',
+                confirmButtonColor: '#ea5e18'
+              });
+
+              // Reset form
+              this.resetForm();
+
+              // Optionally redirect to community recipes page
+              window.location.href = '/community-recipes';
+            } else {
+              throw new Error(result.message || 'Failed to share recipe');
+            }
+          } catch (error) {
+            console.error('Error sharing recipe:', error);
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: error.message || 'Failed to share recipe. Please try again.',
+              confirmButtonColor: '#ea5e18'
+            });
+          } finally {
+            this.isSubmitting = false;
+            this.uploadingImage = false;
+          }
+        },
+
+        resetForm() {
+          this.recipe = {
+            name: '',
+            description: '',
+            ingredients: [],
+            instructions: [],
+            prep_time: 30,
+            cook_time: 45,
+            servings: 4,
+            cuisine: '',
+            difficulty: 'Medium'
+          };
+          this.newIngredient = '';
+          this.newInstruction = '';
+          this.removeImage();
+        }
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>

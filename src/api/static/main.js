@@ -3,15 +3,19 @@ const navMenu = document.getElementById('nav-menu'),
     toggleMenu = document.getElementById('nav-toggle'),
     closeMenu = document.getElementById('nav-close')
 
-// SHOW
-toggleMenu.addEventListener('click', ()=>{
-    navMenu.classList.toggle('show')
-})
+// SHOW - Add null check to prevent errors
+if (toggleMenu) {
+    toggleMenu.addEventListener('click', ()=>{
+        navMenu.classList.toggle('show')
+    })
+}
 
-// HIDDEN
-closeMenu.addEventListener('click', ()=>{
-    navMenu.classList.remove('show')
-})
+// HIDDEN - Add null check to prevent errors
+if (closeMenu) {
+    closeMenu.addEventListener('click', ()=>{
+        navMenu.classList.remove('show')
+    })
+}
 
 /*===== MOUSEMOVE HOME IMG =====*/
 document.addEventListener('mousemove', move);

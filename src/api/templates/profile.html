@@ -11,7 +11,7 @@
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
 
   <!-- Vue -->
-  <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
 
   <!-- SweetAlert for notifications -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -275,12 +275,12 @@
           <small>Sisa Lama</small>
         </div>
         <nav class="nav-links">
-          <a href="dashboard"><i class='bx bx-grid-alt'></i>Dashboard</a>
-          <a href="save-recipe"><i class='bx bx-book-heart'></i>Save Recipe</a>
-          <a href="profile" class="active"><i class='bx bx-user'></i>Profile</a>
-          <a href="#"><i class='bx bx-cog'></i>Settings</a>
-          <a href="#" @click="logout"><i class='bx bx-log-out'></i>Log Out</a>
-          <a href="#"><i class='bx bx-help-circle'></i>Help</a>
+          <a href="{{ url_for('main.dashboard') }}"><i class='bx bx-grid-alt'></i>Dashboard</a>
+          <a href="{{ url_for('main.save_recipe_page') }}"><i class='bx bx-book-heart'></i>Save Recipe</a>
+          <a href="{{ url_for('main.share_recipe_page') }}"><i class='bx bx-share-alt'></i>Share Recipe</a>
+          <a href="{{ url_for('main.community_recipes_page') }}"><i class='bx bx-group'></i>Community</a>
+          <a href="{{ url_for('main.profile_page') }}" class="active"><i class='bx bx-user'></i>Profile</a>
+          <a href="{{ url_for('main.home') }}" id="logoutBtn"><i class='bx bx-log-out'></i>Log Out</a>
         </nav>
       </div>
 
@@ -375,6 +375,66 @@
                     </div>
                   </form>
                 </div>
+
+                <!-- Community Recipes Section -->
+                <div class="profile-section">
+                  <h5><i class='bx bx-share-alt'></i>My Shared Recipes</h5>
+
+                  <!-- Loading State -->
+                  <div v-if="communityRecipesLoading" class="text-center py-3">
+                    <div class="spinner-border text-warning" role="status">
+                      <span class="visually-hidden">Loading recipes...</span>
+                    </div>
+                  </div>
+
+                  <!-- Empty State -->
+                  <div v-else-if="communityRecipes.length === 0" class="text-center py-4">
+                    <i class='bx bx-dish' style="font-size: 3rem; color: #e1cc7f;"></i>
+                    <p class="text-muted mt-2">You haven't shared any recipes yet.</p>
+                    <a href="{{ url_for('main.share_recipe_page') }}" class="btn btn-sm btn-primary">
+                      <i class='bx bx-share-alt'></i> Share Your First Recipe
+                    </a>
+                  </div>
+
+                  <!-- Recipe List -->
+                  <div v-else>
+                    <div class="row">
+                      <div v-for="recipe in communityRecipes" :key="recipe._id" class="col-md-6 mb-3">
+                        <div class="card h-100">
+                          <div class="card-body">
+                            <h6 class="card-title">${ recipe.name }</h6>
+                            <p class="card-text text-muted small" v-if="recipe.description">
+                              ${ recipe.description.substring(0, 100) }${ recipe.description.length > 100 ? '...' : '' }
+                            </p>
+                            <div class="d-flex justify-content-between align-items-center">
+                              <small class="text-muted">
+                                <i class='bx bx-time'></i> ${ formatDate(recipe.submission_date) }
+                              </small>
+                              <span class="badge bg-success" v-if="recipe.submission_status === 'approved'">
+                                <i class='bx bx-check'></i> Approved
+                              </span>
+                              <span class="badge bg-warning" v-else-if="recipe.submission_status === 'pending'">
+                                <i class='bx bx-time'></i> Pending
+                              </span>
+                            </div>
+                          </div>
+                          <div class="card-footer bg-transparent">
+                            <a :href="`/api/recipe/${recipe.original_id}`" class="btn btn-sm btn-outline-primary" target="_blank">
+                              <i class='bx bx-show'></i> View Recipe
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- View All Link -->
+                    <div class="text-center mt-3" v-if="communityRecipes.length >= 4">
+                      <a href="{{ url_for('main.community_recipes_page') }}" class="btn btn-sm btn-outline-secondary">
+                        View All Community Recipes
+                      </a>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -418,12 +478,15 @@
             currentPassword: "",
             newPassword: "",
             confirmPassword: ""
-          }
+          },
+          communityRecipes: [],
+          communityRecipesLoading: false
         }
       },
       mounted() {
         this.fetchUserInfo();
         this.fetchProfileImage();
+        this.fetchCommunityRecipes();
       },
       methods: {
         logout() {
@@ -432,8 +495,8 @@
           localStorage.removeItem('userId');
           localStorage.removeItem('userName');
 
-          // Redirect to login page
-          window.location.href = '/login';
+          // Redirect to home page
+          window.location.href = '/';
         },
         fetchUserInfo() {
           this.loading = true;
@@ -723,6 +786,55 @@
 
           // Reset the file input
           event.target.value = '';
+        },
+
+        fetchCommunityRecipes() {
+          this.communityRecipesLoading = true;
+
+          fetch('/api/community/my-recipes?limit=4', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
+          .then(res => {
+            if (!res.ok) {
+              throw new Error('Failed to fetch community recipes');
+            }
+            return res.json();
+          })
+          .then(data => {
+            this.communityRecipesLoading = false;
+            if (data.status === 'success') {
+              this.communityRecipes = data.recipes;
+            } else {
+              throw new Error(data.message || 'Failed to fetch community recipes');
+            }
+          })
+          .catch(err => {
+            this.communityRecipesLoading = false;
+            console.error('Error fetching community recipes:', err);
+            // Don't show error popup for community recipes as it's not critical
+          });
+        },
+
+        formatDate(dateString) {
+          if (!dateString) return 'Recently';
+
+          const date = new Date(dateString);
+          const now = new Date();
+          const diffTime = Math.abs(now - date);
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+          if (diffDays === 1) {
+            return 'Yesterday';
+          } else if (diffDays < 7) {
+            return `${diffDays} days ago`;
+          } else if (diffDays < 30) {
+            const weeks = Math.floor(diffDays / 7);
+            return `${weeks} week${weeks > 1 ? 's' : ''} ago`;
+          } else {
+            return date.toLocaleDateString();
+          }
         },
 
         logout() {
