@@ -15,8 +15,28 @@ dotenv_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'
 load_dotenv(dotenv_path=dotenv_path)
 
 # MongoDB Configuration
-# Get the MongoDB URI from the environment with a default value
-MONGO_URI = os.getenv('MONGO_URI', 'mongodb://localhost:27017/sisarasa')
+# Get the MongoDB URI from the environment with Railway-friendly defaults
+MONGO_URI = os.getenv('MONGO_URI')
+
+# If no MONGO_URI is set, use Railway's internal MongoDB or fallback
+if not MONGO_URI:
+    # Check for Railway's MongoDB plugin environment variables
+    railway_mongo_host = os.getenv('MONGOHOST')
+    railway_mongo_port = os.getenv('MONGOPORT', '27017')
+    railway_mongo_user = os.getenv('MONGOUSER')
+    railway_mongo_password = os.getenv('MONGOPASSWORD')
+    railway_mongo_database = os.getenv('MONGODATABASE', 'sisarasa')
+
+    if railway_mongo_host and railway_mongo_user and railway_mongo_password:
+        # Use Railway's MongoDB plugin
+        MONGO_URI = f"mongodb://{railway_mongo_user}:{railway_mongo_password}@{railway_mongo_host}:{railway_mongo_port}/{railway_mongo_database}"
+        print(f"🔗 Using Railway MongoDB plugin: {railway_mongo_host}")
+    else:
+        # Fallback to localhost for development
+        MONGO_URI = 'mongodb://localhost:27017/sisarasa'
+        print("⚠️  Using localhost MongoDB - ensure MongoDB is running locally")
+
+print(f"🔗 MongoDB URI configured: {MONGO_URI.replace(MONGO_URI.split('@')[0].split('//')[1] + '@', '***:***@') if '@' in MONGO_URI else MONGO_URI}")
 
 # JWT Configuration
 JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'dev-secret-key-change-in-production')
