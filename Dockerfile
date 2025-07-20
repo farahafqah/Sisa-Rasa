@@ -9,4 +9,5 @@ COPY . .
 
 EXPOSE 5000
 
-CMD ["sh", "-c", "cd src && python run_api.py"]
+WORKDIR /app/src
+CMD ["python", "run_api.py"]
