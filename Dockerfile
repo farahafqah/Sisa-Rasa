@@ -23,8 +23,9 @@ USER app
 # Expose port
 EXPOSE 5000
 
-# Use fast-starting app for Railway deployment
-CMD ["python", "/app/src/api/fast_app.py"]
+# Use ultra-simple app for Railway deployment
+WORKDIR /app/src
+CMD ["python", "simple_app.py"]
 
 
 
