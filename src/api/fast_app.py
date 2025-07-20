@@ -133,6 +133,25 @@ def initialize_ml_system(app):
 app = create_fast_app()
 
 if __name__ == '__main__':
+    # Railway sets PORT environment variable
     port = int(os.environ.get('PORT', 5000))
     print(f"🚀 Starting SisaRasa Fast API on port {port}")
-    app.run(host='0.0.0.0', port=port, debug=False)
+    print(f"🔗 Environment: {os.environ.get('RAILWAY_ENVIRONMENT', 'development')}")
+
+    # Use Gunicorn in production, Flask dev server locally
+    if os.environ.get('RAILWAY_ENVIRONMENT') == 'production':
+        print("🚀 Using Gunicorn for production")
+        import subprocess
+        cmd = [
+            'gunicorn',
+            '--bind', f'0.0.0.0:{port}',
+            '--workers', '1',
+            '--timeout', '60',
+            '--access-logfile', '-',
+            '--error-logfile', '-',
+            'api.fast_app:app'
+        ]
+        subprocess.run(cmd)
+    else:
+        print("🔧 Using Flask dev server")
+        app.run(host='0.0.0.0', port=port, debug=False)

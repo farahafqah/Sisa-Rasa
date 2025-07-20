@@ -24,7 +24,7 @@ USER app
 EXPOSE 5000
 
 # Use fast-starting app for Railway deployment
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "1", "--timeout", "60", "--chdir", "/app/src", "api.fast_app:app"]
+CMD ["python", "/app/src/api/fast_app.py"]
 
 
 
