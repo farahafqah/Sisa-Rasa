@@ -23,8 +23,8 @@ USER app
 # Expose port
 EXPOSE 5000
 
-# Use Gunicorn for production deployment with Railway optimizations
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "1", "--timeout", "300", "--max-requests", "1000", "--max-requests-jitter", "100", "--preload", "--chdir", "/app/src", "api.app:app"]
+# Use fast-starting app for Railway deployment
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "1", "--timeout", "60", "--chdir", "/app/src", "api.fast_app:app"]
 
 
 

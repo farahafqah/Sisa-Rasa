@@ -50,9 +50,21 @@ def create_app():
     app.register_blueprint(auth_bp)
     app.register_blueprint(analytics_bp)
 
-    # Initialize ML recommender system
-    with app.app_context():
-        initialize_recommender(app)
+    # Initialize ML recommender system in background for Railway
+    # Don't block startup - initialize after health check passes
+    app.recommender_initialized = False
+
+    # Create minimal recommender for immediate health checks
+    create_minimal_recommender(app)
+
+    # Schedule full initialization in background
+    if os.getenv('RAILWAY_ENVIRONMENT') == 'production':
+        print("🚀 Railway mode: Deferring ML model loading until after startup")
+        # Will be initialized on first API call
+    else:
+        # Initialize immediately in development
+        with app.app_context():
+            initialize_recommender(app)
 
     return app
 
@@ -127,6 +139,31 @@ def initialize_recommender(app):
         print(f"❌ Error initializing recommender system: {e}")
         print("🔄 Creating fallback recommender...")
         create_lightweight_recommender(app)
+
+def create_minimal_recommender(app):
+    """Create a minimal recommender for immediate startup."""
+    class MinimalRecommender:
+        def __init__(self):
+            self.recipes = []
+            self.ingredient_names = set(['chicken', 'rice', 'egg', 'onion', 'garlic', 'tomato', 'pasta'])
+            self._initialized = False
+
+        def recommend_recipes(self, user_input, **kwargs):
+            # Lazy load the full recommender on first API call
+            if not self._initialized and not getattr(app, 'recommender_initialized', False):
+                print("🔄 Lazy loading full recommender system...")
+                try:
+                    initialize_recommender(app)
+                    app.recommender_initialized = True
+                    if hasattr(app.recommender, 'recommend_recipes'):
+                        return app.recommender.recommend_recipes(user_input, **kwargs)
+                except Exception as e:
+                    print(f"❌ Failed to lazy load recommender: {e}")
+                    return []
+            return []
+
+    app.recommender = MinimalRecommender()
+    print("✅ Minimal recommender created for fast startup")
 
 def create_lightweight_recommender(app):
     """Create a lightweight recommender for Railway deployment."""

@@ -4,9 +4,9 @@
     "builder": "DOCKERFILE"
   },
   "deploy": {
-    "startCommand": "gunicorn --bind 0.0.0.0:$PORT --workers 1 --timeout 300 --max-requests 1000 --max-requests-jitter 100 --preload --chdir /app/src api.app:app",
+    "startCommand": "gunicorn --bind 0.0.0.0:$PORT --workers 1 --timeout 60 --chdir /app/src api.fast_app:app",
     "healthcheckPath": "/health",
-    "healthcheckTimeout": 120,
+    "healthcheckTimeout": 60,
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 3
   }

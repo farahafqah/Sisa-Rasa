@@ -35,13 +35,21 @@ DEBUG=False
 HOST=0.0.0.0
 ```
 
-### Step 3: Deploy & Verify
-1. Railway builds automatically using Dockerfile
-2. App loads 10,000+ recipes and ML models
-3. Test endpoints:
-   - Health: `/api/health`
-   - Home: `/`
-   - API: `/api/ingredients`
+### Step 3: Fast Deployment & Health Check
+1. Railway builds using fast-startup mode (no ML loading)
+2. Health checks pass within 30 seconds
+3. App starts in minimal mode for Railway verification
+
+### Step 4: Initialize Full System
+After deployment is healthy, run:
+```bash
+python initialize_system.py https://your-app.railway.app
+```
+
+This will:
+- Load 3,000+ recipes and ML models
+- Register all API endpoints
+- Enable full functionality
 
 ## System Specifications
 - **Recipes Loaded:** 10,003 recipes
