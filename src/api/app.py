@@ -10,16 +10,16 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
-# Import routes
-from api.routes import main_bp
-app.register_blueprint(main_bp)
+@app.route('/')
+def home():
+    return "Sisa Rasa API is running!"
 
-# Simple health check
 @app.route('/api/health')
 def health():
     return {'status': 'ok', 'message': 'App is running'}
 
-@app.route('/')
-def home():
-    return "Sisa Rasa API is running!"
+# Don't load heavy ML models on startup
+# from api.routes import main_bp
+# app.register_blueprint(main_bp)
+
 
