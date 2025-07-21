@@ -50,65 +50,267 @@ def home():
 def welcome():
     """Welcome page with analytics and recipe information."""
     try:
+        # Check if template exists
+        template_path = os.path.join(current_dir, 'api', 'templates', 'welcome.html')
+        if not os.path.exists(template_path):
+            print(f"❌ Welcome template not found at: {template_path}")
+            return create_fallback_welcome_page()
+
         return render_template('welcome.html')
     except Exception as e:
-        print(f"Error loading welcome template: {e}")
-        return f"""
-        <html>
-        <head><title>SisaRasa - Welcome</title></head>
-        <body>
-            <h1>🍽️ Welcome to SisaRasa</h1>
-            <p>Your AI-powered recipe recommendation system</p>
-            <p><a href="/login">Login</a> | <a href="/signup">Sign Up</a></p>
-            <p>System Status: {'Initialized' if app.system_initialized else 'Starting up...'}</p>
-        </body>
-        </html>
-        """
+        print(f"❌ Error loading welcome template: {e}")
+        return create_fallback_welcome_page()
 
-@app.route('/login')
+def create_fallback_welcome_page():
+    """Create a fallback welcome page when template fails."""
+    return f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>SisaRasa - Welcome</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+        <style>
+            body {{ font-family: 'Poppins', sans-serif; background: linear-gradient(135deg, #f1ead1, #e1cc7f); min-height: 100vh; }}
+            .hero {{ background: rgba(255,255,255,0.9); border-radius: 15px; padding: 3rem; margin: 2rem 0; }}
+            .btn-custom {{ background: #e1cc7f; border: none; color: #0b0a0a; font-weight: 600; }}
+            .btn-custom:hover {{ background: #f9e59a; color: #0b0a0a; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="hero text-center">
+                        <h1 class="display-4 mb-4">🍽️ Welcome to SisaRasa</h1>
+                        <p class="lead mb-4">Your AI-powered recipe recommendation system</p>
+                        <p class="mb-4">Reduce food waste and discover amazing recipes with ingredients you already have!</p>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6 mb-3">
+                                <a href="/login" class="btn btn-custom btn-lg w-100">🔐 Login</a>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <a href="/signup" class="btn btn-outline-secondary btn-lg w-100">📝 Sign Up</a>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <strong>System Status:</strong> {'✅ Fully Initialized' if app.system_initialized else '🔄 Starting up...'}
+                        </div>
+
+                        <div class="row text-start">
+                            <div class="col-md-4">
+                                <h5>🔍 Smart Search</h5>
+                                <p>Find recipes based on your available ingredients</p>
+                            </div>
+                            <div class="col-md-4">
+                                <h5>👥 Community</h5>
+                                <p>Share and discover recipes from other users</p>
+                            </div>
+                            <div class="col-md-4">
+                                <h5>📊 Analytics</h5>
+                                <p>Track your cooking habits and preferences</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+@app.route('/login', methods=['GET', 'POST'])
 def login():
-    """Login page."""
+    """Login page - handles both GET (show form) and POST (process form)."""
+    if request.method == 'POST':
+        # Handle form submission by redirecting to API
+        try:
+            # Get form data
+            email = request.form.get('email')
+            password = request.form.get('password')
+
+            if not email or not password:
+                return create_fallback_login_page(error="Email and password are required")
+
+            # Make internal API call
+            import requests
+            api_url = request.url_root.rstrip('/') + '/api/auth/login'
+            response = requests.post(api_url, json={
+                'email': email,
+                'password': password
+            })
+
+            if response.status_code == 200:
+                # Login successful - redirect to dashboard
+                return redirect(url_for('dashboard'))
+            else:
+                # Login failed
+                error_data = response.json()
+                error_msg = error_data.get('message', 'Login failed')
+                return create_fallback_login_page(error=error_msg)
+
+        except Exception as e:
+            print(f"Login form processing error: {e}")
+            return create_fallback_login_page(error="Login system temporarily unavailable")
+
+    # GET request - show login form
     try:
         return render_template('login.html')
     except Exception as e:
         print(f"Error loading login template: {e}")
-        return f"""
-        <html>
-        <head><title>SisaRasa - Login</title></head>
-        <body>
-            <h1>🔐 Login to SisaRasa</h1>
-            <form method="post" action="/api/auth/login">
-                <p><input type="email" name="email" placeholder="Email" required></p>
-                <p><input type="password" name="password" placeholder="Password" required></p>
-                <p><button type="submit">Login</button></p>
-            </form>
-            <p><a href="/signup">Don't have an account? Sign up</a></p>
-        </body>
-        </html>
-        """
+        return create_fallback_login_page()
 
-@app.route('/signup')
+def create_fallback_login_page(error=None):
+    """Create a fallback login page when template fails."""
+    error_html = f'<div class="alert alert-danger">{error}</div>' if error else ''
+
+    return f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>SisaRasa - Login</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+        <style>
+            body {{ font-family: 'Poppins', sans-serif; background: linear-gradient(135deg, #f1ead1, #e1cc7f); min-height: 100vh; }}
+            .login-form {{ background: rgba(255,255,255,0.95); border-radius: 15px; padding: 2rem; margin: 3rem 0; }}
+            .btn-custom {{ background: #e1cc7f; border: none; color: #0b0a0a; font-weight: 600; }}
+            .btn-custom:hover {{ background: #f9e59a; color: #0b0a0a; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    <div class="login-form">
+                        <h2 class="text-center mb-4">🔐 Login to SisaRasa</h2>
+                        {error_html}
+                        <form method="post" action="/login">
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" name="email" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="password" name="password" required>
+                            </div>
+                            <button type="submit" class="btn btn-custom w-100 mb-3">Login</button>
+                        </form>
+                        <div class="text-center">
+                            <p><a href="/signup">Don't have an account? Sign up</a></p>
+                            <p><a href="/welcome">← Back to Welcome</a></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+@app.route('/signup', methods=['GET', 'POST'])
 def signup():
-    """Sign up page."""
+    """Sign up page - handles both GET (show form) and POST (process form)."""
+    if request.method == 'POST':
+        # Handle form submission by redirecting to API
+        try:
+            # Get form data
+            name = request.form.get('name')
+            email = request.form.get('email')
+            password = request.form.get('password')
+
+            if not name or not email or not password:
+                return create_fallback_signup_page(error="All fields are required")
+
+            # Make internal API call
+            import requests
+            api_url = request.url_root.rstrip('/') + '/api/auth/signup'
+            response = requests.post(api_url, json={
+                'name': name,
+                'email': email,
+                'password': password
+            })
+
+            if response.status_code == 201:
+                # Signup successful - redirect to login
+                return redirect(url_for('login') + '?message=Registration successful! Please login.')
+            else:
+                # Signup failed
+                error_data = response.json()
+                error_msg = error_data.get('message', 'Registration failed')
+                return create_fallback_signup_page(error=error_msg)
+
+        except Exception as e:
+            print(f"Signup form processing error: {e}")
+            return create_fallback_signup_page(error="Registration system temporarily unavailable")
+
+    # GET request - show signup form
     try:
         return render_template('signup.html')
     except Exception as e:
         print(f"Error loading signup template: {e}")
-        return f"""
-        <html>
-        <head><title>SisaRasa - Sign Up</title></head>
-        <body>
-            <h1>📝 Join SisaRasa</h1>
-            <form method="post" action="/api/auth/signup">
-                <p><input type="text" name="name" placeholder="Full Name" required></p>
-                <p><input type="email" name="email" placeholder="Email" required></p>
-                <p><input type="password" name="password" placeholder="Password" required></p>
-                <p><button type="submit">Sign Up</button></p>
-            </form>
-            <p><a href="/login">Already have an account? Login</a></p>
-        </body>
-        </html>
-        """
+        return create_fallback_signup_page()
+
+def create_fallback_signup_page(error=None):
+    """Create a fallback signup page when template fails."""
+    error_html = f'<div class="alert alert-danger">{error}</div>' if error else ''
+
+    return f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>SisaRasa - Sign Up</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+        <style>
+            body {{ font-family: 'Poppins', sans-serif; background: linear-gradient(135deg, #f1ead1, #e1cc7f); min-height: 100vh; }}
+            .signup-form {{ background: rgba(255,255,255,0.95); border-radius: 15px; padding: 2rem; margin: 3rem 0; }}
+            .btn-custom {{ background: #e1cc7f; border: none; color: #0b0a0a; font-weight: 600; }}
+            .btn-custom:hover {{ background: #f9e59a; color: #0b0a0a; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    <div class="signup-form">
+                        <h2 class="text-center mb-4">📝 Join SisaRasa</h2>
+                        {error_html}
+                        <form method="post" action="/signup">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Full Name</label>
+                                <input type="text" class="form-control" id="name" name="name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" name="email" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="password" name="password" required>
+                                <div class="form-text">Password must be at least 6 characters long</div>
+                            </div>
+                            <button type="submit" class="btn btn-custom w-100 mb-3">Sign Up</button>
+                        </form>
+                        <div class="text-center">
+                            <p><a href="/login">Already have an account? Login</a></p>
+                            <p><a href="/welcome">← Back to Welcome</a></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
 
 @app.route('/dashboard')
 def dashboard():
@@ -743,23 +945,47 @@ def initialize_ml_system():
                 self.ingredient_names = set(['chicken', 'rice', 'egg'])
         app.recommender = SimpleRecommender()
 
-def register_api_blueprints():
-    """Register API blueprints for full functionality."""
+def register_auth_blueprints():
+    """Register authentication blueprints - critical for login/signup."""
     try:
-        # Import and register blueprints
+        # Import and register authentication blueprint
         api_dir = os.path.join(current_dir, 'api')
         sys.path.insert(0, api_dir)
 
         from auth import auth_bp
+        app.register_blueprint(auth_bp)
+        print("✅ Authentication blueprint registered")
+
+    except Exception as e:
+        print(f"❌ Authentication blueprint registration failed: {e}")
+        raise e  # Re-raise to ensure we know auth failed
+
+def register_other_blueprints():
+    """Register other API blueprints for additional functionality."""
+    try:
+        # Import and register other blueprints
+        api_dir = os.path.join(current_dir, 'api')
+        sys.path.insert(0, api_dir)
+
         from routes import main_bp
         from analytics_routes import analytics_bp
 
-        app.register_blueprint(auth_bp)
         app.register_blueprint(main_bp)
         app.register_blueprint(analytics_bp)
+        print("✅ Additional API blueprints registered")
 
     except Exception as e:
-        print(f"⚠️  Blueprint registration failed: {e}")
+        print(f"⚠️  Additional blueprint registration failed: {e}")
+        # Continue without full API functionality
+
+def register_api_blueprints():
+    """Register all API blueprints for full functionality."""
+    try:
+        register_auth_blueprints()
+        register_other_blueprints()
+
+    except Exception as e:
+        print(f"⚠️  Full blueprint registration failed: {e}")
         # Continue without full API functionality
 
 # ============================================================================
@@ -863,10 +1089,52 @@ def startup_initialization():
         'ingredient_names': set(['chicken', 'rice', 'egg'])
     })()
 
-    # In production (Railway), defer full initialization
+    # CRITICAL: Always initialize database and authentication first
+    print("🔧 Initializing essential systems...")
+
+    # Initialize MongoDB connection
+    try:
+        sys.path.append(os.path.join(current_dir, 'api'))
+
+        # Set up MongoDB URI in app config
+        from api.config import MONGO_URI
+        app.config['MONGO_URI'] = MONGO_URI
+        print(f"🔗 MongoDB URI: {MONGO_URI.replace(MONGO_URI.split('@')[0].split('//')[1] + '@', '***:***@') if '@' in MONGO_URI else MONGO_URI}")
+
+        from api.models.user import init_db
+        init_db(app)
+        print("✅ MongoDB connection initialized")
+
+        # Test the connection
+        from api.models.user import mongo
+        with app.app_context():
+            # Try to ping the database
+            mongo.db.command('ping')
+            print("✅ MongoDB connection verified")
+
+    except Exception as e:
+        print(f"❌ MongoDB initialization failed: {e}")
+        print(f"❌ Error details: {type(e).__name__}: {str(e)}")
+        # Continue without database - some features will be limited
+
+    # Register authentication blueprints immediately (critical for login/signup)
+    try:
+        register_auth_blueprints()
+        print("✅ Authentication system initialized")
+    except Exception as e:
+        print(f"❌ Authentication initialization failed: {e}")
+
+    # In production (Railway), defer ML system initialization
     if os.getenv('RAILWAY_ENVIRONMENT') == 'production':
-        print("🔄 Railway mode: Deferring full system initialization")
-        print("💡 Visit /api/initialize to load full features after deployment")
+        print("🔄 Railway mode: Deferring ML system initialization")
+        print("💡 Visit /api/initialize to load full ML features after deployment")
+
+        # But still register other API blueprints for basic functionality
+        try:
+            register_other_blueprints()
+            print("✅ Basic API blueprints registered")
+        except Exception as e:
+            print(f"⚠️  Basic API blueprint registration failed: {e}")
     else:
         # In development, initialize everything immediately
         print("🔧 Development mode: Initializing full system...")
