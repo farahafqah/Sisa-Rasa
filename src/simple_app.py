@@ -43,8 +43,117 @@ app.recommender = None
 
 @app.route('/')
 def home():
-    """Home page - redirect to welcome page."""
-    return redirect(url_for('welcome'))
+    """Home page - serve the actual home.html template."""
+    try:
+        # Check if template exists
+        template_path = os.path.join(current_dir, 'api', 'templates', 'home.html')
+        if not os.path.exists(template_path):
+            print(f"❌ Home template not found at: {template_path}")
+            return create_fallback_home_page()
+
+        return render_template('home.html')
+    except Exception as e:
+        print(f"❌ Error loading home template: {e}")
+        return create_fallback_home_page()
+
+@app.route('/home')
+def home_alt():
+    """Alternative home route."""
+    return home()
+
+def create_fallback_home_page():
+    """Create a fallback home page when template fails."""
+    return f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Sisa Rasa - Home</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+        <link href='https://cdn.jsdelivr.net/npm/boxicons@2.0.5/css/boxicons.min.css' rel='stylesheet'>
+        <style>
+            body {{
+                font-family: 'Poppins', sans-serif;
+                background: linear-gradient(135deg, #f1ead1, #e1cc7f);
+                min-height: 100vh;
+                margin: 0;
+            }}
+            .navbar {{ background: #f1ead1 !important; }}
+            .hero {{ background: rgba(255,255,255,0.95); border-radius: 15px; padding: 3rem; margin: 2rem 0; }}
+            .btn-custom {{ background: #e1cc7f; border: none; color: #0b0a0a; font-weight: 600; }}
+            .btn-custom:hover {{ background: #f9e59a; color: #0b0a0a; }}
+            .feature-card {{ background: rgba(255,255,255,0.9); border-radius: 10px; padding: 1.5rem; margin: 1rem 0; }}
+        </style>
+    </head>
+    <body>
+        <!-- Navigation -->
+        <nav class="navbar navbar-expand-lg navbar-light">
+            <div class="container">
+                <a class="navbar-brand fw-bold" href="/">🍽️ Sisa Rasa</a>
+                <div class="navbar-nav ms-auto">
+                    <a class="nav-link" href="/welcome">Welcome</a>
+                    <a class="nav-link" href="/login">Login</a>
+                    <a class="nav-link" href="/signup">Sign Up</a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Hero Section -->
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-10">
+                    <div class="hero text-center">
+                        <h1 class="display-3 mb-4">🍽️ Sisa Rasa</h1>
+                        <p class="lead mb-4">Transform Your Leftovers Into Delicious Meals</p>
+                        <p class="mb-4">AI-powered recipe recommendations that help reduce food waste while creating amazing dishes from ingredients you already have.</p>
+
+                        <div class="row mb-5">
+                            <div class="col-md-4 mb-3">
+                                <a href="/signup" class="btn btn-custom btn-lg w-100">🚀 Get Started</a>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <a href="/login" class="btn btn-outline-secondary btn-lg w-100">🔐 Login</a>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <a href="/welcome" class="btn btn-outline-info btn-lg w-100">📊 Learn More</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features -->
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="feature-card text-center">
+                        <i class='bx bx-search-alt-2 bx-lg mb-3' style="color: #e1cc7f;"></i>
+                        <h4>Smart Recipe Search</h4>
+                        <p>Enter your available ingredients and get personalized recipe recommendations powered by AI.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card text-center">
+                        <i class='bx bx-group bx-lg mb-3' style="color: #e1cc7f;"></i>
+                        <h4>Community Sharing</h4>
+                        <p>Share your favorite recipes and discover new ones from our community of food enthusiasts.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card text-center">
+                        <i class='bx bx-leaf bx-lg mb-3' style="color: #e1cc7f;"></i>
+                        <h4>Reduce Food Waste</h4>
+                        <p>Make the most of your ingredients and contribute to a more sustainable future.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    </body>
+    </html>
+    """
 
 @app.route('/welcome')
 def welcome():
@@ -136,22 +245,44 @@ def login():
             if not email or not password:
                 return create_fallback_login_page(error="Email and password are required")
 
-            # Make internal API call
-            import requests
-            api_url = request.url_root.rstrip('/') + '/api/auth/login'
-            response = requests.post(api_url, json={
-                'email': email,
-                'password': password
-            })
+            # Try direct API call first, then fallback to internal processing
+            try:
+                import requests
+                api_url = request.url_root.rstrip('/') + '/api/auth/login'
+                response = requests.post(api_url, json={
+                    'email': email,
+                    'password': password
+                }, timeout=10)
 
-            if response.status_code == 200:
-                # Login successful - redirect to dashboard
-                return redirect(url_for('dashboard'))
-            else:
-                # Login failed
-                error_data = response.json()
-                error_msg = error_data.get('message', 'Login failed')
-                return create_fallback_login_page(error=error_msg)
+                if response.status_code == 200:
+                    # Login successful - redirect to dashboard
+                    return redirect(url_for('dashboard'))
+                else:
+                    # Login failed
+                    try:
+                        error_data = response.json()
+                        error_msg = error_data.get('message', 'Login failed')
+                    except:
+                        error_msg = f'Login failed (Status: {response.status_code})'
+                    return create_fallback_login_page(error=error_msg)
+
+            except Exception as api_error:
+                print(f"API call failed, trying direct authentication: {api_error}")
+
+                # Fallback: Try direct authentication
+                try:
+                    from api.models.user import get_user_by_email, verify_password
+                    user = get_user_by_email(email)
+
+                    if user and verify_password(user, password):
+                        # Direct login successful
+                        return redirect(url_for('dashboard'))
+                    else:
+                        return create_fallback_login_page(error="Invalid email or password")
+
+                except Exception as direct_auth_error:
+                    print(f"Direct authentication failed: {direct_auth_error}")
+                    return create_fallback_login_page(error="Authentication system temporarily unavailable")
 
         except Exception as e:
             print(f"Login form processing error: {e}")
@@ -228,23 +359,54 @@ def signup():
             if not name or not email or not password:
                 return create_fallback_signup_page(error="All fields are required")
 
-            # Make internal API call
-            import requests
-            api_url = request.url_root.rstrip('/') + '/api/auth/signup'
-            response = requests.post(api_url, json={
-                'name': name,
-                'email': email,
-                'password': password
-            })
+            # Try direct API call first, then fallback to internal processing
+            try:
+                import requests
+                api_url = request.url_root.rstrip('/') + '/api/auth/signup'
+                response = requests.post(api_url, json={
+                    'name': name,
+                    'email': email,
+                    'password': password
+                }, timeout=10)
 
-            if response.status_code == 201:
-                # Signup successful - redirect to login
-                return redirect(url_for('login') + '?message=Registration successful! Please login.')
-            else:
-                # Signup failed
-                error_data = response.json()
-                error_msg = error_data.get('message', 'Registration failed')
-                return create_fallback_signup_page(error=error_msg)
+                if response.status_code == 201:
+                    # Signup successful - redirect to login
+                    return redirect(url_for('login') + '?message=Registration successful! Please login.')
+                else:
+                    # Signup failed
+                    try:
+                        error_data = response.json()
+                        error_msg = error_data.get('message', 'Registration failed')
+                    except:
+                        error_msg = f'Registration failed (Status: {response.status_code})'
+                    return create_fallback_signup_page(error=error_msg)
+
+            except Exception as api_error:
+                print(f"API call failed, trying direct registration: {api_error}")
+
+                # Fallback: Try direct user creation
+                try:
+                    from api.models.user import create_user, get_user_by_email
+
+                    # Check if user already exists
+                    if get_user_by_email(email):
+                        return create_fallback_signup_page(error="Email already registered")
+
+                    # Validate password length
+                    if len(password) < 6:
+                        return create_fallback_signup_page(error="Password must be at least 6 characters long")
+
+                    # Create user directly
+                    user = create_user(name=name, email=email, password=password)
+
+                    if user:
+                        return redirect(url_for('login') + '?message=Registration successful! Please login.')
+                    else:
+                        return create_fallback_signup_page(error="Failed to create user account")
+
+                except Exception as direct_create_error:
+                    print(f"Direct user creation failed: {direct_create_error}")
+                    return create_fallback_signup_page(error="Registration system temporarily unavailable")
 
         except Exception as e:
             print(f"Signup form processing error: {e}")
@@ -950,14 +1112,39 @@ def register_auth_blueprints():
     try:
         # Import and register authentication blueprint
         api_dir = os.path.join(current_dir, 'api')
-        sys.path.insert(0, api_dir)
+        if api_dir not in sys.path:
+            sys.path.insert(0, api_dir)
 
-        from auth import auth_bp
-        app.register_blueprint(auth_bp)
-        print("✅ Authentication blueprint registered")
+        # Try multiple import paths to ensure compatibility
+        auth_bp = None
+        try:
+            from api.auth import auth_bp
+            print("✅ Imported auth blueprint from api.auth")
+        except ImportError:
+            try:
+                from auth import auth_bp
+                print("✅ Imported auth blueprint from auth")
+            except ImportError as e:
+                print(f"❌ Failed to import auth blueprint: {e}")
+                raise e
+
+        if auth_bp:
+            app.register_blueprint(auth_bp)
+            print("✅ Authentication blueprint registered successfully")
+
+            # Test the blueprint registration
+            with app.app_context():
+                # Check if auth routes are available
+                auth_routes = [rule.rule for rule in app.url_map.iter_rules() if rule.rule.startswith('/api/auth')]
+                print(f"✅ Registered auth routes: {auth_routes}")
+        else:
+            raise Exception("auth_bp is None after import attempts")
 
     except Exception as e:
         print(f"❌ Authentication blueprint registration failed: {e}")
+        print(f"❌ Current sys.path: {sys.path[:3]}...")  # Show first 3 paths
+        print(f"❌ API directory exists: {os.path.exists(api_dir)}")
+        print(f"❌ Auth file exists: {os.path.exists(os.path.join(api_dir, 'auth.py'))}")
         raise e  # Re-raise to ensure we know auth failed
 
 def register_other_blueprints():
@@ -965,14 +1152,36 @@ def register_other_blueprints():
     try:
         # Import and register other blueprints
         api_dir = os.path.join(current_dir, 'api')
-        sys.path.insert(0, api_dir)
+        if api_dir not in sys.path:
+            sys.path.insert(0, api_dir)
 
-        from routes import main_bp
-        from analytics_routes import analytics_bp
+        # Try to import main routes blueprint
+        try:
+            from api.routes import main_bp
+            app.register_blueprint(main_bp)
+            print("✅ Main routes blueprint registered")
+        except ImportError:
+            try:
+                from routes import main_bp
+                app.register_blueprint(main_bp)
+                print("✅ Main routes blueprint registered (fallback import)")
+            except ImportError as e:
+                print(f"⚠️  Main routes blueprint import failed: {e}")
 
-        app.register_blueprint(main_bp)
-        app.register_blueprint(analytics_bp)
-        print("✅ Additional API blueprints registered")
+        # Try to import analytics blueprint
+        try:
+            from api.analytics_routes import analytics_bp
+            app.register_blueprint(analytics_bp)
+            print("✅ Analytics blueprint registered")
+        except ImportError:
+            try:
+                from analytics_routes import analytics_bp
+                app.register_blueprint(analytics_bp)
+                print("✅ Analytics blueprint registered (fallback import)")
+            except ImportError as e:
+                print(f"⚠️  Analytics blueprint import failed: {e}")
+
+        print("✅ Additional API blueprints registration completed")
 
     except Exception as e:
         print(f"⚠️  Additional blueprint registration failed: {e}")
@@ -1094,28 +1303,58 @@ def startup_initialization():
 
     # Initialize MongoDB connection
     try:
-        sys.path.append(os.path.join(current_dir, 'api'))
+        api_path = os.path.join(current_dir, 'api')
+        if api_path not in sys.path:
+            sys.path.append(api_path)
 
         # Set up MongoDB URI in app config
-        from api.config import MONGO_URI
-        app.config['MONGO_URI'] = MONGO_URI
-        print(f"🔗 MongoDB URI: {MONGO_URI.replace(MONGO_URI.split('@')[0].split('//')[1] + '@', '***:***@') if '@' in MONGO_URI else MONGO_URI}")
+        try:
+            from api.config import MONGO_URI
+            app.config['MONGO_URI'] = MONGO_URI
+            masked_uri = MONGO_URI.replace(MONGO_URI.split('@')[0].split('//')[1] + '@', '***:***@') if '@' in MONGO_URI else MONGO_URI
+            print(f"🔗 MongoDB URI configured: {masked_uri}")
+        except ImportError as e:
+            print(f"❌ Failed to import MongoDB config: {e}")
+            # Fallback to environment variable
+            MONGO_URI = os.getenv('MONGO_URI')
+            if MONGO_URI:
+                app.config['MONGO_URI'] = MONGO_URI
+                print("🔗 MongoDB URI loaded from environment")
+            else:
+                raise Exception("No MongoDB URI available")
 
-        from api.models.user import init_db
-        init_db(app)
-        print("✅ MongoDB connection initialized")
+        # Initialize database connection
+        try:
+            from api.models.user import init_db, mongo
+            init_db(app)
+            print("✅ MongoDB connection initialized")
+        except ImportError as e:
+            print(f"❌ Failed to import user model: {e}")
+            raise e
 
-        # Test the connection
-        from api.models.user import mongo
-        with app.app_context():
-            # Try to ping the database
-            mongo.db.command('ping')
-            print("✅ MongoDB connection verified")
+        # Test the connection with detailed error handling
+        try:
+            with app.app_context():
+                # Try to ping the database
+                result = mongo.db.command('ping')
+                print("✅ MongoDB connection verified - database is responsive")
+
+                # Test user collection access
+                user_count = mongo.db.users.count_documents({})
+                print(f"✅ User collection accessible - {user_count} users in database")
+
+        except Exception as db_test_error:
+            print(f"❌ MongoDB connection test failed: {db_test_error}")
+            print(f"❌ This will cause authentication failures")
+            raise db_test_error
 
     except Exception as e:
         print(f"❌ MongoDB initialization failed: {e}")
-        print(f"❌ Error details: {type(e).__name__}: {str(e)}")
+        print(f"❌ Error type: {type(e).__name__}")
+        print(f"❌ Error details: {str(e)}")
+        print(f"❌ This will cause user registration and login to fail")
         # Continue without database - some features will be limited
+        app.config['DATABASE_AVAILABLE'] = False
 
     # Register authentication blueprints immediately (critical for login/signup)
     try:
