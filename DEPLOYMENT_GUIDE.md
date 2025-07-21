@@ -52,19 +52,32 @@ This will:
 - Enable full functionality
 
 ## System Specifications
-- **Recipes Loaded:** 10,003 recipes
-- **Ingredients:** 36,921 unique ingredients  
+- **Application Type:** Complete Web Application (not just API)
+- **Recipes Available:** 3,000+ recipes (Railway optimized)
+- **Ingredients:** 36,000+ unique ingredients
 - **ML System:** Hybrid KNN + Content-based + Collaborative filtering
-- **Memory Usage:** ~500MB RAM
-- **Startup Time:** 2-3 minutes (ML model loading)
+- **Memory Usage:** ~300MB RAM (Railway optimized)
+- **Startup Time:** 30 seconds (fast web interface, ML loads after)
+
+## Web Pages Available
+- 🏠 **Welcome Page** (`/welcome`) - Landing page with system info
+- 🔐 **Login Page** (`/login`) - User authentication
+- 📝 **Signup Page** (`/signup`) - User registration
+- 🍳 **Dashboard** (`/dashboard`) - Recipe recommendation interface
+- 👤 **Profile** (`/profile`) - User account management
+- 💾 **Saved Recipes** (`/save-recipe`) - User's favorite recipes
+- 👥 **Community** (`/community-recipes`) - Recipe sharing and reviews
+- 📤 **Share Recipe** (`/share-recipe`) - Submit new recipes
+- 🔍 **Search Results** (`/search-results`) - Recipe recommendations display
 
 ## Core Features Ready for Testing
-- ✅ User authentication (signup/login)
-- ✅ Recipe recommendations with KNN algorithm
+- ✅ Complete web interface (accessible via browser)
+- ✅ User authentication (signup/login pages)
+- ✅ Recipe recommendations with web interface
 - ✅ Community features (sharing, reviews, ratings)
 - ✅ Profile management and saved recipes
-- ✅ Analytics dashboard
-- ✅ All API endpoints functional
+- ✅ Responsive design for desktop and mobile
+- ✅ All pages with fallback HTML if templates fail
 
 ## MongoDB Options
 **Option A:** Use existing MongoDB Atlas (recommended)

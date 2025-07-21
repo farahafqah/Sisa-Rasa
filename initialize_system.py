@@ -48,25 +48,37 @@ def main():
     """Main function."""
     if len(sys.argv) != 2:
         print("Usage: python initialize_system.py <your-railway-app-url>")
-        print("Example: python initialize_system.py https://sisarasa-production.up.railway.app")
+        print("Example: python initialize_system.py https://sisa-rasa-production.up.railway.app")
         sys.exit(1)
-    
+
     app_url = sys.argv[1].rstrip('/')
-    
-    print("🎯 SisaRasa System Initialization")
-    print("=" * 50)
-    
+
+    print("🎯 SisaRasa Full System Initialization")
+    print("=" * 60)
+
     success = initialize_deployed_system(app_url)
-    
+
     if success:
-        print("\n🎉 System initialization completed successfully!")
-        print(f"Your SisaRasa app is now fully functional at: {app_url}")
-        print("\nYou can now test:")
-        print(f"- Home page: {app_url}/")
-        print(f"- Login page: {app_url}/login")
-        print(f"- API health: {app_url}/api/health")
+        print("\n🎉 Full system initialization completed successfully!")
+        print(f"🌐 Your SisaRasa web app is now fully functional!")
+        print("=" * 60)
+        print("📱 Available Pages:")
+        print(f"   • {app_url}/welcome - Welcome page")
+        print(f"   • {app_url}/login - User login")
+        print(f"   • {app_url}/signup - User registration")
+        print(f"   • {app_url}/dashboard - Recipe recommendations")
+        print(f"   • {app_url}/profile - User profile")
+        print(f"   • {app_url}/community-recipes - Community features")
+        print(f"   • {app_url}/share-recipe - Share recipes")
+        print("=" * 60)
+        print("🔧 API Endpoints:")
+        print(f"   • {app_url}/api/health - System health")
+        print(f"   • {app_url}/api/status - System status")
+        print("=" * 60)
+        print("✅ Your complete recipe recommendation system is ready!")
     else:
         print("\n❌ System initialization failed!")
+        print("The web interface is still available, but some features may be limited.")
         print("Please check the Railway logs for more details.")
         sys.exit(1)
 
