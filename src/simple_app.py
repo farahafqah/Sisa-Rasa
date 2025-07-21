@@ -15,6 +15,12 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path:
     sys.path.insert(0, current_dir)
 
+# Debug path information
+print(f"🔧 Current directory: {current_dir}")
+print(f"🔧 API directory: {os.path.join(current_dir, 'api')}")
+print(f"🔧 API directory exists: {os.path.exists(os.path.join(current_dir, 'api'))}")
+print(f"🔧 Auth file exists: {os.path.exists(os.path.join(current_dir, 'api', 'auth.py'))}")
+
 # Create Flask app with proper template and static folder configuration
 app = Flask(__name__,
             template_folder='api/templates',
@@ -1112,39 +1118,68 @@ def register_auth_blueprints():
     try:
         # Import and register authentication blueprint
         api_dir = os.path.join(current_dir, 'api')
+        print(f"🔧 Attempting to register auth blueprints from: {api_dir}")
+        print(f"🔧 API directory exists: {os.path.exists(api_dir)}")
+        print(f"🔧 Auth file exists: {os.path.exists(os.path.join(api_dir, 'auth.py'))}")
+
         if api_dir not in sys.path:
             sys.path.insert(0, api_dir)
+            print(f"🔧 Added {api_dir} to sys.path")
 
         # Try multiple import paths to ensure compatibility
         auth_bp = None
+
+        # Method 1: Direct import from current directory structure
         try:
-            from api.auth import auth_bp
-            print("✅ Imported auth blueprint from api.auth")
-        except ImportError:
+            # Since we're in src/ and api/ is in src/api/, we can import directly
+            sys.path.insert(0, os.path.join(current_dir, 'api'))
+            from auth import auth_bp
+            print("✅ Imported auth blueprint from auth module")
+        except ImportError as e1:
+            print(f"⚠️  Method 1 failed: {e1}")
+
+            # Method 2: Try with api prefix
             try:
-                from auth import auth_bp
-                print("✅ Imported auth blueprint from auth")
-            except ImportError as e:
-                print(f"❌ Failed to import auth blueprint: {e}")
-                raise e
+                from api.auth import auth_bp
+                print("✅ Imported auth blueprint from api.auth")
+            except ImportError as e2:
+                print(f"⚠️  Method 2 failed: {e2}")
+
+                # Method 3: Manual module loading
+                try:
+                    import importlib.util
+                    auth_file_path = os.path.join(current_dir, 'api', 'auth.py')
+                    spec = importlib.util.spec_from_file_location("auth", auth_file_path)
+                    auth_module = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(auth_module)
+                    auth_bp = auth_module.auth_bp
+                    print("✅ Imported auth blueprint via manual loading")
+                except Exception as e3:
+                    print(f"❌ All import methods failed. Last error: {e3}")
+                    raise e3
 
         if auth_bp:
             app.register_blueprint(auth_bp)
             print("✅ Authentication blueprint registered successfully")
 
             # Test the blueprint registration
-            with app.app_context():
-                # Check if auth routes are available
-                auth_routes = [rule.rule for rule in app.url_map.iter_rules() if rule.rule.startswith('/api/auth')]
-                print(f"✅ Registered auth routes: {auth_routes}")
+            try:
+                with app.app_context():
+                    # Check if auth routes are available
+                    auth_routes = [rule.rule for rule in app.url_map.iter_rules() if rule.rule.startswith('/api/auth')]
+                    print(f"✅ Registered auth routes: {auth_routes}")
+                    if not auth_routes:
+                        print("⚠️  No auth routes found after registration")
+            except Exception as route_check_error:
+                print(f"⚠️  Route check failed: {route_check_error}")
         else:
-            raise Exception("auth_bp is None after import attempts")
+            raise Exception("auth_bp is None after all import attempts")
 
     except Exception as e:
         print(f"❌ Authentication blueprint registration failed: {e}")
-        print(f"❌ Current sys.path: {sys.path[:3]}...")  # Show first 3 paths
-        print(f"❌ API directory exists: {os.path.exists(api_dir)}")
-        print(f"❌ Auth file exists: {os.path.exists(os.path.join(api_dir, 'auth.py'))}")
+        print(f"❌ Current working directory: {os.getcwd()}")
+        print(f"❌ Current sys.path (first 5): {sys.path[:5]}")
+        print(f"❌ Files in api directory: {os.listdir(api_dir) if os.path.exists(api_dir) else 'Directory not found'}")
         raise e  # Re-raise to ensure we know auth failed
 
 def register_other_blueprints():
@@ -1307,30 +1342,67 @@ def startup_initialization():
         if api_path not in sys.path:
             sys.path.append(api_path)
 
+        print(f"🔧 Initializing MongoDB connection...")
+        print(f"🔧 API path: {api_path}")
+        print(f"🔧 API path exists: {os.path.exists(api_path)}")
+
         # Set up MongoDB URI in app config
+        MONGO_URI = None
         try:
-            from api.config import MONGO_URI
-            app.config['MONGO_URI'] = MONGO_URI
-            masked_uri = MONGO_URI.replace(MONGO_URI.split('@')[0].split('//')[1] + '@', '***:***@') if '@' in MONGO_URI else MONGO_URI
-            print(f"🔗 MongoDB URI configured: {masked_uri}")
-        except ImportError as e:
-            print(f"❌ Failed to import MongoDB config: {e}")
+            # Try importing from config first
+            sys.path.insert(0, api_path)
+            from config import MONGO_URI as CONFIG_MONGO_URI
+            MONGO_URI = CONFIG_MONGO_URI
+            print("✅ MongoDB URI loaded from config.py")
+        except ImportError as config_error:
+            print(f"⚠️  Config import failed: {config_error}")
             # Fallback to environment variable
             MONGO_URI = os.getenv('MONGO_URI')
             if MONGO_URI:
-                app.config['MONGO_URI'] = MONGO_URI
-                print("🔗 MongoDB URI loaded from environment")
+                print("✅ MongoDB URI loaded from environment variable")
             else:
+                print("❌ No MongoDB URI found in config or environment")
                 raise Exception("No MongoDB URI available")
+
+        if MONGO_URI:
+            app.config['MONGO_URI'] = MONGO_URI
+            # Mask sensitive parts for logging
+            masked_uri = MONGO_URI
+            if '@' in MONGO_URI and '://' in MONGO_URI:
+                try:
+                    parts = MONGO_URI.split('://')
+                    protocol = parts[0]
+                    rest = parts[1]
+                    if '@' in rest:
+                        credentials, host_part = rest.split('@', 1)
+                        masked_uri = f"{protocol}://***:***@{host_part}"
+                except:
+                    masked_uri = "mongodb://***:***@***"
+            print(f"🔗 MongoDB URI configured: {masked_uri}")
 
         # Initialize database connection
         try:
-            from api.models.user import init_db, mongo
+            # Try multiple import methods for user model
+            user_module = None
+            try:
+                from models.user import init_db, mongo
+                user_module = "models.user"
+                print("✅ Imported user model from models.user")
+            except ImportError:
+                try:
+                    from api.models.user import init_db, mongo
+                    user_module = "api.models.user"
+                    print("✅ Imported user model from api.models.user")
+                except ImportError as e:
+                    print(f"❌ Failed to import user model: {e}")
+                    raise e
+
             init_db(app)
             print("✅ MongoDB connection initialized")
-        except ImportError as e:
-            print(f"❌ Failed to import user model: {e}")
-            raise e
+
+        except Exception as init_error:
+            print(f"❌ Database initialization failed: {init_error}")
+            raise init_error
 
         # Test the connection with detailed error handling
         try:
@@ -1343,9 +1415,13 @@ def startup_initialization():
                 user_count = mongo.db.users.count_documents({})
                 print(f"✅ User collection accessible - {user_count} users in database")
 
+                # Mark database as available
+                app.config['DATABASE_AVAILABLE'] = True
+
         except Exception as db_test_error:
             print(f"❌ MongoDB connection test failed: {db_test_error}")
             print(f"❌ This will cause authentication failures")
+            app.config['DATABASE_AVAILABLE'] = False
             raise db_test_error
 
     except Exception as e:
@@ -1353,31 +1429,121 @@ def startup_initialization():
         print(f"❌ Error type: {type(e).__name__}")
         print(f"❌ Error details: {str(e)}")
         print(f"❌ This will cause user registration and login to fail")
+        print(f"❌ Environment MONGO_URI set: {'Yes' if os.getenv('MONGO_URI') else 'No'}")
         # Continue without database - some features will be limited
         app.config['DATABASE_AVAILABLE'] = False
 
     # Register authentication blueprints immediately (critical for login/signup)
+    auth_success = False
     try:
         register_auth_blueprints()
         print("✅ Authentication system initialized")
+        auth_success = True
     except Exception as e:
         print(f"❌ Authentication initialization failed: {e}")
+        print("🚨 CRITICAL: Users will not be able to register or login!")
+
+        # Try alternative authentication setup
+        try:
+            print("🔄 Attempting alternative authentication setup...")
+            alternative_auth_setup()
+            auth_success = True
+            print("✅ Alternative authentication setup successful")
+        except Exception as alt_e:
+            print(f"❌ Alternative authentication setup also failed: {alt_e}")
+
+    # Register other API blueprints
+    try:
+        register_other_blueprints()
+        print("✅ Additional API blueprints registered")
+    except Exception as e:
+        print(f"⚠️  Additional API blueprint registration failed: {e}")
+
+    # Set system initialization status
+    if auth_success and app.config.get('DATABASE_AVAILABLE', False):
+        app.system_initialized = True
+        print("🎉 System fully initialized - all features available")
+    elif auth_success:
+        app.system_initialized = True
+        print("⚠️  System partially initialized - authentication works but database limited")
+    else:
+        app.system_initialized = False
+        print("❌ System initialization incomplete - authentication unavailable")
 
     # In production (Railway), defer ML system initialization
     if os.getenv('RAILWAY_ENVIRONMENT') == 'production':
-        print("🔄 Railway mode: Deferring ML system initialization")
-        print("💡 Visit /api/initialize to load full ML features after deployment")
-
-        # But still register other API blueprints for basic functionality
-        try:
-            register_other_blueprints()
-            print("✅ Basic API blueprints registered")
-        except Exception as e:
-            print(f"⚠️  Basic API blueprint registration failed: {e}")
+        print("🔄 Railway mode: ML system can be initialized via /api/initialize")
     else:
-        # In development, initialize everything immediately
-        print("🔧 Development mode: Initializing full system...")
-        initialize_full_system()
+        # In development, initialize ML system if basic systems work
+        if app.system_initialized:
+            print("🔧 Development mode: Initializing ML system...")
+            try:
+                initialize_ml_system()
+                print("✅ ML system initialized")
+            except Exception as ml_e:
+                print(f"⚠️  ML system initialization failed: {ml_e}")
+
+def alternative_auth_setup():
+    """Alternative authentication setup method."""
+    print("🔧 Setting up authentication via alternative method...")
+
+    # Create minimal auth routes directly in the main app
+    from flask import request, jsonify
+
+    @app.route('/api/auth/signup', methods=['POST'])
+    def alt_signup():
+        try:
+            data = request.get_json()
+            if not data or not all(k in data for k in ['name', 'email', 'password']):
+                return jsonify({'status': 'error', 'message': 'Missing required fields'}), 400
+
+            # Try direct user creation
+            from api.models.user import create_user, get_user_by_email
+
+            if get_user_by_email(data['email']):
+                return jsonify({'status': 'error', 'message': 'Email already registered'}), 409
+
+            if len(data['password']) < 6:
+                return jsonify({'status': 'error', 'message': 'Password must be at least 6 characters'}), 400
+
+            user = create_user(data['name'], data['email'], data['password'])
+            if user:
+                return jsonify({
+                    'status': 'success',
+                    'message': 'User registered successfully',
+                    'user': {'id': str(user['_id']), 'name': user['name'], 'email': user['email']}
+                }), 201
+            else:
+                return jsonify({'status': 'error', 'message': 'Failed to create user'}), 500
+
+        except Exception as e:
+            return jsonify({'status': 'error', 'message': f'Registration error: {str(e)}'}), 500
+
+    @app.route('/api/auth/login', methods=['POST'])
+    def alt_login():
+        try:
+            data = request.get_json()
+            if not data or not all(k in data for k in ['email', 'password']):
+                return jsonify({'status': 'error', 'message': 'Missing email or password'}), 400
+
+            from api.models.user import get_user_by_email, verify_password
+            from flask_jwt_extended import create_access_token
+
+            user = get_user_by_email(data['email'])
+            if not user or not verify_password(user, data['password']):
+                return jsonify({'status': 'error', 'message': 'Invalid credentials'}), 401
+
+            token = create_access_token(identity=str(user['_id']))
+            return jsonify({
+                'status': 'success',
+                'token': token,
+                'user': {'id': str(user['_id']), 'name': user['name'], 'email': user['email']}
+            }), 200
+
+        except Exception as e:
+            return jsonify({'status': 'error', 'message': f'Login error: {str(e)}'}), 500
+
+    print("✅ Alternative auth routes created directly in main app")
 
 if __name__ == '__main__':
     # Get port from Railway environment
