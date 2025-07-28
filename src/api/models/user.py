@@ -41,17 +41,6 @@ def init_db(app):
         # Create a unique index on email
         mongo.db.users.create_index('email', unique=True)
 
-def get_user_by_email(email):
-    """Get a user by email."""
-    try:
-        if not mongo.db:
-            print("MongoDB connection not initialized")
-            return None
-        return mongo.db.users.find_one({'email': email.lower()})
-    except Exception as e:
-        print(f"Error in get_user_by_email: {e}")
-        return None
-
 def get_user_by_id(user_id):
     """Get a user by ID."""
     try:
@@ -67,6 +56,17 @@ def get_user_by_id(user_id):
         return mongo.db.users.find_one({'_id': user_id})
     except Exception as e:
         print(f"Error in get_user_by_id: {e}")
+        return None
+
+def get_user_by_email(email):
+    """Get a user by email."""
+    try:
+        if not mongo.db:
+            print("MongoDB connection not initialized")
+            return None
+        return mongo.db.users.find_one({'email': email.lower()})
+    except Exception as e:
+        print(f"Error in get_user_by_email: {e}")
         return None
 
 def create_user(name, email, password):
@@ -812,5 +812,4 @@ def get_user_analytics(user_id):
     except Exception as e:
         print(f"Error getting user analytics: {e}")
         return None
-
 
