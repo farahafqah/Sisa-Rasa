@@ -36,11 +36,14 @@ mongo = PyMongo()
 def init_db(app):
     """Initialize the database connection."""
     try:
+        # Initialize PyMongo with the app
         mongo.init_app(app)
-        # Test the connection first
+        print("✅ PyMongo initialized with Flask app")
+        
+        # Test connection and create indexes INSIDE app context
         with app.app_context():
-            # Try to ping the database
-            mongo.db.command('ping')
+            # Test the connection
+            result = mongo.db.command('ping')
             print("✅ MongoDB connection successful!")
             
             # Create indexes for user collection
@@ -53,14 +56,19 @@ def init_db(app):
     except Exception as e:
         print(f"❌ MongoDB connection failed: {e}")
         print("⚠️ App will continue without database connection")
-        # Don't crash the app, just log the error
 
 def get_user_by_id(user_id):
     """Get a user by ID."""
     try:
+        # Check if we're in an app context, if not create one
+        if not current_app:
+            print("No Flask app context available")
+            return None
+            
         if not mongo.db:
             print("MongoDB connection not initialized")
             return None
+            
         # Handle both string and ObjectId inputs
         if isinstance(user_id, str):
             if ObjectId.is_valid(user_id):
@@ -75,84 +83,94 @@ def get_user_by_id(user_id):
 def get_user_by_email(email):
     """Get a user by email."""
     try:
+        # Check if we're in an app context
+        if not current_app:
+            print("No Flask app context available")
+            return None
+            
         if not mongo.db:
             print("MongoDB connection not initialized")
             return None
+            
         return mongo.db.users.find_one({'email': email.lower()})
     except Exception as e:
         print(f"Error in get_user_by_email: {e}")
         return None
 
 def create_user(name, email, password):
-    """
-    Create a new user.
+    """Create a new user."""
+    try:
+        # Check if we're in an app context
+        if not current_app:
+            print("No Flask app context available")
+            return None
+            
+        if not mongo.db:
+            print("MongoDB connection not initialized")
+            return None
+            
+        # Check if user already exists
+        if get_user_by_email(email):
+            return None
 
-    Args:
-        name (str): User's full name
-        email (str): User's email address
-        password (str): User's password (will be hashed)
+        # Hash the password
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
 
-    Returns:
-        dict: The created user document or None if creation failed
-    """
-    # Check if user already exists
-    if get_user_by_email(email):
-        return None
-
-    # Hash the password
-    hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-
-    # Create user document
-    user = {
-        'name': name,
-        'email': email.lower(),
-        'password': hashed_password,
-        'profile_image': None,  # Will store the image ID or path
-        'created_at': datetime.utcnow(),
-        'updated_at': datetime.utcnow(),
-        'preferences': {
-            'favorite_ingredients': [],
-            'dietary_restrictions': []
-        },
-        'saved_recipes': [],
-        'dashboard_data': {
-            'recent_searches': [],
-            'ingredient_history': [],
-            'search_stats': {
-                'total_searches': 0,
-                'most_used_ingredients': {},
-                'last_search_date': None
-            }
-        },
-        'analytics': {
-            'total_recipe_views': 0,
-            'total_recipe_saves': 0,
-            'total_reviews_given': 0,
-            'cuisine_preferences': {},
-            'cooking_streak': {
-                'current_streak': 0,
-                'longest_streak': 0,
-                'last_activity_date': None
+        # Create user document
+        user = {
+            'name': name,
+            'email': email.lower(),
+            'password': hashed_password,
+            'profile_image': None,
+            'created_at': datetime.utcnow(),
+            'updated_at': datetime.utcnow(),
+            'preferences': {
+                'favorite_ingredients': [],
+                'dietary_restrictions': []
             },
-            'monthly_activity': {},
-            'discovery_stats': {
-                'unique_ingredients_tried': 0,
-                'recipe_diversity_score': 0
+            'saved_recipes': [],
+            'dashboard_data': {
+                'recent_searches': [],
+                'ingredient_history': [],
+                'search_stats': {
+                    'total_searches': 0,
+                    'most_used_ingredients': {},
+                    'last_search_date': None
+                }
+            },
+            'analytics': {
+                'total_recipe_views': 0,
+                'total_recipe_saves': 0,
+                'total_reviews_given': 0,
+                'cuisine_preferences': {},
+                'cooking_streak': {
+                    'current_streak': 0,
+                    'longest_streak': 0,
+                    'last_activity_date': None
+                },
+                'monthly_activity': {},
+                'discovery_stats': {
+                    'unique_ingredients_tried': 0,
+                    'recipe_diversity_score': 0
+                }
             }
         }
-    }
 
-    # Insert user into database
-    result = mongo.db.users.insert_one(user)
+        # Insert user into database
+        result = mongo.db.users.insert_one(user)
 
-    # Return the created user
-    if result.inserted_id:
-        user['_id'] = result.inserted_id
-        # Don't return the password
-        user.pop('password', None)
-        return user
+        # Return the created user
+        if result.inserted_id:
+            user['_id'] = result.inserted_id
+            # Don't return the password
+            user.pop('password', None)
+            return user
 
-    return None
+        return None
+        
+    except Exception as e:
+        print(f"Error in create_user: {e}")
+        return None
 
 def verify_password(user, password):
     """
@@ -826,5 +844,6 @@ def get_user_analytics(user_id):
     except Exception as e:
         print(f"Error getting user analytics: {e}")
         return None
+
 
 

@@ -24,9 +24,6 @@ from api.config import (
     MAIL_USERNAME, MAIL_PASSWORD, MAIL_DEFAULT_SENDER
 )
 
-# Import database initialization
-from api.models.user import init_db
-
 # Create Flask app
 app = Flask(__name__,
            static_folder='static',
@@ -51,8 +48,12 @@ app.config['MAIL_DEFAULT_SENDER'] = MAIL_DEFAULT_SENDER
 CORS(app)
 jwt = JWTManager(app)
 
-# Initialize database with error handling
+# Initialize database with proper error handling
 try:
+    # Import database initialization
+    from api.models.user import init_db
+    
+    # Initialize database
     init_db(app)
     print("✅ Database initialization completed")
 except Exception as e:
@@ -216,6 +217,7 @@ if __name__ == '__main__':
 
     # Run the app
     app.run(debug=True, host='0.0.0.0', port=5000)
+
 
 
 
