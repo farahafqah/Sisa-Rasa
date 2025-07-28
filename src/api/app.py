@@ -102,26 +102,30 @@ def initialize_recommender(num_recipes=10, max_recipes=10000):
         print("Loading clean recipes...")
         recommender.load_recipes(clean_recipes_path, max_rows=max_recipes)
 
-        # Load user interaction data from MongoDB
-        try:
-            from api.models.user import mongo
-            recommender.load_user_interaction_data(mongo.db)
-            print("User interaction data loaded successfully!")
-        except Exception as e:
-            print(f"Warning: Could not load user interaction data: {e}")
-            print("Continuing with default popularity scores...")
+        # Load user interaction data from MongoDB - PRODUCTION VERSION
+        with app.app_context():
+            try:
+                from api.models.user import mongo
+                if mongo is not None and mongo.db is not None:
+                    recommender.load_user_interaction_data(mongo.db)
+                    print("✅ User interaction data loaded successfully!")
+                else:
+                    print("⚠️ MongoDB not available, using default popularity scores")
+            except Exception as e:
+                print(f"⚠️ Warning: Could not load user interaction data: {e}")
+                print("Continuing with default popularity scores...")
 
         # Store recommender in app context
         app.recommender = recommender
 
         # Print some stats about loaded recipes
-        print(f"Loaded {len(recommender.recipes)} recipes")
-        print(f"Found {len(recommender.knn_recommender.ingredient_names)} unique ingredients")
+        print(f"✅ Loaded {len(recommender.recipes)} recipes")
+        print(f"✅ Found {len(recommender.knn_recommender.ingredient_names)} unique ingredients")
 
         return True
 
     except Exception as e:
-        print(f"Error initializing recommender: {e}")
+        print(f"❌ Error initializing recommender: {e}")
         return False
 
 # Import and register blueprints
@@ -187,18 +191,25 @@ def get_leftover_ingredients_analytics():
 @app.route('/api/health', methods=['GET'])
 def health_check():
     """Health check endpoint to verify app and database status."""
+    from datetime import datetime
+    
     try:
-        from api.models.user import mongo
-        # Test MongoDB connection
-        mongo.db.command('ping')
-        db_status = "connected"
+        with app.app_context():
+            from api.models.user import mongo
+            # Test MongoDB connection
+            if mongo is not None and mongo.db is not None:  # ← FIXED
+                mongo.db.command('ping')
+                db_status = "✅ connected"
+            else:
+                db_status = "⚠️ not initialized"
     except Exception as e:
-        db_status = f"disconnected: {str(e)}"
+        db_status = f"❌ disconnected: {str(e)}"
     
     return jsonify({
         'status': 'success',
-        'app': 'running',
+        'app': '✅ running',
         'database': db_status,
+        'recommender': '✅ loaded' if recommender else '❌ not loaded',
         'timestamp': datetime.utcnow().isoformat()
     })
 

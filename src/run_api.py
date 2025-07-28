@@ -8,12 +8,16 @@ import os
 from api.app import app, initialize_recommender
 
 if __name__ == '__main__':
-    # Initialize recommender with smaller dataset for Railway
-    max_recipes = int(os.environ.get('MAX_RECIPES', 1000))
+    # Initialize recommender with larger dataset for production
+    max_recipes = int(os.environ.get('MAX_RECIPES', 5000))  # Increased from 1000
     num_recipes = int(os.environ.get('NUM_RECIPES', 10))
     
     print(f"Initializing with {max_recipes} max recipes, {num_recipes} recommendations")
-    initialize_recommender(num_recipes=num_recipes, max_recipes=max_recipes)
+    success = initialize_recommender(num_recipes=num_recipes, max_recipes=max_recipes)
+    
+    if not success:
+        print("❌ Failed to initialize recommender")
+        exit(1)
     
     # Railway provides PORT automatically
     port = int(os.environ.get('PORT', 5000))
@@ -21,5 +25,6 @@ if __name__ == '__main__':
     
     print(f"Starting server on port {port}")
     app.run(host='0.0.0.0', port=port, debug=debug)
+
 
 
