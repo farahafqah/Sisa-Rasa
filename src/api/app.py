@@ -51,8 +51,13 @@ app.config['MAIL_DEFAULT_SENDER'] = MAIL_DEFAULT_SENDER
 CORS(app)
 jwt = JWTManager(app)
 
-# Initialize database
-init_db(app)
+# Initialize database with error handling
+try:
+    init_db(app)
+    print("✅ Database initialization completed")
+except Exception as e:
+    print(f"❌ Database initialization failed: {e}")
+    print("⚠️ App will continue without database")
 
 # Initialize the recommender
 recommender = None
@@ -178,6 +183,24 @@ def get_leftover_ingredients_analytics():
         }
     })
 
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    """Health check endpoint to verify app and database status."""
+    try:
+        from api.models.user import mongo
+        # Test MongoDB connection
+        mongo.db.command('ping')
+        db_status = "connected"
+    except Exception as e:
+        db_status = f"disconnected: {str(e)}"
+    
+    return jsonify({
+        'status': 'success',
+        'app': 'running',
+        'database': db_status,
+        'timestamp': datetime.utcnow().isoformat()
+    })
+
 # Register blueprints
 try:
     app.register_blueprint(auth_bp)
@@ -193,4 +216,6 @@ if __name__ == '__main__':
 
     # Run the app
     app.run(debug=True, host='0.0.0.0', port=5000)
+
+
 

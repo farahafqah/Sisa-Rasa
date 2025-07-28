@@ -18,6 +18,13 @@ load_dotenv(dotenv_path=dotenv_path)
 # Get the MongoDB URI from the environment with a default value
 MONGO_URI = os.getenv('MONGO_URI', 'mongodb://localhost:27017/sisarasa')
 
+# Validate MongoDB URI
+if not MONGO_URI:
+    print("❌ ERROR: MONGO_URI environment variable is not set!")
+    MONGO_URI = 'mongodb://localhost:27017/sisarasa'
+else:
+    print(f"✅ MongoDB URI loaded: {MONGO_URI[:20]}...")
+
 # JWT Configuration
 JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'dev-secret-key-change-in-production')
 # Get JWT_ACCESS_TOKEN_EXPIRES and handle potential comment in the value
@@ -39,3 +46,4 @@ MAIL_USE_SSL = os.getenv('MAIL_USE_SSL', 'False').lower() in ('true', '1', 't')
 MAIL_USERNAME = os.getenv('MAIL_USERNAME', '')
 MAIL_PASSWORD = os.getenv('MAIL_PASSWORD', '')
 MAIL_DEFAULT_SENDER = os.getenv('MAIL_DEFAULT_SENDER', MAIL_USERNAME)
+

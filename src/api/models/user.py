@@ -35,11 +35,25 @@ mongo = PyMongo()
 
 def init_db(app):
     """Initialize the database connection."""
-    mongo.init_app(app)
-    # Create indexes for user collection
-    with app.app_context():
-        # Create a unique index on email
-        mongo.db.users.create_index('email', unique=True)
+    try:
+        mongo.init_app(app)
+        # Test the connection first
+        with app.app_context():
+            # Try to ping the database
+            mongo.db.command('ping')
+            print("✅ MongoDB connection successful!")
+            
+            # Create indexes for user collection
+            try:
+                mongo.db.users.create_index('email', unique=True)
+                print("✅ Database indexes created successfully!")
+            except Exception as index_error:
+                print(f"⚠️ Warning: Could not create indexes: {index_error}")
+                
+    except Exception as e:
+        print(f"❌ MongoDB connection failed: {e}")
+        print("⚠️ App will continue without database connection")
+        # Don't crash the app, just log the error
 
 def get_user_by_id(user_id):
     """Get a user by ID."""
@@ -812,4 +826,5 @@ def get_user_analytics(user_id):
     except Exception as e:
         print(f"Error getting user analytics: {e}")
         return None
+
 
