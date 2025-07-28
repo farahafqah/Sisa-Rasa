@@ -6,9 +6,29 @@ This module defines the User model and authentication functions.
 
 import bcrypt
 from bson.objectid import ObjectId
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask_pymongo import PyMongo
 from flask import current_app
+import sys
+import os
+import secrets
+import hashlib
+
+# Add the project root to the path to import ingredient_filter
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+# Try to import ingredient_filter, with fallback if not found
+try:
+    from ingredient_filter import filter_ingredient_stats, filter_ingredients_list
+except ImportError:
+    # Fallback functions if ingredient_filter is not available
+    def filter_ingredient_stats(stats):
+        return stats
+
+    def filter_ingredients_list(ingredients):
+        return ingredients
 
 # Initialize PyMongo
 mongo = PyMongo()
@@ -199,6 +219,107 @@ def change_password(user_id, current_password, new_password):
 
     return result.modified_count > 0
 
+def generate_password_reset_token(email):
+    """
+    Generate a secure password reset token for a user.
+
+    Args:
+        email (str): User's email address
+
+    Returns:
+        str: Reset token if user exists, None otherwise
+    """
+    # Get user by email
+    user = get_user_by_email(email)
+    if not user:
+        return None
+
+    # Generate a secure random token
+    token = secrets.token_urlsafe(32)
+
+    # Hash the token for storage (security best practice)
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+
+    # Set expiration time (1 hour from now)
+    expires_at = datetime.utcnow() + timedelta(hours=1)
+
+    # Update user with reset token
+    result = mongo.db.users.update_one(
+        {'_id': user['_id']},
+        {
+            '$set': {
+                'reset_token': token_hash,
+                'reset_token_expires': expires_at,
+                'updated_at': datetime.utcnow()
+            }
+        }
+    )
+
+    if result.modified_count > 0:
+        return token  # Return the unhashed token for the email
+
+    return None
+
+def verify_password_reset_token(token):
+    """
+    Verify a password reset token and return the user if valid.
+
+    Args:
+        token (str): Reset token from the email link
+
+    Returns:
+        dict: User document if token is valid, None otherwise
+    """
+    if not token:
+        return None
+
+    # Hash the provided token to match stored hash
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+
+    # Find user with matching token that hasn't expired
+    user = mongo.db.users.find_one({
+        'reset_token': token_hash,
+        'reset_token_expires': {'$gt': datetime.utcnow()}
+    })
+
+    return user
+
+def reset_password_with_token(token, new_password):
+    """
+    Reset a user's password using a valid reset token.
+
+    Args:
+        token (str): Reset token from the email link
+        new_password (str): New password to set
+
+    Returns:
+        bool: True if password was reset, False otherwise
+    """
+    # Verify the token
+    user = verify_password_reset_token(token)
+    if not user:
+        return False
+
+    # Hash the new password
+    hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
+
+    # Update password and clear reset token
+    result = mongo.db.users.update_one(
+        {'_id': user['_id']},
+        {
+            '$set': {
+                'password': hashed_password,
+                'updated_at': datetime.utcnow()
+            },
+            '$unset': {
+                'reset_token': '',
+                'reset_token_expires': ''
+            }
+        }
+    )
+
+    return result.modified_count > 0
+
 def save_recipe(user_id, recipe_id):
     """
     Save a recipe to a user's saved recipes.
@@ -362,6 +483,12 @@ def save_search_history(user_id, search_data):
             else:
                 search_stats['most_used_ingredients'][ingredient] = 1
 
+        # Debug logging
+        print(f"🔍 DEBUG: Saving search for user {user_id}")
+        print(f"🔍 DEBUG: Ingredients: {ingredients_list}")
+        print(f"🔍 DEBUG: Updated search stats: {search_stats}")
+        print(f"🔍 DEBUG: Most used ingredients: {search_stats['most_used_ingredients']}")
+
         # Update user document
         result = mongo.db.users.update_one(
             {'_id': ObjectId(user_id)},
@@ -375,6 +502,7 @@ def save_search_history(user_id, search_data):
             }
         )
 
+        print(f"🔍 DEBUG: MongoDB update result - modified_count: {result.modified_count}")
         return result.modified_count > 0
 
     except Exception as e:
@@ -414,6 +542,17 @@ def get_dashboard_data(user_id):
         for key, default_value in default_dashboard_data.items():
             if key not in dashboard_data:
                 dashboard_data[key] = default_value
+
+        # Apply ingredient filtering to focus on main ingredients
+        if 'search_stats' in dashboard_data and 'most_used_ingredients' in dashboard_data['search_stats']:
+            dashboard_data['search_stats']['most_used_ingredients'] = filter_ingredient_stats(
+                dashboard_data['search_stats']['most_used_ingredients']
+            )
+
+        if 'ingredient_history' in dashboard_data:
+            dashboard_data['ingredient_history'] = filter_ingredients_list(
+                dashboard_data['ingredient_history']
+            )
 
         return dashboard_data
 
@@ -609,7 +748,10 @@ def update_user_analytics(user_id, event_type, event_data=None):
         return result.modified_count > 0
 
     except Exception as e:
-        print(f"Error updating user analytics: {e}")
+        print(f"🔍 DEBUG: Error updating user analytics: {e}")
+        print(f"🔍 DEBUG: Error type: {type(e)}")
+        import traceback
+        print(f"🔍 DEBUG: Traceback: {traceback.format_exc()}")
         return False
 
 def get_user_analytics(user_id):
@@ -630,6 +772,11 @@ def get_user_analytics(user_id):
         analytics = user.get('analytics', {})
         dashboard_data = user.get('dashboard_data', {})
 
+        # Apply ingredient filtering to focus on main ingredients
+        filtered_favorite_ingredients = filter_ingredient_stats(
+            dashboard_data.get('search_stats', {}).get('most_used_ingredients', {})
+        )
+
         # Combine analytics with dashboard data for comprehensive view
         combined_analytics = {
             'personal_stats': {
@@ -639,7 +786,7 @@ def get_user_analytics(user_id):
                 'total_reviews_given': analytics.get('total_reviews_given', 0),
                 'unique_ingredients_tried': analytics.get('discovery_stats', {}).get('unique_ingredients_tried', 0)
             },
-            'favorite_ingredients': dashboard_data.get('search_stats', {}).get('most_used_ingredients', {}),
+            'favorite_ingredients': filtered_favorite_ingredients,
             'cuisine_preferences': analytics.get('cuisine_preferences', {}),
             'cooking_streak': analytics.get('cooking_streak', {
                 'current_streak': 0,

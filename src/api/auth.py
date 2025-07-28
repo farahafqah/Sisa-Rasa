@@ -22,8 +22,12 @@ from api.models.user import (
     change_password,
     update_user,
     save_profile_image,
-    get_profile_image
+    get_profile_image,
+    generate_password_reset_token,
+    verify_password_reset_token,
+    reset_password_with_token
 )
+from api.utils.email import send_password_reset_email, is_email_configured
 
 # Create blueprint
 auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
@@ -251,6 +255,7 @@ def get_current_user():
             'id': str(user['_id']),
             'name': user['name'],
             'email': user['email'],
+            'profile_image': user.get('profile_image', None),
             'preferences': user.get('preferences', {}),
             'saved_recipes': user.get('saved_recipes', [])
         }
@@ -488,3 +493,191 @@ def get_current_user_profile_image():
         'status': 'success',
         'profile_image': profile_image
     })
+
+@auth_bp.route('/forgot-password', methods=['POST'])
+def forgot_password():
+    """
+    Initiate password reset process by generating a reset token.
+
+    Request Body:
+    ------------
+    {
+        "email": "user@example.com"
+    }
+
+    Returns:
+    --------
+    {
+        "status": "success",
+        "message": "If the email exists, a password reset link has been sent."
+    }
+    """
+    # Get request data
+    data = request.get_json()
+
+    # Validate request data
+    if not data:
+        return jsonify({
+            'status': 'error',
+            'message': 'No data provided'
+        }), 400
+
+    # Check required fields
+    if 'email' not in data or not data['email']:
+        return jsonify({
+            'status': 'error',
+            'message': 'Email is required'
+        }), 400
+
+    email = data['email'].lower().strip()
+
+    # Generate reset token (this will return None if email doesn't exist)
+    reset_token = generate_password_reset_token(email)
+
+    # Always return success message for security (don't reveal if email exists)
+    if reset_token:
+        # Get user info for personalized email
+        user = get_user_by_email(email)
+        user_name = user.get('name') if user else None
+
+        # Try to send email if configured
+        email_sent = False
+        if is_email_configured():
+            email_sent = send_password_reset_email(email, reset_token, user_name)
+
+        # Response for development/testing
+        response_data = {
+            'status': 'success',
+            'message': 'If the email exists, a password reset link has been sent.'
+        }
+
+        # In development mode, include additional info
+        if not email_sent:
+            response_data.update({
+                'dev_info': 'Email not configured. Using development mode.',
+                'reset_token': reset_token,  # Remove this in production
+                'reset_link': f'/reset-password?token={reset_token}'  # Remove this in production
+            })
+
+        return jsonify(response_data)
+    else:
+        # Still return success to not reveal if email exists
+        return jsonify({
+            'status': 'success',
+            'message': 'If the email exists, a password reset link has been sent.'
+        })
+
+@auth_bp.route('/reset-password', methods=['POST'])
+def reset_password():
+    """
+    Reset password using a valid reset token.
+
+    Request Body:
+    ------------
+    {
+        "token": "reset-token-from-email",
+        "password": "newpassword123"
+    }
+
+    Returns:
+    --------
+    {
+        "status": "success",
+        "message": "Password has been reset successfully"
+    }
+    """
+    # Get request data
+    data = request.get_json()
+
+    # Validate request data
+    if not data:
+        return jsonify({
+            'status': 'error',
+            'message': 'No data provided'
+        }), 400
+
+    # Check required fields
+    if 'token' not in data or not data['token']:
+        return jsonify({
+            'status': 'error',
+            'message': 'Reset token is required'
+        }), 400
+
+    if 'password' not in data or not data['password']:
+        return jsonify({
+            'status': 'error',
+            'message': 'New password is required'
+        }), 400
+
+    # Validate password length
+    if len(data['password']) < 6:
+        return jsonify({
+            'status': 'error',
+            'message': 'Password must be at least 6 characters long'
+        }), 400
+
+    # Reset password with token
+    success = reset_password_with_token(data['token'], data['password'])
+
+    if not success:
+        return jsonify({
+            'status': 'error',
+            'message': 'Invalid or expired reset token'
+        }), 400
+
+    # Return success response
+    return jsonify({
+        'status': 'success',
+        'message': 'Password has been reset successfully'
+    })
+
+@auth_bp.route('/verify-reset-token', methods=['POST'])
+def verify_reset_token():
+    """
+    Verify if a reset token is valid without resetting the password.
+
+    Request Body:
+    ------------
+    {
+        "token": "reset-token-from-email"
+    }
+
+    Returns:
+    --------
+    {
+        "status": "success",
+        "valid": true,
+        "email": "user@example.com"
+    }
+    """
+    # Get request data
+    data = request.get_json()
+
+    # Validate request data
+    if not data:
+        return jsonify({
+            'status': 'error',
+            'message': 'No data provided'
+        }), 400
+
+    # Check required fields
+    if 'token' not in data or not data['token']:
+        return jsonify({
+            'status': 'error',
+            'message': 'Reset token is required'
+        }), 400
+
+    # Verify the token
+    user = verify_password_reset_token(data['token'])
+
+    if user:
+        return jsonify({
+            'status': 'success',
+            'valid': True,
+            'email': user['email']
+        })
+    else:
+        return jsonify({
+            'status': 'success',
+            'valid': False
+        })

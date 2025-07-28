@@ -11,9 +11,11 @@
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
 
   <!-- VueJS -->
-  <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
   <!-- SweetAlert for notifications -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- Bootstrap JS for tooltips -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
   <style>
     body {
@@ -262,12 +264,21 @@
       color: #666;
     }
     .match-score {
+      background-color: #6c757d;
+      color: white;
+      padding: 0.25rem 0.75rem;
+      border-radius: 1rem;
+      font-weight: 500;
+      font-size: 0.8rem;
+    }
+    .hybrid-score {
       background-color: #ea5e18;
       color: white;
       padding: 0.25rem 0.75rem;
       border-radius: 1rem;
-      font-weight: 600;
-      font-size: 0.8rem;
+      font-weight: 700;
+      font-size: 0.9rem;
+      margin-right: 0.5rem;
     }
     .recipe-details {
       margin-bottom: 1rem;
@@ -802,7 +813,7 @@
           <h4>Sisa Rasa</h4>
         </div>
         <div class="user-info">
-          <a href="{{ url_for('dashboard') }}" class="back-button">
+          <a href="{{ url_for('main.dashboard') }}" class="back-button">
             <i class='bx bx-arrow-back'></i>
             Back to Dashboard
           </a>
@@ -873,24 +884,12 @@
             </select>
           </div>
           <div class="filter-group">
-            <label for="maxPrepTime">Max Prep Time (min):</label>
-            <input type="number" id="maxPrepTime" v-model.number="maxPrepTime" @input="applyFiltersAndSort" min="0" max="300" placeholder="Any">
-          </div>
-          <div class="filter-group">
-            <label for="maxCookTime">Max Cook Time (min):</label>
-            <input type="number" id="maxCookTime" v-model.number="maxCookTime" @input="applyFiltersAndSort" min="0" max="300" placeholder="Any">
-          </div>
-          <div class="filter-group">
             <label for="minServings">Min Servings:</label>
             <input type="number" id="minServings" v-model.number="minServings" @input="applyFiltersAndSort" min="1" max="20" placeholder="Any">
           </div>
           <div class="filter-group">
             <label for="maxIngredients">Max Ingredients:</label>
             <input type="number" id="maxIngredients" v-model.number="maxIngredients" @input="applyFiltersAndSort" min="1" max="50" placeholder="Any">
-          </div>
-          <div class="filter-group">
-            <label for="minMatchPercentage">Min Match (%):</label>
-            <input type="number" id="minMatchPercentage" v-model.number="minMatchPercentage" @input="applyFiltersAndSort" min="1" max="100" placeholder="Any">
           </div>
           <div class="filter-group">
             <button @click="clearAllFilters" class="btn btn-outline-secondary btn-sm">
@@ -948,7 +947,7 @@
         <i class='bx bx-search-alt'></i>
         <h3>No recipes found</h3>
         <p>Try adjusting your filters or search with different ingredients.</p>
-        <a href="{{ url_for('dashboard') }}" class="back-button mt-3">
+        <a href="{{ url_for('main.dashboard') }}" class="back-button mt-3">
           <i class='bx bx-arrow-back'></i>
           Try New Search
         </a>
@@ -956,7 +955,7 @@
 
       <!-- Recipe Grid -->
       <div v-else class="recipe-grid">
-        <div v-for="(recipe, index) in filteredRecipes" :key="recipe.id" class="recipe-card fade-in" :style="{ animationDelay: (index * 0.1) + 's' }">
+        <div v-for="(recipe, index) in filteredRecipes" :key="recipe.id || recipe.name || index" class="recipe-card fade-in" :style="{ animationDelay: (index * 0.1) + 's' }">
           <!-- Recipe Header -->
           <div class="recipe-header">
             <h5 class="recipe-title">${ recipe.name }</h5>
@@ -964,7 +963,7 @@
               <button @click="saveRecipe(recipe)" :title="recipe.saved ? 'Remove from saved' : 'Save recipe'">
                 <i :class="recipe.saved ? 'bx bxs-heart text-danger' : 'bx bx-heart text-muted'"></i>
               </button>
-              <button @click="showRatingModal(recipe)" title="Rate & Review" v-if="token">
+              <button @click="debugAndShowRatingModal(recipe, index)" title="Rate & Review" v-if="token">
                 <i class='bx bx-star text-muted'></i>
               </button>
               <button @click="showReviewsModal(recipe)" title="View All Reviews" class="comment-btn">
@@ -981,8 +980,20 @@
 
           <!-- Recipe Meta -->
           <div class="recipe-meta">
-            <span class="match-score">${ recipe.ingredient_match_percentage }% match</span>
-            <span class="text-muted">Score: ${ recipe.score.toFixed(2) }</span>
+            <span class="hybrid-score"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="top"
+                  data-bs-title="This score is a weighted combination of ingredient KNN similarity (50%), Content-based filtering (25%),Collaborative filtering (15%)">
+              <strong>Score: ${ (recipe.hybrid_score || recipe.score || 0).toFixed(2) }</strong>
+              <i class='bx bx-info-circle' style="margin-left: 4px; cursor: help;"></i>
+            </span>
+            <span class="match-score"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="top"
+                  data-bs-title="Percentage of your input ingredients found in this recipe">
+              ${ recipe.ingredient_match_percentage }% match
+              <i class='bx bx-info-circle' style="margin-left: 4px; cursor: help;"></i>
+            </span>
           </div>
 
           <!-- Rating Display -->
@@ -1072,29 +1083,6 @@
                       rows="4"
                       placeholder="Tell others about your experience with this recipe..."></textarea>
           </div>
-
-          <!-- Verification Section -->
-          <div class="verification-section">
-            <div class="form-check">
-              <input type="checkbox"
-                     id="markAsVerified"
-                     v-model="markAsVerified"
-                     class="form-check-input">
-              <label for="markAsVerified" class="form-check-label">
-                <i class='bx bx-check-circle'></i>
-                I've tried this recipe and can verify it works
-              </label>
-            </div>
-
-            <div v-if="markAsVerified" class="verification-notes">
-              <label for="verificationNotes">Verification Notes (Optional)</label>
-              <textarea id="verificationNotes"
-                        v-model="verificationNotes"
-                        class="form-control"
-                        rows="2"
-                        placeholder="Any tips or modifications you made..."></textarea>
-            </div>
-          </div>
         </div>
 
         <div class="modal-footer">
@@ -1149,17 +1137,6 @@
               <div v-if="review.review_text" class="review-text">
                 ${ review.review_text }
               </div>
-
-              <div class="review-actions">
-                <button @click="voteOnReview(review._id, 'helpful')" class="vote-btn" :class="{ 'active': review.user_vote === 'helpful' }" v-if="token">
-                  <i class='bx bx-like'></i>
-                  Helpful (${ review.helpful_votes || 0 })
-                </button>
-                <button @click="voteOnReview(review._id, 'unhelpful')" class="vote-btn" :class="{ 'active': review.user_vote === 'unhelpful' }" v-if="token">
-                  <i class='bx bx-dislike'></i>
-                  Not Helpful (${ review.unhelpful_votes || 0 })
-                </button>
-              </div>
             </div>
           </div>
 
@@ -1168,17 +1145,11 @@
             <i class='bx bx-comment-x' style="font-size: 3rem; color: #ddd;"></i>
             <h6 class="mt-2">No reviews yet</h6>
             <p class="text-muted">Be the first to review this recipe!</p>
-            <button @click="closeReviewsModal(); showRatingModal(selectedRecipeForReviews)" class="btn btn-primary" v-if="token">
-              Write a Review
-            </button>
           </div>
         </div>
 
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" @click="closeReviewsModal">Close</button>
-          <button type="button" class="btn btn-primary" @click="closeReviewsModal(); showRatingModal(selectedRecipeForReviews)" v-if="token">
-            Write a Review
-          </button>
         </div>
       </div>
     </div>
@@ -1247,8 +1218,92 @@
         this.fetchProfileImage();
         this.loadSearchResults();
         this.loadSavedRecipes();
+
+        // Initialize tooltips after component is mounted
+        this.$nextTick(() => {
+          this.initializeTooltips();
+        });
       },
       methods: {
+        // UTILITY FUNCTION: Safely get recipe ID with comprehensive null checks
+        safeGetRecipeId(recipe, context = 'unknown') {
+          console.log(`safeGetRecipeId called from ${context} with recipe:`, recipe);
+
+          // Check if recipe exists
+          if (!recipe) {
+            console.error(`ERROR [${context}]: Recipe is null or undefined`);
+            return null;
+          }
+
+          // Check if recipe has an ID
+          if (recipe.id) {
+            console.log(`SUCCESS [${context}]: Using recipe.id = ${recipe.id}`);
+            return recipe.id;
+          }
+
+          // Check if recipe has a name to generate ID from
+          if (recipe.name && typeof recipe.name === 'string' && recipe.name.trim()) {
+            const generatedId = recipe.name.toLowerCase().replace(/\s+/g, '-');
+            console.log(`SUCCESS [${context}]: Generated ID from name = ${generatedId}`);
+            return generatedId;
+          }
+
+          // Last resort: check if recipe has any string property we can use
+          const stringProps = ['title', 'recipe_name', 'recipeName'];
+          for (const prop of stringProps) {
+            if (recipe[prop] && typeof recipe[prop] === 'string' && recipe[prop].trim()) {
+              const generatedId = recipe[prop].toLowerCase().replace(/\s+/g, '-');
+              console.log(`SUCCESS [${context}]: Generated ID from ${prop} = ${generatedId}`);
+              return generatedId;
+            }
+          }
+
+          console.error(`ERROR [${context}]: Cannot generate recipe ID - no usable properties found`);
+          console.error(`Recipe object:`, recipe);
+          return null;
+        },
+
+        // UTILITY FUNCTION: Safely validate recipe object
+        validateRecipe(recipe, context = 'unknown') {
+          console.log(`🔍 validateRecipe called from ${context}`);
+          console.log(`📥 Recipe input:`, recipe);
+          console.log(`📝 Recipe type:`, typeof recipe);
+
+          if (!recipe) {
+            console.error(`❌ ERROR [${context}]: Recipe is null or undefined`);
+            console.error(`📊 Validation details: recipe = ${recipe}`);
+            return false;
+          }
+
+          console.log(`📋 Recipe properties:`, Object.keys(recipe));
+          console.log(`📛 Recipe.name:`, recipe.name);
+          console.log(`📛 Recipe.name type:`, typeof recipe.name);
+
+          if (!recipe.name || typeof recipe.name !== 'string' || !recipe.name.trim()) {
+            console.error(`❌ ERROR [${context}]: Recipe missing valid name property`);
+            console.error(`📊 Name validation details:`);
+            console.error(`  - recipe.name exists: ${!!recipe.name}`);
+            console.error(`  - recipe.name type: ${typeof recipe.name}`);
+            console.error(`  - recipe.name value: "${recipe.name}"`);
+            console.error(`  - recipe.name.trim(): "${recipe.name ? recipe.name.trim() : 'N/A'}"`);
+            console.error(`📝 Full recipe object:`, recipe);
+            return false;
+          }
+
+          console.log(`✅ SUCCESS [${context}]: Recipe validation passed`);
+          return true;
+        },
+
+        initializeTooltips() {
+          // Initialize Bootstrap tooltips
+          if (typeof bootstrap !== 'undefined') {
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+              return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+          }
+        },
+
         fetchProfileImage() {
           if (!token) {
             return; // Skip if no token
@@ -1282,6 +1337,12 @@
 
           if (ingredients) {
             this.searchedIngredients = ingredients.split(',').map(i => i.trim());
+
+            // Track this search for analytics (only if we have a valid token)
+            const token = localStorage.getItem('token');
+            if (token && this.searchedIngredients.length > 0) {
+              this.trackSearchAnalytics();
+            }
           } else {
             // Try to get from localStorage as fallback
             const storedSearch = localStorage.getItem('lastSearchResults');
@@ -1347,9 +1408,13 @@
                   const hasOriginalCuisine = recipe.cuisine && recipe.cuisine !== 'International' && recipe.cuisine !== 'Medium';
                   const hasOriginalDifficulty = recipe.difficulty && recipe.difficulty !== 'Medium';
 
+                  // Ensure recipe has valid name and ID
+                  const recipeName = recipe.name || `Recipe ${index + 1}`;
+                  const recipeId = recipe.id || recipeName.toLowerCase().replace(/\s+/g, '-') || `recipe-${index}`;
+
                   return {
-                    id: recipe.id,
-                    name: recipe.name,
+                    id: recipeId,
+                    name: recipeName,
                     ingredients: Array.isArray(recipe.ingredients) ? recipe.ingredients : [recipe.ingredients],
                     steps: Array.isArray(recipe.steps) ? recipe.steps : [recipe.steps],
                     score: recipe.score || 0,
@@ -1372,11 +1437,21 @@
               this.extractAvailableCuisines();
               this.checkSavedStatus();
 
+              // DEBUG: Log loaded recipes
+              console.log('✅ Recipes loaded successfully:', this.allRecipes.length);
+              console.log('✅ First recipe sample:', this.allRecipes[0]);
+              console.log('✅ All recipe IDs:', this.allRecipes.map(r => r.id));
+
               // Store search results for future reference
               localStorage.setItem('lastSearchResults', JSON.stringify({
                 ingredients: this.searchedIngredients,
                 recipes: this.allRecipes
               }));
+
+              // Re-initialize tooltips after recipes are loaded
+              this.$nextTick(() => {
+                this.initializeTooltips();
+              });
             } else {
               this.allRecipes = [];
               this.filteredRecipes = [];
@@ -1455,7 +1530,12 @@
           this.filteredRecipes.sort((a, b) => {
             switch (this.sortBy) {
               case 'score':
-                // Sort by ingredient match percentage (best match first)
+                // Sort by hybrid score first (highest first), then by ingredient match percentage
+                const scoreA = a.hybrid_score || a.score || 0;
+                const scoreB = b.hybrid_score || b.score || 0;
+                if (scoreB !== scoreA) {
+                  return scoreB - scoreA;
+                }
                 return b.ingredient_match_percentage - a.ingredient_match_percentage;
               case 'name':
                 return a.name.localeCompare(b.name);
@@ -1480,7 +1560,12 @@
               case 'match_percentage_desc':
                 return a.ingredient_match_percentage - b.ingredient_match_percentage;
               default:
-                // Default to best match (highest ingredient match percentage)
+                // Default to best score (highest hybrid score first, then ingredient match percentage)
+                const defaultScoreA = a.hybrid_score || a.score || 0;
+                const defaultScoreB = b.hybrid_score || b.score || 0;
+                if (defaultScoreB !== defaultScoreA) {
+                  return defaultScoreB - defaultScoreA;
+                }
                 return b.ingredient_match_percentage - a.ingredient_match_percentage;
             }
           });
@@ -1554,7 +1639,19 @@
             return;
           }
 
-          const recipeId = recipe.id || recipe.name.toLowerCase().replace(/\s+/g, '-');
+          // Use the recipe ID directly from the recipe object
+          const recipeId = recipe.id;
+
+          if (!recipeId) {
+            console.error('Recipe ID is missing:', recipe);
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Recipe ID is missing. Cannot save recipe.',
+              confirmButtonColor: '#ea5e18'
+            });
+            return;
+          }
 
           if (recipe.saved) {
             // Remove from saved recipes
@@ -1565,10 +1662,18 @@
                 'Authorization': `Bearer ${token}`
               }
             })
-            .then(res => res.json())
+            .then(res => {
+              if (!res.ok) {
+                throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+              }
+              return res.json();
+            })
             .then(data => {
               if (data.status === 'success') {
                 recipe.saved = false;
+                this.savedRecipes = this.savedRecipes.filter(saved =>
+                  saved.name !== recipe.name && saved.original_id !== recipe.id
+                );
                 Swal.fire({
                   icon: 'success',
                   title: 'Recipe Removed',
@@ -1578,10 +1683,18 @@
                   showConfirmButton: false
                 });
                 this.loadSavedRecipes();
+              } else {
+                throw new Error(data.message || 'Failed to remove recipe');
               }
             })
             .catch(err => {
               console.error('Error removing recipe:', err);
+              Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: `Failed to remove recipe: ${err.message}`,
+                confirmButtonColor: '#ea5e18'
+              });
             });
           } else {
             // Save recipe
@@ -1592,8 +1705,15 @@
                 'Authorization': `Bearer ${token}`
               }
             })
-            .then(res => res.json())
+            .then(res => {
+              console.log('Save recipe response status:', res.status);
+              if (!res.ok) {
+                throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+              }
+              return res.json();
+            })
             .then(data => {
+              console.log('Save recipe response data:', data);
               if (data.status === 'success') {
                 recipe.saved = true;
                 Swal.fire({
@@ -1605,6 +1725,8 @@
                   showConfirmButton: false
                 });
                 this.loadSavedRecipes();
+              } else {
+                throw new Error(data.message || 'Failed to save recipe');
               }
             })
             .catch(err => {
@@ -1612,7 +1734,7 @@
               Swal.fire({
                 icon: 'error',
                 title: 'Error',
-                text: 'Failed to save recipe. Please try again.',
+                text: `Failed to save recipe: ${err.message}`,
                 confirmButtonColor: '#ea5e18'
               });
             });
@@ -1816,8 +1938,45 @@
           return `${value}${suffix ? ' ' + suffix : ''}`;
         },
 
+        // DEBUG WRAPPER: This method will help us see exactly what's being passed from the button
+        debugAndShowRatingModal(recipe, index) {
+          console.log('🚨 DEBUG: Button clicked - Rate & Review');
+          console.log('🚨 DEBUG: Recipe passed from button:', recipe);
+          console.log('🚨 DEBUG: Recipe index:', index);
+          console.log('🚨 DEBUG: Recipe type:', typeof recipe);
+          console.log('🚨 DEBUG: Recipe is null?', recipe === null);
+          console.log('🚨 DEBUG: Recipe is undefined?', recipe === undefined);
+          console.log('🚨 DEBUG: Recipe properties:', recipe ? Object.keys(recipe) : 'N/A');
+
+          if (recipe) {
+            console.log('🚨 DEBUG: Recipe.id:', recipe.id);
+            console.log('🚨 DEBUG: Recipe.name:', recipe.name);
+            console.log('🚨 DEBUG: Recipe.ingredients:', recipe.ingredients);
+          } else {
+            // If recipe is null, try to get it from the filteredRecipes array
+            console.log('🚨 DEBUG: Recipe is null, trying to get from filteredRecipes[' + index + ']');
+            const fallbackRecipe = this.filteredRecipes[index];
+            console.log('🚨 DEBUG: Fallback recipe:', fallbackRecipe);
+            if (fallbackRecipe) {
+              recipe = fallbackRecipe;
+            }
+          }
+
+          // Call the actual method
+          this.showRatingModal(recipe);
+        },
+
         showRatingModal(recipe) {
+          // ENHANCED DEBUGGING: Log everything about this call
+          console.log('🔍 showRatingModal called in search-results');
+          console.log('📥 Raw recipe parameter:', recipe);
+          console.log('📝 Recipe type:', typeof recipe);
+          console.log('📋 Recipe properties:', recipe ? Object.keys(recipe) : 'N/A');
+          console.log('🔑 Recipe.id:', recipe ? recipe.id : 'N/A');
+          console.log('📛 Recipe.name:', recipe ? recipe.name : 'N/A');
+
           if (!this.token) {
+            console.log('❌ No token - showing login required');
             Swal.fire({
               icon: 'warning',
               title: 'Login Required',
@@ -1827,11 +1986,67 @@
             return;
           }
 
+          // Use utility function to validate recipe
+          console.log('🔍 Starting recipe validation...');
+          if (!this.validateRecipe(recipe, 'showRatingModal_searchResults')) {
+            console.log('❌ Recipe validation failed');
+            Swal.fire({
+              icon: 'error',
+              title: 'Recipe Validation Failed',
+              html: `
+                <div style="text-align: left;">
+                  <p><strong>Debug Info:</strong></p>
+                  <p>Recipe type: ${typeof recipe}</p>
+                  <p>Recipe: ${JSON.stringify(recipe, null, 2)}</p>
+                  <p>This error suggests the recipe object is missing required properties.</p>
+                </div>
+              `,
+              confirmButtonColor: '#ea5e18'
+            });
+            return;
+          }
+
+          // Get safe recipe ID
+          console.log('🔍 Getting safe recipe ID...');
+          const recipeId = this.safeGetRecipeId(recipe, 'showRatingModal_searchResults');
+          if (!recipeId) {
+            console.log('❌ Recipe ID generation failed');
+            Swal.fire({
+              icon: 'error',
+              title: 'Recipe ID Generation Failed',
+              html: `
+                <div style="text-align: left;">
+                  <p><strong>Debug Info:</strong></p>
+                  <p>Recipe: ${JSON.stringify(recipe, null, 2)}</p>
+                  <p>Could not generate a valid ID from this recipe object.</p>
+                </div>
+              `,
+              confirmButtonColor: '#ea5e18'
+            });
+            return;
+          }
+
+          console.log('✅ Recipe ID generated successfully:', recipeId);
+
+          // Create a clean copy of the recipe with guaranteed properties
+          const cleanRecipe = {
+            id: recipeId,
+            name: recipe.name,
+            ingredients: recipe.ingredients || 'Ingredients not available',
+            instructions: recipe.instructions || 'Instructions not available',
+            // Copy other properties if they exist
+            ...recipe
+          };
+
+          console.log('✅ Clean recipe created:', cleanRecipe);
+
           // Show rating modal directly
-          this.selectedRecipeForRating = recipe;
+          this.selectedRecipeForRating = cleanRecipe;
           this.showRatingModalFlag = true;
           this.currentRating = 0;
           this.currentReviewText = '';
+
+          console.log('✅ Rating modal should now be visible');
           this.markAsVerified = false;
           this.verificationNotes = '';
 
@@ -1888,7 +2103,7 @@
           });
         },
 
-        submitRating() {
+        async submitRating() {
           if (this.currentRating === 0) {
             Swal.fire({
               icon: 'warning',
@@ -1899,85 +2114,273 @@
             return;
           }
 
-          const recipeId = this.selectedRecipeForRating.id;
+          // Disable the submit button to prevent double submissions
+          const submitButton = document.querySelector('.rating-modal .btn-primary');
+          if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.textContent = 'Submitting...';
+          }
 
-          // Submit review
-          const reviewData = {
-            rating: this.currentRating,
-            review_text: this.currentReviewText.trim() || null
-          };
+          try {
+            // Use utility function to validate recipe and get ID
+            if (!this.validateRecipe(this.selectedRecipeForRating, 'submitRating_searchResults')) {
+              throw new Error('Recipe data is incomplete or missing');
+            }
 
-          fetch(`/api/recipe/${recipeId}/review`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${this.token}`
-            },
-            body: JSON.stringify(reviewData)
-          })
-          .then(res => res.json())
-          .then(data => {
-            if (data.status === 'success') {
+            const recipeId = this.safeGetRecipeId(this.selectedRecipeForRating, 'submitRating_searchResults');
+            if (!recipeId) {
+              throw new Error('Recipe ID could not be determined');
+            }
+
+            // Submit review with retry logic
+            const reviewData = {
+              rating: this.currentRating,
+              review_text: this.currentReviewText.trim() || null
+            };
+
+            console.log('Submitting rating:', { recipeId, reviewData });
+
+            const success = await this.submitRatingWithRetry(recipeId, reviewData);
+
+            if (success) {
               // If user marked as verified, submit verification
               if (this.markAsVerified) {
-                return this.submitVerification(recipeId);
+                console.log('Submitting verification...');
+                try {
+                  await this.submitVerificationWithRetry(recipeId);
+                } catch (verifyErr) {
+                  console.warn('Verification failed but rating succeeded:', verifyErr);
+                }
               }
-              return Promise.resolve();
-            } else {
-              throw new Error(data.message || 'Failed to submit review');
+
+              // Refresh recipe data to show updated ratings
+              this.searchRecipes();
+
+              Swal.fire({
+                icon: 'success',
+                title: 'Thank You!',
+                text: 'Your rating and review have been submitted successfully',
+                confirmButtonColor: '#ea5e18',
+                timer: 2000,
+                showConfirmButton: false
+              });
+
+              this.closeRatingModal();
             }
-          })
-          .then(() => {
-            // Refresh recipe data to show updated ratings
-            this.searchRecipes();
-
-            Swal.fire({
-              icon: 'success',
-              title: 'Thank You!',
-              text: 'Your rating and review have been submitted successfully',
-              confirmButtonColor: '#ea5e18',
-              timer: 2000,
-              showConfirmButton: false
-            });
-
-            this.closeRatingModal();
-          })
-          .catch(err => {
+          } catch (err) {
             console.error('Error submitting rating:', err);
-            Swal.fire({
-              icon: 'error',
-              title: 'Error',
-              text: 'Failed to submit rating. Please try again.',
-              confirmButtonColor: '#ea5e18'
-            });
-          });
+
+            // Check if it's a token expiration issue
+            if (err.message.includes('token') || err.message.includes('401') || err.message.includes('unauthorized')) {
+              Swal.fire({
+                icon: 'warning',
+                title: 'Session Expired',
+                text: 'Your session has expired. Please refresh the page and try again.',
+                confirmButtonColor: '#ea5e18',
+                confirmButtonText: 'Refresh Page'
+              }).then((result) => {
+                if (result.isConfirmed) {
+                  window.location.reload();
+                }
+              });
+            } else {
+              Swal.fire({
+                icon: 'error',
+                title: 'Submission Failed',
+                text: err.message || 'Failed to submit rating. Please try again.',
+                confirmButtonColor: '#ea5e18',
+                showCancelButton: true,
+                confirmButtonText: 'Retry',
+                cancelButtonText: 'Cancel'
+              }).then((result) => {
+                if (result.isConfirmed) {
+                  // Retry submission
+                  this.submitRating();
+                }
+              });
+            }
+          } finally {
+            // Re-enable the submit button
+            const submitButton = document.querySelector('.rating-modal .btn-primary');
+            if (submitButton) {
+              submitButton.disabled = false;
+              submitButton.textContent = 'Submit Rating';
+            }
+          }
         },
 
-        submitVerification(recipeId) {
+        async submitRatingWithRetry(recipeId, reviewData, maxRetries = 3) {
+          for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+              console.log(`Rating submission attempt ${attempt}/${maxRetries}`);
+
+              // Check if token exists
+              if (!this.token) {
+                throw new Error('Authentication token not found. Please log in again.');
+              }
+
+              const response = await fetch(`/api/recipe/${recipeId}/review`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${this.token}`
+                },
+                body: JSON.stringify(reviewData)
+              });
+
+              console.log('Rating response status:', response.status);
+              console.log('Rating response headers:', Object.fromEntries(response.headers.entries()));
+
+              if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Rating submission failed:', response.status, errorText);
+
+                // Try to parse error as JSON
+                let errorData;
+                try {
+                  errorData = JSON.parse(errorText);
+                } catch (e) {
+                  errorData = { message: errorText };
+                }
+
+                // If it's a 401 (unauthorized), don't retry
+                if (response.status === 401) {
+                  throw new Error('Authentication failed - please refresh the page and try again');
+                }
+
+                // If it's the last attempt, throw the error
+                if (attempt === maxRetries) {
+                  throw new Error(errorData.message || `HTTP ${response.status}: ${errorText}`);
+                }
+
+                // Wait before retrying (exponential backoff)
+                await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+                continue;
+              }
+
+              const data = await response.json();
+              console.log('Rating submission response:', data);
+
+              if (data.status === 'success') {
+                return true;
+              } else {
+                throw new Error(data.message || 'Failed to submit review');
+              }
+            } catch (err) {
+              console.error(`Rating submission attempt ${attempt} failed:`, err);
+
+              // If it's the last attempt or a non-retryable error, throw it
+              if (attempt === maxRetries || err.message.includes('Authentication failed')) {
+                throw err;
+              }
+
+              // Wait before retrying
+              await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+            }
+          }
+        },
+
+        async submitVerificationWithRetry(recipeId, maxRetries = 3) {
           const verificationData = {
             notes: this.verificationNotes.trim() || null
           };
 
-          return fetch(`/api/recipe/${recipeId}/verify`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${this.token}`
-            },
-            body: JSON.stringify(verificationData)
-          })
-          .then(res => res.json())
-          .then(data => {
-            if (data.status !== 'success') {
-              throw new Error(data.message || 'Failed to submit verification');
+          for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+              console.log(`Verification submission attempt ${attempt}/${maxRetries}`);
+
+              const response = await fetch(`/api/recipe/${recipeId}/verify`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${this.token}`
+                },
+                body: JSON.stringify(verificationData),
+                timeout: 10000 // 10 second timeout
+              });
+
+              console.log('Verification response status:', response.status);
+
+              if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Verification submission failed:', response.status, errorText);
+
+                // Try to parse error as JSON
+                let errorData;
+                try {
+                  errorData = JSON.parse(errorText);
+                } catch (e) {
+                  errorData = { message: errorText };
+                }
+
+                // If it's a 401 (unauthorized), don't retry
+                if (response.status === 401) {
+                  throw new Error('Authentication failed - please refresh the page and try again');
+                }
+
+                // If it's the last attempt, throw the error
+                if (attempt === maxRetries) {
+                  throw new Error(errorData.message || `HTTP ${response.status}: ${errorText}`);
+                }
+
+                // Wait before retrying (exponential backoff)
+                await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+                continue;
+              }
+
+              const data = await response.json();
+              console.log('Verification submission response:', data);
+
+              if (data.status === 'success') {
+                return true;
+              } else {
+                throw new Error(data.message || 'Failed to submit verification');
+              }
+            } catch (err) {
+              console.error(`Verification submission attempt ${attempt} failed:`, err);
+
+              // If it's the last attempt or a non-retryable error, throw it
+              if (attempt === maxRetries || err.message.includes('Authentication failed')) {
+                throw err;
+              }
+
+              // Wait before retrying
+              await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
             }
-          });
+          }
+        },
+
+        // Legacy method for backward compatibility
+        submitVerification(recipeId) {
+          return this.submitVerificationWithRetry(recipeId);
         },
 
         showReviewsModal(recipe) {
+          // Use utility function to validate recipe and get ID
+          if (!this.validateRecipe(recipe, 'showReviewsModal_searchResults')) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Recipe data is incomplete.',
+              confirmButtonColor: '#ea5e18'
+            });
+            return;
+          }
+
+          const recipeId = this.safeGetRecipeId(recipe, 'showReviewsModal_searchResults');
+          if (!recipeId) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Recipe ID could not be determined.',
+              confirmButtonColor: '#ea5e18'
+            });
+            return;
+          }
+
           this.selectedRecipeForReviews = recipe;
           this.showReviewsModalFlag = true;
-          this.loadRecipeReviews(recipe.id);
+          this.loadRecipeReviews(recipeId);
         },
 
         closeReviewsModal() {
@@ -2037,7 +2440,10 @@
           .then(data => {
             if (data.status === 'success') {
               // Reload reviews to show updated vote counts
-              this.loadRecipeReviews(this.selectedRecipeForReviews.id);
+              const recipeId = this.safeGetRecipeId(this.selectedRecipeForReviews, 'voteOnReview_reload');
+              if (recipeId) {
+                this.loadRecipeReviews(recipeId);
+              }
             } else {
               throw new Error(data.message || 'Failed to vote');
             }
@@ -2050,6 +2456,75 @@
               text: 'Failed to vote on review. Please try again.',
               confirmButtonColor: '#ea5e18'
             });
+          });
+        },
+
+        trackSearchAnalytics() {
+          // Track search analytics when users land on search results page
+          const token = localStorage.getItem('token');
+          if (!token || this.searchedIngredients.length === 0) {
+            return;
+          }
+
+          console.log('🔍 DEBUG: Tracking search analytics for ingredients:', this.searchedIngredients);
+
+          // Save search to recent searches
+          const searchData = {
+            title: 'Search Results',
+            ingredients: this.searchedIngredients.join(', '),
+            ingredientsList: this.searchedIngredients,
+            timestamp: new Date().toISOString()
+          };
+
+          // Save to database via API
+          fetch('/api/dashboard/search-history', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(searchData)
+          })
+          .then(res => {
+            if (!res.ok) {
+              throw new Error('Failed to save search history');
+            }
+            return res.json();
+          })
+          .then(data => {
+            console.log('🔍 DEBUG: Search history saved successfully:', data);
+          })
+          .catch(err => {
+            console.error('Error saving search history:', err);
+          });
+
+          // Track analytics event
+          fetch('/api/analytics/track', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              event_type: 'search',
+              event_data: {
+                ingredients: this.searchedIngredients,
+                ingredient_count: this.searchedIngredients.length,
+                source: 'search_results_page'
+              }
+            })
+          })
+          .then(res => {
+            if (!res.ok) {
+              throw new Error('Failed to track analytics');
+            }
+            return res.json();
+          })
+          .then(data => {
+            console.log('🔍 DEBUG: Analytics tracked successfully:', data);
+          })
+          .catch(err => {
+            console.error('Error tracking analytics:', err);
           });
         }
       }

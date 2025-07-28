@@ -142,3 +142,92 @@ def remove_saved_recipe_for_user(user_id, recipe_id):
     from api.models.user import remove_saved_recipe
     
     return remove_saved_recipe(user_id, recipe_id)
+
+def get_user_submitted_recipes(user_id=None, approval_status=None, limit=None):
+    """
+    Get user-submitted recipes with optional filtering.
+
+    Args:
+        user_id (str, optional): Filter by submitter user ID
+        approval_status (str, optional): Filter by approval status ('pending', 'approved', 'rejected')
+        limit (int, optional): Limit number of results
+
+    Returns:
+        list: List of user-submitted recipe documents
+    """
+    query = {'is_user_submitted': True}
+
+    if user_id:
+        query['submitter_id'] = user_id
+
+    if approval_status:
+        query['approval_status'] = approval_status
+
+    cursor = mongo.db.recipes.find(query).sort('submission_date', -1)
+
+    if limit:
+        cursor = cursor.limit(limit)
+
+    return list(cursor)
+
+def update_recipe_approval_status(recipe_id, approval_status, admin_notes=None):
+    """
+    Update the approval status of a user-submitted recipe.
+
+    Args:
+        recipe_id (str): Recipe ID
+        approval_status (str): New approval status ('pending', 'approved', 'rejected')
+        admin_notes (str, optional): Admin notes about the approval decision
+
+    Returns:
+        bool: True if update was successful, False otherwise
+    """
+    update_data = {
+        'approval_status': approval_status,
+        'updated_at': datetime.utcnow()
+    }
+
+    if admin_notes:
+        update_data['admin_notes'] = admin_notes
+
+    if approval_status == 'approved':
+        update_data['approved_at'] = datetime.utcnow()
+    elif approval_status == 'rejected':
+        update_data['rejected_at'] = datetime.utcnow()
+
+    try:
+        result = mongo.db.recipes.update_one(
+            {'_id': ObjectId(recipe_id)},
+            {'$set': update_data}
+        )
+        return result.modified_count > 0
+    except:
+        return False
+
+def get_recipe_with_submitter_info(recipe_id):
+    """
+    Get a recipe with submitter information.
+
+    Args:
+        recipe_id (str): Recipe ID
+
+    Returns:
+        dict: Recipe document with submitter info or None if not found
+    """
+    try:
+        recipe = mongo.db.recipes.find_one({'_id': ObjectId(recipe_id)})
+
+        if recipe and recipe.get('is_user_submitted') and recipe.get('submitter_id'):
+            # Get submitter info
+            from api.models.user import get_user_by_id
+            submitter = get_user_by_id(recipe['submitter_id'])
+
+            if submitter:
+                recipe['submitter_info'] = {
+                    'name': submitter.get('name', 'Anonymous'),
+                    'profile_image': submitter.get('profile_image')
+                }
+
+        return recipe
+    except:
+        return None

@@ -18,7 +18,11 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from hybrid_recipe_recommender import HybridRecipeRecommender
 
 # Import configuration
-from api.config import MONGO_URI, JWT_SECRET_KEY, JWT_ACCESS_TOKEN_EXPIRES
+from api.config import (
+    MONGO_URI, JWT_SECRET_KEY, JWT_ACCESS_TOKEN_EXPIRES,
+    MAIL_SERVER, MAIL_PORT, MAIL_USE_TLS, MAIL_USE_SSL,
+    MAIL_USERNAME, MAIL_PASSWORD, MAIL_DEFAULT_SENDER
+)
 
 # Create Flask app
 app = Flask(__name__,
@@ -31,6 +35,15 @@ app = Flask(__name__,
 app.config['MONGO_URI'] = MONGO_URI
 app.config['JWT_SECRET_KEY'] = JWT_SECRET_KEY
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = JWT_ACCESS_TOKEN_EXPIRES
+
+# Email configuration
+app.config['MAIL_SERVER'] = MAIL_SERVER
+app.config['MAIL_PORT'] = MAIL_PORT
+app.config['MAIL_USE_TLS'] = MAIL_USE_TLS
+app.config['MAIL_USE_SSL'] = MAIL_USE_SSL
+app.config['MAIL_USERNAME'] = MAIL_USERNAME
+app.config['MAIL_PASSWORD'] = MAIL_PASSWORD
+app.config['MAIL_DEFAULT_SENDER'] = MAIL_DEFAULT_SENDER
 
 # Initialize extensions
 CORS(app)  # Enable CORS for all routes
@@ -101,9 +114,12 @@ def initialize_recommender(num_recipes=10, max_recipes=10000):
             print(f"Warning: Could not load user interaction data: {e}")
             print("Continuing with default popularity scores...")
 
+        # Store recommender in app context
+        app.recommender = recommender
+
         # Print some stats about loaded recipes
         print(f"Loaded {len(recommender.recipes)} recipes")
-        print(f"Found {len(recommender.ingredient_names)} unique ingredients")
+        print(f"Found {len(recommender.knn_recommender.ingredient_names)} unique ingredients")
 
         return True
 
@@ -111,23 +127,78 @@ def initialize_recommender(num_recipes=10, max_recipes=10000):
         print(f"Error initializing recommender: {e}")
         return False
 
-# Initialize the recommender
-initialize_recommender()
-
 # Import and register blueprints
-from api.routes import *
 from api.auth import auth_bp
+from api.analytics_routes import analytics_bp
+from api.routes import main_bp
+
+# Initialize the recommender with smaller dataset for faster startup
+initialize_recommender(num_recipes=5, max_recipes=100)
+
+# Add a simple home route
+@app.route('/', methods=['GET'])
+def home():
+    """Home page for the recipe recommendation system."""
+    from flask import render_template
+    return render_template('home.html')
+
+@app.route('/welcome', methods=['GET'])
+def welcome():
+    """Welcome page with analytics and recipe information."""
+    from flask import render_template
+    return render_template('welcome.html')
+
+@app.route('/login', methods=['GET'])
+def login():
+    """Login page for the recipe recommendation system."""
+    from flask import render_template
+    return render_template('login.html')
+
+@app.route('/api/test', methods=['GET'])
+def test_api():
+    """Test API endpoint."""
+    from flask import jsonify
+    return jsonify({'status': 'success', 'message': 'API is working!'})
+
+@app.route('/api/analytics/leftover-ingredients', methods=['GET'])
+def get_leftover_ingredients_analytics():
+    """
+    Get analytics for most searched leftover-prone ingredients.
+    """
+    from flask import jsonify
+    from datetime import datetime
+
+    # Return fallback data for now
+    most_searched_leftovers = [
+        {'name': 'Chicken', 'count': 245, 'percentage': 22.1},
+        {'name': 'Rice', 'count': 189, 'percentage': 17.0},
+        {'name': 'Tomatoes', 'count': 167, 'percentage': 15.1},
+        {'name': 'Onions', 'count': 134, 'percentage': 12.1},
+        {'name': 'Carrots', 'count': 112, 'percentage': 10.1}
+    ]
+    total_ingredient_searches = sum(item['count'] for item in most_searched_leftovers)
+
+    return jsonify({
+        'status': 'success',
+        'data': {
+            'most_searched_leftovers': most_searched_leftovers,
+            'total_searches': total_ingredient_searches,
+            'last_updated': datetime.utcnow().isoformat()
+        }
+    })
 
 # Register blueprints
 try:
     app.register_blueprint(auth_bp)
+    app.register_blueprint(analytics_bp)
+    app.register_blueprint(main_bp)
 except ValueError:
     # Blueprint already registered, skip
     pass
 
 if __name__ == '__main__':
-    # Initialize the recommender
-    initialize_recommender()
+    # Initialize the recommender with small dataset for testing
+    initialize_recommender(num_recipes=5, max_recipes=100)
 
     # Run the app
     app.run(debug=True, host='0.0.0.0', port=5000)

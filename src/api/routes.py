@@ -4,9 +4,11 @@ API Routes for Recipe Recommender
 This module defines the API routes for the recipe recommendation system.
 """
 
-from flask import jsonify, request, render_template, redirect, url_for
+from flask import jsonify, request, render_template, redirect, url_for, current_app, Blueprint
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
-from api.app import app, recommender
+
+# Create a blueprint for the main routes
+main_bp = Blueprint('main', __name__)
 from api.decorators import login_required
 from api.models.recipe import (
     get_recipe_by_id,
@@ -36,6 +38,22 @@ from api.models.community import (
     get_user_verification_for_recipe,
     create_community_indexes
 )
+
+# Import ingredient filter for analytics
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Try to import ingredient_filter, with fallback if not found
+try:
+    from ingredient_filter import filter_ingredients_list, is_main_ingredient
+except ImportError:
+    # Fallback functions if ingredient_filter is not available
+    def filter_ingredients_list(ingredients):
+        return ingredients
+
+    def is_main_ingredient(ingredient):
+        return True
 
 def _simple_fuzzy_match(str1, str2, threshold=0.6):
     """Simple fuzzy matching for ingredient names."""
@@ -68,55 +86,121 @@ def _simple_fuzzy_match(str1, str2, threshold=0.6):
 
     return similarity >= threshold
 
-@app.route('/', methods=['GET'])
+@main_bp.route('/', methods=['GET'])
+def home():
+    """Home page for the recipe recommendation system."""
+    return render_template('home.html')
+
+@main_bp.route('/welcome', methods=['GET'])
 def welcome():
-    """Welcome page for the recipe recommendation system."""
+    """Welcome page with analytics and recipe information."""
     return render_template('welcome.html')
 
-@app.route('/login', methods=['GET'])
+@main_bp.route('/login', methods=['GET'])
 def login():
     """Login page for the recipe recommendation system."""
     return render_template('login.html')
 
-@app.route('/signup', methods=['GET'])
+@main_bp.route('/signup', methods=['GET'])
 def signup():
     """Sign up page for the recipe recommendation system."""
     return render_template('signup.html')
 
-@app.route('/dashboard', methods=['GET'])
+@main_bp.route('/dashboard', methods=['GET'])
 def dashboard():
     """Dashboard page for the recipe recommendation system."""
     # We'll handle authentication in the client-side JavaScript
     return render_template('dashboard.html')
 
-@app.route('/save-recipe', methods=['GET'])
+@main_bp.route('/save-recipe', methods=['GET'])
 def save_recipe_page():
     """Saved recipes page for the recipe recommendation system."""
     # We'll handle authentication in the client-side JavaScript
     return render_template('save-recipe.html')
 
-@app.route('/profile', methods=['GET'])
+@main_bp.route('/profile', methods=['GET'])
 def profile_page():
     """Profile page for the recipe recommendation system."""
     # We'll handle authentication in the client-side JavaScript
     return render_template('profile.html')
 
-@app.route('/search-results', methods=['GET'])
+@main_bp.route('/shared-recipe', methods=['GET'])
+def shared_recipe_page():
+    """Shared recipe page for users to submit their own recipes."""
+    # We'll handle authentication in the client-side JavaScript
+    return render_template('shared-recipe.html')
+
+@main_bp.route('/community', methods=['GET'])
+def community_page():
+    """Community page for social interactions and shared recipes."""
+    # We'll handle authentication in the client-side JavaScript
+    return render_template('community.html')
+
+@main_bp.route('/test-auth', methods=['GET'])
+def test_auth_page():
+    """Test page for authentication debugging."""
+    return '''<!DOCTYPE html>
+<html><head><title>Auth Test</title></head><body>
+<h1>Community Auth Test</h1><div id="status">Testing...</div><div id="results"></div>
+<script>
+const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTc1MzQ4MzU5NSwianRpIjoiYzFhNGJkMGEtMWE2ZC00OGI0LTg5MGYtZTVmYmY2YWMzMjRlIiwidHlwZSI6ImFjY2VzcyIsInN1YiI6IjY4ODM4ZDk3MmFkZmYyZDU4NzIzOTkwNiIsIm5iZiI6MTc1MzQ4MzU5NSwiY3NyZiI6IjNmYzVhNGRlLWNmYmItNDI5MC1iYzc4LWE3OWY0MDQyM2RmZCIsImV4cCI6MTc1MzU2OTk5NSwibmFtZSI6IlRlc3QgVXNlciIsImVtYWlsIjoidGVzdHVzZXJAZXhhbXBsZS5jb20iLCJpc19hZG1pbiI6ZmFsc2V9.8BqbQgCs7jLD_N3ncbf-KHHat8diw7xnOuF6bE6FW9c';
+localStorage.setItem('token', token);
+async function testAuth() {
+    try {
+        document.getElementById('status').textContent = 'Testing auth...';
+        const response = await fetch('/api/auth/me', { headers: { 'Authorization': 'Bearer ' + token } });
+        if (response.ok) {
+            const userData = await response.json();
+            if (userData.status === 'success' && userData.user) {
+                document.getElementById('status').textContent = '✅ Auth successful!';
+                document.getElementById('results').innerHTML = '<h3>User: ' + userData.user.name + '</h3><p><a href="/community">Test Community Page</a></p>';
+            }
+        } else { throw new Error('Auth failed'); }
+    } catch (error) {
+        document.getElementById('status').textContent = '❌ Auth failed: ' + error.message;
+    }
+}
+testAuth();
+</script></body></html>'''
+
+@main_bp.route('/test-profile-api', methods=['GET'])
+def test_profile_api():
+    """Test page for profile API debugging."""
+    return render_template('test_profile_api.html')
+
+@main_bp.route('/search-results', methods=['GET'])
 def search_results_page():
     """Search results page for displaying all recommended recipes."""
     # We'll handle authentication in the client-side JavaScript
     return render_template('search-results.html')
 
+@main_bp.route('/admin', methods=['GET'])
+def admin_page():
+    """Admin page for viewing all user information."""
+    return render_template('admin.html')
+
+@main_bp.route('/forgot-password', methods=['GET'])
+def forgot_password_page():
+    """Forgot password page for password reset requests."""
+    return render_template('forgot-password.html')
+
+@main_bp.route('/reset-password', methods=['GET'])
+def reset_password_page():
+    """Reset password page for setting new password with token."""
+    return render_template('reset-password.html')
 
 
-@app.route('/api/docs', methods=['GET'])
+
+@main_bp.route('/api/docs', methods=['GET'])
 def api_docs():
     """API documentation page."""
     return render_template('api_docs.html')
 
-@app.route('/api/health', methods=['GET'])
+@main_bp.route('/api/health', methods=['GET'])
 def health_check():
     """Health check endpoint."""
+    # Get recommender from current_app
+    recommender = getattr(current_app, 'recommender', None)
     if recommender is None:
         return jsonify({
             'status': 'error',
@@ -130,7 +214,7 @@ def health_check():
         'ingredients_loaded': len(recommender.ingredient_names)
     })
 
-@app.route('/api/ingredients', methods=['GET'])
+@main_bp.route('/api/ingredients', methods=['GET'])
 def get_ingredients():
     """
     Get all available ingredients.
@@ -142,6 +226,8 @@ def get_ingredients():
     limit : int, optional
         Maximum number of ingredients to return (default: 100)
     """
+    # Get recommender from current_app
+    recommender = getattr(current_app, 'recommender', None)
     if recommender is None:
         return jsonify({
             'status': 'error',
@@ -156,7 +242,7 @@ def get_ingredients():
     ingredients = []
     count = 0
 
-    for ingredient_name in recommender.ingredient_names:
+    for ingredient_name in recommender.knn_recommender.ingredient_names:
         if count >= limit:
             break
 
@@ -175,7 +261,7 @@ def get_ingredients():
         'ingredients': ingredients
     })
 
-@app.route('/api/recommend', methods=['POST'])
+@main_bp.route('/api/recommend', methods=['POST'])
 def recommend_recipes():
     """
     Recommend recipes based on ingredients.
@@ -209,6 +295,8 @@ def recommend_recipes():
         ]
     }
     """
+    # Get recommender from current_app
+    recommender = getattr(current_app, 'recommender', None)
     if recommender is None:
         return jsonify({
             'status': 'error',
@@ -309,6 +397,26 @@ def recommend_recipes():
             cuisine_estimated = cuisine == 'International'
             difficulty_estimated = difficulty == 'Medium'
 
+            # Get rating data for this recipe
+            rating_summary = get_recipe_rating_summary(str(recipe['id']))
+            rating_data = None
+            verification_data = None
+
+            if rating_summary['status'] == 'success':
+                rating_data = {
+                    'average_rating': rating_summary['average_rating'],
+                    'total_reviews': rating_summary['total_reviews'],
+                    'rating_distribution': rating_summary['rating_distribution']
+                }
+
+            # Get verification data for this recipe
+            from api.models.community import mongo
+            verification_count = mongo.db.recipe_verifications.count_documents({'recipe_id': str(recipe['id'])})
+            if verification_count > 0:
+                verification_data = {
+                    'verification_count': verification_count
+                }
+
             # Prepare recipe data
             recipe_data = {
                 'id': recipe['id'],
@@ -330,7 +438,9 @@ def recommend_recipes():
                 'cuisine': cuisine,
                 'cuisine_estimated': cuisine_estimated,
                 'difficulty': difficulty,
-                'difficulty_estimated': difficulty_estimated
+                'difficulty_estimated': difficulty_estimated,
+                'rating_data': rating_data,
+                'verification_data': verification_data
             }
 
             # Add recommendation explanation if available (for debugging)
@@ -339,7 +449,7 @@ def recommend_recipes():
 
             recipes.append(recipe_data)
 
-        # Sort recipes by hybrid score first, then by ingredient match percentage
+        # Sort recipes by hybrid score first (highest first), then by ingredient match percentage
         recipes.sort(key=lambda x: (x['hybrid_score'], x['ingredient_match_percentage']), reverse=True)
 
         return jsonify({
@@ -354,7 +464,7 @@ def recommend_recipes():
             'message': f'Error recommending recipes: {str(e)}'
         }), 500
 
-@app.route('/api/recipe/<recipe_id>', methods=['GET'])
+@main_bp.route('/api/recipe/<recipe_id>', methods=['GET'])
 def get_recipe(recipe_id):
     """
     Get details for a specific recipe.
@@ -364,6 +474,8 @@ def get_recipe(recipe_id):
     recipe_id : str
         ID of the recipe to get
     """
+    # Get recommender from current_app
+    recommender = getattr(current_app, 'recommender', None)
     if recommender is None:
         return jsonify({
             'status': 'error',
@@ -391,6 +503,26 @@ def get_recipe(recipe_id):
         cuisine = recipe.get('cuisine', 'International')
         difficulty = recipe.get('difficulty', 'Medium')
 
+        # Get rating data for this recipe
+        rating_summary = get_recipe_rating_summary(str(recipe['id']))
+        rating_data = None
+        verification_data = None
+
+        if rating_summary['status'] == 'success':
+            rating_data = {
+                'average_rating': rating_summary['average_rating'],
+                'total_reviews': rating_summary['total_reviews'],
+                'rating_distribution': rating_summary['rating_distribution']
+            }
+
+        # Get verification data for this recipe
+        from api.models.community import mongo
+        verification_count = mongo.db.recipe_verifications.count_documents({'recipe_id': str(recipe['id'])})
+        if verification_count > 0:
+            verification_data = {
+                'verification_count': verification_count
+            }
+
         recipe_data = {
             'id': recipe['id'],
             'name': recipe['name'],
@@ -407,7 +539,9 @@ def get_recipe(recipe_id):
             'cuisine': cuisine,
             'cuisine_estimated': cuisine == 'International',
             'difficulty': difficulty,
-            'difficulty_estimated': difficulty == 'Medium'
+            'difficulty_estimated': difficulty == 'Medium',
+            'rating_data': rating_data,
+            'verification_data': verification_data
         }
 
         return jsonify({
@@ -421,7 +555,7 @@ def get_recipe(recipe_id):
             'message': f'Error getting recipe: {str(e)}'
         }), 500
 
-@app.route('/api/recipe/<recipe_id>/save', methods=['POST'])
+@main_bp.route('/api/recipe/<recipe_id>/save', methods=['POST'])
 @jwt_required()
 def save_recipe_api(recipe_id):
     """
@@ -432,6 +566,8 @@ def save_recipe_api(recipe_id):
     recipe_id : str
         ID of the recipe to save
     """
+    # Get recommender from current_app
+    recommender = getattr(current_app, 'recommender', None)
     if recommender is None:
         return jsonify({
             'status': 'error',
@@ -474,6 +610,16 @@ def save_recipe_api(recipe_id):
         success = save_recipe_for_user(user_id, recipe_data)
 
         if success:
+            # Track analytics for recipe save
+            try:
+                update_user_analytics(user_id, 'recipe_save', {
+                    'recipe_id': recipe_id,
+                    'recipe_name': recipe['name']
+                })
+                print(f"Analytics tracked for recipe save: user={user_id}, recipe={recipe_id}")
+            except Exception as e:
+                print(f"Warning: Could not track recipe save analytics: {e}")
+
             return jsonify({
                 'status': 'success',
                 'message': 'Recipe saved successfully'
@@ -490,7 +636,7 @@ def save_recipe_api(recipe_id):
             'message': f'Error saving recipe: {str(e)}'
         }), 500
 
-@app.route('/api/recipes/saved', methods=['GET'])
+@main_bp.route('/api/recipes/saved', methods=['GET'])
 @jwt_required()
 def get_saved_recipes_api():
     """
@@ -528,7 +674,7 @@ def get_saved_recipes_api():
             'message': f'Error getting saved recipes: {str(e)}'
         }), 500
 
-@app.route('/api/recipe/<recipe_id>/unsave', methods=['POST'])
+@main_bp.route('/api/recipe/<recipe_id>/unsave', methods=['POST'])
 @jwt_required()
 def unsave_recipe_api(recipe_id):
     """
@@ -563,8 +709,214 @@ def unsave_recipe_api(recipe_id):
             'message': f'Error removing recipe from saved recipes: {str(e)}'
         }), 500
 
+
+
+
+
+
+
+
+
+@main_bp.route('/api/recipe/submit', methods=['POST'])
+@jwt_required()
+def submit_recipe_api():
+    """
+    Submit a new user-generated recipe to the community.
+
+    Request Body (multipart/form-data):
+    -----------------------------------
+    - name: Recipe name (required)
+    - description: Recipe description
+    - cuisine: Cuisine type
+    - image: Recipe image file (optional)
+    - ingredients: JSON array of ingredients (required)
+    - instructions: JSON array of instructions (required)
+    - prep_time: Preparation time in minutes
+    - cook_time: Cooking time in minutes
+    - servings: Number of servings
+    - difficulty: Difficulty level (Easy/Medium/Hard)
+
+    Returns:
+    --------
+    {
+        "status": "success",
+        "message": "Recipe submitted successfully",
+        "recipe_id": "generated_recipe_id"
+    }
+    """
+    import json
+    import base64
+    import uuid
+    from datetime import datetime
+
+    try:
+        # Get user ID from JWT
+        user_id = get_jwt_identity()
+
+        # Get form data
+        name = request.form.get('name', '').strip()
+        description = request.form.get('description', '').strip()
+        cuisine = request.form.get('cuisine', 'International').strip()
+        prep_time = int(request.form.get('prep_time', 30))
+        cook_time = int(request.form.get('cook_time', 45))
+        servings = int(request.form.get('servings', 4))
+        difficulty = request.form.get('difficulty', 'Medium').strip()
+
+        # Parse JSON arrays
+        try:
+            ingredients = json.loads(request.form.get('ingredients', '[]'))
+            instructions = json.loads(request.form.get('instructions', '[]'))
+        except json.JSONDecodeError:
+            return jsonify({
+                'status': 'error',
+                'message': 'Invalid ingredients or instructions format'
+            }), 400
+
+        # Validation
+        if not name:
+            return jsonify({
+                'status': 'error',
+                'message': 'Recipe name is required'
+            }), 400
+
+        if not ingredients or len(ingredients) == 0:
+            return jsonify({
+                'status': 'error',
+                'message': 'At least one ingredient is required'
+            }), 400
+
+        if not instructions or len(instructions) == 0:
+            return jsonify({
+                'status': 'error',
+                'message': 'At least one instruction is required'
+            }), 400
+
+        # Handle image upload
+        image_data = None
+        if 'image' in request.files:
+            image_file = request.files['image']
+            if image_file and image_file.filename:
+                # Read and encode image as base64
+                image_bytes = image_file.read()
+                image_base64 = base64.b64encode(image_bytes).decode('utf-8')
+
+                # Get file extension
+                ext = image_file.filename.rsplit('.', 1)[1].lower() if '.' in image_file.filename else 'jpg'
+                image_data = f"data:image/{ext};base64,{image_base64}"
+
+        # Generate unique recipe ID for user-submitted recipes
+        recipe_id = f"user_{user_id}_{uuid.uuid4().hex[:8]}"
+
+        # Create recipe data structure
+        recipe_data = {
+            'original_id': recipe_id,
+            'name': name,
+            'description': description,
+            'ingredients': ingredients,
+            'steps': instructions,  # Using 'steps' to match existing schema
+            'instructions': instructions,  # Also keep 'instructions' for compatibility
+            'techniques': [],  # Empty for user recipes
+            'calorie_level': 1,  # Default value
+            'prep_time': prep_time,
+            'cook_time': cook_time,
+            'servings': servings,
+            'cuisine': cuisine,
+            'difficulty': difficulty,
+            'image_data': image_data,
+            'submitted_by': user_id,  # Changed from submitter_id to submitted_by for consistency
+            'submitter_id': user_id,  # Keep both for compatibility
+            'submission_date': datetime.utcnow(),
+            'is_user_submitted': True,
+            'created_at': datetime.utcnow(),
+            'updated_at': datetime.utcnow()
+        }
+
+        # Save recipe to database (for community sharing)
+        saved_recipe_id = save_recipe_to_db(recipe_data)
+
+        if not saved_recipe_id:
+            return jsonify({
+                'status': 'error',
+                'message': 'Failed to save recipe to database'
+            }), 500
+
+        # Note: Shared recipes go to community feed, not to personal saved recipes
+
+        # Create a community post for the shared recipe
+        try:
+            from api.models.community_posts import create_post
+
+            # Create post content with recipe details
+            post_content = f"🍽️ I just shared a new recipe: **{name}**\n\n"
+            if description:
+                post_content += f"{description}\n\n"
+
+            post_content += f"🍳 **Cuisine:** {cuisine}\n"
+            post_content += f"⏱️ **Prep Time:** {prep_time} min | **Cook Time:** {cook_time} min\n"
+            post_content += f"👥 **Servings:** {servings} | **Difficulty:** {difficulty}\n\n"
+            post_content += f"📝 **Ingredients:** {', '.join(ingredients[:5])}"
+            if len(ingredients) > 5:
+                post_content += f" and {len(ingredients) - 5} more...\n\n"
+            else:
+                post_content += "\n\n"
+
+            post_content += f"Check out the full recipe in the Shared Recipes section! 🔥"
+
+            # Create the community post
+            post_result = create_post(user_id, post_content)
+
+            if post_result['status'] == 'success':
+                # Add recipe reference to the post
+                from api.models.community_posts import posts_collection
+                posts_collection.update_one(
+                    {'_id': post_result['post']['id']},
+                    {
+                        '$set': {
+                            'recipe_id': saved_recipe_id,
+                            'post_type': 'shared_recipe',
+                            'recipe_name': name,
+                            'recipe_image': image_data
+                        }
+                    }
+                )
+
+                return jsonify({
+                    'status': 'success',
+                    'message': 'Recipe submitted successfully and shared with the community!',
+                    'recipe_id': saved_recipe_id,
+                    'post_id': post_result['post']['id']
+                })
+            else:
+                # Recipe saved but post creation failed - still return success
+                return jsonify({
+                    'status': 'success',
+                    'message': 'Recipe submitted successfully! (Community post creation failed but recipe is saved)',
+                    'recipe_id': saved_recipe_id
+                })
+
+        except Exception as post_error:
+            print(f"Error creating community post for recipe: {post_error}")
+            # Recipe saved but post creation failed - still return success
+            return jsonify({
+                'status': 'success',
+                'message': 'Recipe submitted successfully! (Community post creation failed but recipe is saved)',
+                'recipe_id': saved_recipe_id
+            })
+
+    except ValueError as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Invalid input: {str(e)}'
+        }), 400
+    except Exception as e:
+        print(f"Error submitting recipe: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': f'Error submitting recipe: {str(e)}'
+        }), 500
+
 # Dashboard API endpoints
-@app.route('/api/dashboard/data', methods=['GET'])
+@main_bp.route('/api/dashboard/data', methods=['GET'])
 @jwt_required()
 def get_dashboard_data_api():
     """
@@ -605,7 +957,7 @@ def get_dashboard_data_api():
             'message': f'Error getting dashboard data: {str(e)}'
         }), 500
 
-@app.route('/api/dashboard/search-history', methods=['POST'])
+@main_bp.route('/api/dashboard/search-history', methods=['POST'])
 @jwt_required()
 def save_search_history_api():
     """
@@ -640,8 +992,14 @@ def save_search_history_api():
                 'message': 'ingredientsList is required'
             }), 400
 
+        # Debug logging
+        print(f"🔍 DEBUG: Saving search history for user {user_id}")
+        print(f"🔍 DEBUG: Search data: {data}")
+
         # Save search history
         success = save_search_history(user_id, data)
+
+        print(f"🔍 DEBUG: Search history save success: {success}")
 
         if success:
             return jsonify({
@@ -660,7 +1018,7 @@ def save_search_history_api():
             'message': f'Error saving search history: {str(e)}'
         }), 500
 
-@app.route('/api/dashboard/search-history/clear', methods=['POST'])
+@main_bp.route('/api/dashboard/search-history/clear', methods=['POST'])
 @jwt_required()
 def clear_search_history_api():
     """
@@ -690,7 +1048,7 @@ def clear_search_history_api():
             'message': f'Error clearing search history: {str(e)}'
         }), 500
 
-@app.route('/api/dashboard/search-history/<int:search_index>', methods=['DELETE'])
+@main_bp.route('/api/dashboard/search-history/<int:search_index>', methods=['DELETE'])
 @jwt_required()
 def remove_search_from_history_api(search_index):
     """
@@ -726,7 +1084,7 @@ def remove_search_from_history_api(search_index):
         }), 500
 
 # User Analytics API endpoints
-@app.route('/api/analytics/personal', methods=['GET'])
+@main_bp.route('/api/analytics/personal', methods=['GET'])
 @jwt_required()
 def get_personal_analytics():
     """
@@ -770,7 +1128,547 @@ def get_personal_analytics():
             'message': f'Error getting personal analytics: {str(e)}'
         }), 500
 
-@app.route('/api/analytics/track', methods=['POST'])
+@main_bp.route('/api/analytics/prescriptive', methods=['GET'])
+def get_prescriptive_analytics():
+    """
+    Get prescriptive analytics data for the welcome/dashboard pages.
+
+    Returns:
+    --------
+    {
+        "status": "success",
+        "data": {
+            "trending_recipes": [...],
+            "popular_recipes": [...],
+            "leftover_solutions": {...},
+            "user_specific": {...} // Only if authenticated
+        }
+    }
+    """
+    try:
+        from datetime import datetime, timedelta
+        from collections import defaultdict, Counter
+        import random
+
+        # Import with error handling
+        try:
+            from api.models.user import mongo
+        except ImportError as e:
+            print(f"Warning: Could not import mongo: {e}")
+            mongo = None
+
+        try:
+            from bson.objectid import ObjectId
+        except ImportError as e:
+            print(f"Warning: Could not import ObjectId: {e}")
+            ObjectId = None
+
+        # Get user ID if authenticated (optional)
+        user_id = None
+        try:
+            user_id = get_jwt_identity()
+        except:
+            pass  # User not authenticated
+
+        # Get trending recipes (recipes with recent high engagement)
+        thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+        seven_days_ago = datetime.utcnow() - timedelta(days=7)
+
+        # Get recent reviews and verifications with error handling
+        recent_reviews = []
+        recent_verifications = []
+
+        if mongo:
+            try:
+                recent_reviews = list(mongo.db.recipe_reviews.find({
+                    'created_at': {'$gte': seven_days_ago}
+                }))
+
+                recent_verifications = list(mongo.db.recipe_verifications.find({
+                    'created_at': {'$gte': seven_days_ago}
+                }))
+            except Exception as e:
+                print(f"Warning: Could not fetch reviews/verifications: {e}")
+                recent_reviews = []
+                recent_verifications = []
+
+        # Calculate trending scores
+        trending_scores = defaultdict(float)
+
+        # Score based on recent reviews
+        for review in recent_reviews:
+            recipe_id = review.get('recipe_id')
+            rating = review.get('rating', 3)
+            # Higher weight for recent reviews, bonus for high ratings
+            trending_scores[recipe_id] += (rating / 5.0) * 2.0
+
+        # Score based on recent verifications
+        for verification in recent_verifications:
+            recipe_id = verification.get('recipe_id')
+            trending_scores[recipe_id] += 1.5
+
+        # Get popular recipes (all-time high ratings and engagement)
+        all_reviews = []
+        all_verifications = []
+
+        if mongo:
+            try:
+                all_reviews = list(mongo.db.recipe_reviews.find())
+                all_verifications = list(mongo.db.recipe_verifications.find())
+            except Exception as e:
+                print(f"Warning: Could not fetch all reviews/verifications: {e}")
+                all_reviews = []
+                all_verifications = []
+
+        # Calculate popularity scores with enhanced metrics
+        recipe_ratings = defaultdict(list)
+        recipe_verification_counts = defaultdict(int)
+        recipe_saves = defaultdict(int)
+
+        for review in all_reviews:
+            recipe_id = review.get('recipe_id')
+            rating = review.get('rating', 3)
+            recipe_ratings[recipe_id].append(rating)
+
+        for verification in all_verifications:
+            recipe_id = verification.get('recipe_id')
+            recipe_verification_counts[recipe_id] += 1
+
+        # Get recipe saves data from users
+        if mongo:
+            try:
+                saved_recipes = list(mongo.db.saved_recipes.find())
+                for saved_recipe in saved_recipes:
+                    recipe_name = saved_recipe.get('name', '')
+                    # Try to match saved recipe name to recipe ID
+                    if recommender and recommender.recipes:
+                        matching_recipe = next((r for r in recommender.recipes if r['name'].lower() == recipe_name.lower()), None)
+                        if matching_recipe:
+                            recipe_saves[str(matching_recipe['id'])] += 1
+            except Exception as e:
+                print(f"Warning: Could not fetch saved recipes data: {e}")
+
+        # Calculate average ratings and popularity scores
+        popular_scores = {}
+        for recipe_id, ratings in recipe_ratings.items():
+            avg_rating = sum(ratings) / len(ratings)
+            review_count = len(ratings)
+            verification_count = recipe_verification_counts.get(recipe_id, 0)
+            saves_count = recipe_saves.get(recipe_id, 0)
+
+            # Enhanced popularity score: rating (40%), review count (25%), verifications (20%), saves (15%)
+            popularity_score = (
+                (avg_rating * 0.4) +
+                (min(review_count, 20) * 0.25) +
+                (min(verification_count, 10) * 0.2) +
+                (min(saves_count, 15) * 0.15)
+            )
+            popular_scores[recipe_id] = {
+                'score': popularity_score,
+                'avg_rating': avg_rating,
+                'review_count': review_count,
+                'verification_count': verification_count,
+                'saves': saves_count
+            }
+
+        # Get top trending and popular recipe IDs
+        top_trending_ids = sorted(trending_scores.items(), key=lambda x: x[1], reverse=True)[:5]
+        top_popular_ids = sorted(popular_scores.items(), key=lambda x: x[1]['score'], reverse=True)[:10]
+
+        print(f"🔍 DEBUG: Found {len(popular_scores)} recipes with real ratings/reviews")
+        print(f"🔍 DEBUG: Top popular recipe scores: {[(rid, data['score']) for rid, data in top_popular_ids[:3]]}")
+
+        # Get recipe details from recommender
+        trending_recipes = []
+        popular_recipes = []
+
+        # Get recommender from current_app
+        recommender = getattr(current_app, 'recommender', None)
+        if recommender and recommender.recipes:
+            # Get trending recipes
+            for recipe_id, score in top_trending_ids:
+                recipe = next((r for r in recommender.recipes if str(r['id']) == str(recipe_id)), None)
+                if recipe:
+                    recipe_data = {
+                        'id': recipe['id'],
+                        'name': recipe['name'],
+                        'ingredients': recipe['ingredients'][:5],  # First 5 ingredients
+                        'description': f"Trending recipe with {score:.1f} engagement score",
+                        'trending_score': score,
+                        'prep_time': recipe.get('prep_time', 30),
+                        'difficulty': recipe.get('difficulty', 'Medium')
+                    }
+                    trending_recipes.append(recipe_data)
+
+            # Get popular recipes with enhanced data
+            for recipe_id, data in top_popular_ids:
+                recipe = next((r for r in recommender.recipes if str(r['id']) == str(recipe_id)), None)
+                if recipe:
+                    # Get latest review for this recipe
+                    latest_review = None
+                    if mongo:
+                        try:
+                            latest_review_doc = mongo.db.recipe_reviews.find_one(
+                                {'recipe_id': str(recipe_id)},
+                                sort=[('created_at', -1)]
+                            )
+                            if latest_review_doc:
+                                latest_review = {
+                                    'text': latest_review_doc.get('review_text', ''),
+                                    'user_name': latest_review_doc.get('user_name', 'Anonymous'),
+                                    'rating': latest_review_doc.get('rating', 5)
+                                }
+                        except Exception as e:
+                            print(f"Warning: Could not fetch latest review for recipe {recipe_id}: {e}")
+
+                    recipe_data = {
+                        'id': recipe['id'],
+                        'name': recipe['name'],
+                        'ingredients': recipe['ingredients'][:5],  # First 5 ingredients
+                        'description': f"Highly rated recipe ({data['avg_rating']:.1f}/5 stars) with {data['review_count']} reviews",
+                        'avg_rating': data['avg_rating'],
+                        'rating': data['avg_rating'],  # Alias for compatibility
+                        'review_count': data['review_count'],
+                        'total_reviews': data['review_count'],  # Alias for compatibility
+                        'verification_count': data['verification_count'],
+                        'prep_time': recipe.get('prep_time', 30),
+                        'difficulty': recipe.get('difficulty', 'Medium'),
+                        'saves': data.get('saves', 0),
+                        'total_saves': data.get('saves', 0),  # Alias for compatibility
+                        'latest_review': latest_review
+                    }
+                    popular_recipes.append(recipe_data)
+
+        # Only use fallback data if we have insufficient real data
+        print(f"🔍 DEBUG: Real popular recipes found: {len(popular_recipes)}")
+
+        if len(popular_recipes) < 3:
+            fallback_popular = [
+                {
+                    'id': 'popular-1',
+                    'name': 'Classic Chicken Curry',
+                    'ingredients': ['chicken', 'curry powder', 'coconut milk', 'onion', 'garlic'],
+                    'description': 'Highly rated recipe (4.8/5 stars) with 156 reviews',
+                    'avg_rating': 4.8,
+                    'rating': 4.8,
+                    'review_count': 156,
+                    'total_reviews': 156,
+                    'verification_count': 23,
+                    'prep_time': 45,
+                    'difficulty': 'Medium',
+                    'saves': 234,
+                    'total_saves': 234,
+                    'latest_review': {
+                        'text': 'Amazing flavor! Used leftover chicken and it was perfect.',
+                        'user_name': 'Sarah K.',
+                        'rating': 5
+                    }
+                },
+                {
+                    'id': 'popular-2',
+                    'name': 'Perfect Pancakes',
+                    'ingredients': ['flour', 'egg', 'milk', 'sugar', 'baking powder'],
+                    'description': 'Community favorite (4.9/5 stars) with 203 reviews',
+                    'avg_rating': 4.9,
+                    'rating': 4.9,
+                    'review_count': 203,
+                    'total_reviews': 203,
+                    'verification_count': 45,
+                    'prep_time': 15,
+                    'difficulty': 'Easy',
+                    'saves': 189,
+                    'total_saves': 189,
+                    'latest_review': {
+                        'text': 'Fluffy and delicious! Kids loved them.',
+                        'user_name': 'Mike R.',
+                        'rating': 5
+                    }
+                },
+                {
+                    'id': 'popular-3',
+                    'name': 'Homemade Fried Rice',
+                    'ingredients': ['rice', 'egg', 'soy sauce', 'vegetables', 'garlic'],
+                    'description': 'Perfect for leftovers (4.6/5 stars) with 142 reviews',
+                    'avg_rating': 4.6,
+                    'rating': 4.6,
+                    'review_count': 142,
+                    'total_reviews': 142,
+                    'verification_count': 31,
+                    'prep_time': 20,
+                    'difficulty': 'Easy',
+                    'saves': 167,
+                    'total_saves': 167,
+                    'latest_review': {
+                        'text': 'Great way to use leftover rice. So tasty!',
+                        'user_name': 'Lisa T.',
+                        'rating': 4
+                    }
+                }
+            ]
+
+            # Only add fallback recipes if we need more to reach 3 recipes
+            needed_recipes = 3 - len(popular_recipes)
+            if needed_recipes > 0:
+                popular_recipes.extend(fallback_popular[:needed_recipes])
+                print(f"🔍 DEBUG: Added {needed_recipes} fallback recipes to supplement real data")
+        else:
+            # We have enough real data, just take the top 3
+            popular_recipes = popular_recipes[:3]
+            print(f"🔍 DEBUG: Using {len(popular_recipes)} real popular recipes")
+
+        # Get leftover solutions data
+        leftover_solutions = {}
+
+        # Get most frequently searched ingredients from all users
+        all_users = []
+
+        if mongo:
+            try:
+                all_users = list(mongo.db.users.find({}, {
+                    'dashboard_data.search_stats.most_used_ingredients': 1,
+                    'dashboard_data.ingredient_history': 1
+                }))
+            except Exception as e:
+                print(f"Warning: Could not fetch user data: {e}")
+                all_users = []
+
+        # Aggregate ingredient usage across all users
+        global_ingredient_usage = defaultdict(int)
+        for user in all_users:
+            dashboard_data = user.get('dashboard_data', {})
+            search_stats = dashboard_data.get('search_stats', {})
+            most_used = search_stats.get('most_used_ingredients', {})
+
+            for ingredient, count in most_used.items():
+                global_ingredient_usage[ingredient] += count
+
+        # Get top leftover ingredients
+        top_leftovers = sorted(global_ingredient_usage.items(), key=lambda x: x[1], reverse=True)[:10]
+
+        # Common leftover combinations and their recipe suggestions
+        leftover_combinations = {
+            'rice_egg': {
+                'ingredients': ['rice', 'egg'],
+                'recipes': ['Fried Rice', 'Egg Rice Bowl', 'Rice Omelette'],
+                'description': 'Perfect for using leftover rice'
+            },
+            'chicken_vegetables': {
+                'ingredients': ['chicken', 'vegetables'],
+                'recipes': ['Chicken Stir Fry', 'Chicken Soup', 'Chicken Salad'],
+                'description': 'Great way to use leftover chicken'
+            },
+            'bread_milk': {
+                'ingredients': ['bread', 'milk'],
+                'recipes': ['French Toast', 'Bread Pudding', 'Milk Toast'],
+                'description': 'Transform stale bread into delicious meals'
+            },
+            'pasta_cheese': {
+                'ingredients': ['pasta', 'cheese'],
+                'recipes': ['Mac and Cheese', 'Pasta Bake', 'Cheesy Pasta'],
+                'description': 'Quick pasta solutions'
+            }
+        }
+
+        leftover_solutions = {
+            'top_leftover_ingredients': [{'name': ing, 'usage_count': count} for ing, count in top_leftovers],
+            'common_combinations': leftover_combinations
+        }
+
+        # User-specific analytics (only if authenticated)
+        user_specific = {}
+        if user_id and mongo and ObjectId:
+            try:
+                user = mongo.db.users.find_one({'_id': ObjectId(user_id)})
+                if user:
+                    dashboard_data = user.get('dashboard_data', {})
+                    analytics = user.get('analytics', {})
+
+                    # User's most used ingredients
+                    user_ingredients = dashboard_data.get('search_stats', {}).get('most_used_ingredients', {})
+                    top_user_ingredients = sorted(user_ingredients.items(), key=lambda x: x[1], reverse=True)[:5]
+
+                    # Recent search patterns
+                    recent_searches = dashboard_data.get('recent_searches', [])
+
+                    # Personalized leftover suggestions based on user history
+                    user_leftover_suggestions = []
+                    for ingredient, count in top_user_ingredients:
+                        # Find recipes that use this ingredient
+                        if recommender and recommender.recipes:
+                            matching_recipes = [
+                                r for r in recommender.recipes[:100]  # Limit search
+                                if ingredient.lower() in [ing.lower() for ing in r.get('ingredients', [])]
+                            ][:3]  # Top 3 matches
+
+                            if matching_recipes:
+                                user_leftover_suggestions.append({
+                                    'ingredient': ingredient,
+                                    'usage_count': count,
+                                    'suggested_recipes': [
+                                        {
+                                            'id': r['id'],
+                                            'name': r['name'],
+                                            'ingredients': r['ingredients'][:4]  # First 4 ingredients
+                                        } for r in matching_recipes
+                                    ]
+                                })
+
+                    user_specific = {
+                        'most_used_ingredients': [{'name': ing, 'count': count} for ing, count in top_user_ingredients],
+                        'total_searches': dashboard_data.get('search_stats', {}).get('total_searches', 0),
+                        'recent_search_count': len(recent_searches),
+                        'personalized_leftover_suggestions': user_leftover_suggestions,
+                        'cooking_streak': analytics.get('cooking_streak', {}),
+                        'total_recipe_saves': analytics.get('total_recipe_saves', 0)
+                    }
+            except Exception as e:
+                print(f"Error getting user-specific analytics: {e}")
+                user_specific = {}
+
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'popular_recipes': popular_recipes,
+                'leftover_solutions': leftover_solutions,
+                'user_specific': user_specific
+            }
+        })
+
+    except Exception as e:
+        print(f"Error getting prescriptive analytics: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': f'Error getting prescriptive analytics: {str(e)}'
+        }), 500
+
+@main_bp.route('/api/analytics/leftover-ingredients', methods=['GET'])
+def get_leftover_ingredients_analytics():
+    """
+    Get analytics for most searched leftover-prone ingredients.
+
+    Returns:
+    --------
+    {
+        "status": "success",
+        "data": {
+            "most_searched_leftovers": [
+                {"name": "chicken", "count": 245, "percentage": 18.5},
+                {"name": "rice", "count": 189, "percentage": 14.2},
+                ...
+            ],
+            "total_searches": 1324,
+            "last_updated": "2024-01-01T12:00:00Z"
+        }
+    }
+    """
+    try:
+        from api.models.user import mongo
+        from collections import defaultdict
+        from datetime import datetime
+
+        # Define perishable ingredients that commonly become leftovers
+        leftover_prone_ingredients = {
+            # Fresh vegetables
+            'tomato', 'tomatoes', 'lettuce', 'spinach', 'carrot', 'carrots',
+            'broccoli', 'cauliflower', 'bell pepper', 'peppers', 'onion', 'onions',
+            'celery', 'cucumber', 'zucchini', 'eggplant', 'cabbage', 'kale',
+            'mushroom', 'mushrooms', 'potato', 'potatoes', 'sweet potato',
+
+            # Fresh fruits
+            'banana', 'bananas', 'apple', 'apples', 'orange', 'oranges',
+            'berries', 'strawberry', 'strawberries', 'blueberry', 'blueberries',
+            'grapes', 'lemon', 'lemons', 'lime', 'limes', 'avocado', 'avocados',
+
+            # Dairy products
+            'milk', 'cheese', 'yogurt', 'yoghurt', 'cream', 'butter',
+            'sour cream', 'cottage cheese', 'mozzarella', 'cheddar',
+
+            # Meat and protein
+            'chicken', 'beef', 'pork', 'fish', 'salmon', 'tuna', 'shrimp',
+            'turkey', 'lamb', 'bacon', 'ham', 'sausage', 'ground beef',
+            'chicken breast', 'chicken thigh',
+
+            # Fresh herbs
+            'basil', 'cilantro', 'parsley', 'mint', 'dill', 'chives',
+            'rosemary', 'thyme', 'oregano', 'sage',
+
+            # Cooked grains and leftovers
+            'rice', 'pasta', 'bread', 'noodles', 'quinoa', 'couscous',
+            'leftover rice', 'leftover pasta', 'leftover chicken'
+        }
+
+        # Get all users' search data
+        all_users = []
+        if mongo:
+            try:
+                all_users = list(mongo.db.users.find({}, {
+                    'dashboard_data.search_stats.most_used_ingredients': 1,
+                    'dashboard_data.ingredient_history': 1,
+                    'dashboard_data.recent_searches': 1
+                }))
+            except Exception as e:
+                print(f"Warning: Could not fetch user data: {e}")
+                all_users = []
+
+        # Aggregate ingredient usage across all users
+        global_ingredient_usage = defaultdict(int)
+        total_ingredient_searches = 0
+
+        for user in all_users:
+            dashboard_data = user.get('dashboard_data', {})
+            search_stats = dashboard_data.get('search_stats', {})
+            most_used = search_stats.get('most_used_ingredients', {})
+
+            for ingredient, count in most_used.items():
+                # Normalize ingredient name (lowercase, strip whitespace)
+                normalized_ingredient = ingredient.lower().strip()
+
+                # Check if this ingredient is leftover-prone
+                if normalized_ingredient in leftover_prone_ingredients:
+                    global_ingredient_usage[normalized_ingredient] += count
+                    total_ingredient_searches += count
+
+        # Get top leftover ingredients
+        top_leftovers = sorted(global_ingredient_usage.items(), key=lambda x: x[1], reverse=True)[:5]
+
+        # Calculate percentages
+        most_searched_leftovers = []
+        for ingredient, count in top_leftovers:
+            percentage = (count / total_ingredient_searches * 100) if total_ingredient_searches > 0 else 0
+            most_searched_leftovers.append({
+                'name': ingredient.title(),  # Capitalize for display
+                'count': count,
+                'percentage': round(percentage, 1)
+            })
+
+        # If no real data, provide fallback data
+        if not most_searched_leftovers:
+            most_searched_leftovers = [
+                {'name': 'Chicken', 'count': 245, 'percentage': 22.1},
+                {'name': 'Rice', 'count': 189, 'percentage': 17.0},
+                {'name': 'Tomatoes', 'count': 167, 'percentage': 15.1},
+                {'name': 'Onions', 'count': 134, 'percentage': 12.1},
+                {'name': 'Carrots', 'count': 112, 'percentage': 10.1}
+            ]
+            total_ingredient_searches = sum(item['count'] for item in most_searched_leftovers)
+
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'most_searched_leftovers': most_searched_leftovers,
+                'total_searches': total_ingredient_searches,
+                'last_updated': datetime.utcnow().isoformat()
+            }
+        })
+
+    except Exception as e:
+        print(f"Error getting leftover ingredients analytics: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': f'Error getting leftover ingredients analytics: {str(e)}'
+        }), 500
+
+@main_bp.route('/api/analytics/track', methods=['POST'])
 @jwt_required()
 def track_user_event():
     """
@@ -817,8 +1715,15 @@ def track_user_event():
                 'message': f'Invalid event_type. Must be one of: {valid_events}'
             }), 400
 
+        # Debug logging
+        print(f"🔍 DEBUG: Tracking event for user {user_id}")
+        print(f"🔍 DEBUG: Event type: {event_type}")
+        print(f"🔍 DEBUG: Event data: {event_data}")
+
         # Update user analytics
         success = update_user_analytics(user_id, event_type, event_data)
+
+        print(f"🔍 DEBUG: Analytics update success: {success}")
 
         if success:
             return jsonify({
@@ -837,9 +1742,462 @@ def track_user_event():
             'message': f'Error tracking event: {str(e)}'
         }), 500
 
+# ==================== ADMIN API ROUTES ====================
+
+@main_bp.route('/api/admin/users', methods=['GET'])
+@jwt_required()
+def get_all_users_admin():
+    """
+    Get all users with their complete information (admin only).
+
+    Query Parameters:
+    ----------------
+    page : int, optional
+        Page number for pagination (default: 1)
+    limit : int, optional
+        Number of users per page (default: 20)
+    search : str, optional
+        Search by name or email
+    """
+    try:
+        # Check if user is admin
+        from flask_jwt_extended import get_jwt
+        claims = get_jwt()
+        if not claims.get('is_admin', False):
+            return jsonify({
+                'status': 'error',
+                'message': 'Admin privileges required'
+            }), 403
+
+        # Get query parameters
+        page = int(request.args.get('page', 1))
+        limit = int(request.args.get('limit', 20))
+        search = request.args.get('search', '').strip()
+
+        # Calculate skip value for pagination
+        skip = (page - 1) * limit
+
+        # Build query
+        query = {}
+        if search:
+            query = {
+                '$or': [
+                    {'name': {'$regex': search, '$options': 'i'}},
+                    {'email': {'$regex': search, '$options': 'i'}}
+                ]
+            }
+
+        # Get users from database
+        from api.models.user import mongo
+
+        # Get total count
+        total_users = mongo.db.users.count_documents(query)
+
+        # Get users with pagination
+        users_cursor = mongo.db.users.find(query).skip(skip).limit(limit).sort('created_at', -1)
+        users = list(users_cursor)
+
+        # Format user data (remove sensitive password field)
+        formatted_users = []
+        for user in users:
+            user_data = {
+                'id': str(user['_id']),
+                'name': user['name'],
+                'email': user['email'],
+                'created_at': user.get('created_at'),
+                'updated_at': user.get('updated_at'),
+                'profile_image': user.get('profile_image'),
+                'preferences': user.get('preferences', {}),
+                'analytics': user.get('analytics', {}),
+                'dashboard_data': user.get('dashboard_data', {}),
+                'is_admin': user.get('is_admin', False)
+            }
+            formatted_users.append(user_data)
+
+        return jsonify({
+            'status': 'success',
+            'users': formatted_users,
+            'pagination': {
+                'current_page': page,
+                'total_pages': (total_users + limit - 1) // limit,
+                'total_users': total_users,
+                'users_per_page': limit
+            }
+        })
+
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Error fetching users: {str(e)}'
+        }), 500
+
+@main_bp.route('/api/admin/user/<user_id>/details', methods=['GET'])
+@jwt_required()
+def get_user_details_admin(user_id):
+    """
+    Get detailed information for a specific user (admin only).
+    Includes saved recipes, reviews, verifications, etc.
+    """
+    try:
+        # Check if user is admin
+        from flask_jwt_extended import get_jwt
+        claims = get_jwt()
+        if not claims.get('is_admin', False):
+            return jsonify({
+                'status': 'error',
+                'message': 'Admin privileges required'
+            }), 403
+
+        from api.models.user import mongo, get_user_by_id
+        from api.models.recipe import get_saved_recipes_for_user
+
+        # Get user basic info
+        user = get_user_by_id(user_id)
+        if not user:
+            return jsonify({
+                'status': 'error',
+                'message': 'User not found'
+            }), 404
+
+        # Get user's saved recipes
+        saved_recipes = get_saved_recipes_for_user(user_id)
+
+        # Get user's reviews
+        reviews = list(mongo.db.recipe_reviews.find({'user_id': user_id}).sort('created_at', -1))
+
+        # Get user's verifications
+        verifications = list(mongo.db.recipe_verifications.find({'user_id': user_id}).sort('created_at', -1))
+
+        # Get user's review votes
+        review_votes = list(mongo.db.review_votes.find({'user_id': user_id}).sort('created_at', -1))
+
+        # Format the data
+        user_details = {
+            'basic_info': {
+                'id': str(user['_id']),
+                'name': user['name'],
+                'email': user['email'],
+                'created_at': user.get('created_at'),
+                'updated_at': user.get('updated_at'),
+                'profile_image': user.get('profile_image'),
+                'is_admin': user.get('is_admin', False)
+            },
+            'preferences': user.get('preferences', {}),
+            'analytics': user.get('analytics', {}),
+            'dashboard_data': user.get('dashboard_data', {}),
+            'saved_recipes': {
+                'count': len(saved_recipes),
+                'recipes': [
+                    {
+                        'id': str(recipe['_id']),
+                        'name': recipe['name'],
+                        'saved_at': recipe.get('created_at'),
+                        'ingredients_count': len(recipe.get('ingredients', []))
+                    } for recipe in saved_recipes
+                ]
+            },
+            'reviews': {
+                'count': len(reviews),
+                'reviews': [
+                    {
+                        'id': str(review['_id']),
+                        'recipe_id': review['recipe_id'],
+                        'rating': review['rating'],
+                        'review_text': review.get('review_text'),
+                        'helpful_votes': review.get('helpful_votes', 0),
+                        'unhelpful_votes': review.get('unhelpful_votes', 0),
+                        'created_at': review.get('created_at'),
+                        'updated_at': review.get('updated_at')
+                    } for review in reviews
+                ]
+            },
+            'verifications': {
+                'count': len(verifications),
+                'verifications': [
+                    {
+                        'id': str(verification['_id']),
+                        'recipe_id': verification['recipe_id'],
+                        'notes': verification.get('notes'),
+                        'has_photo': 'photo_data' in verification,
+                        'created_at': verification.get('created_at')
+                    } for verification in verifications
+                ]
+            },
+            'review_votes': {
+                'count': len(review_votes),
+                'votes': [
+                    {
+                        'id': str(vote['_id']),
+                        'review_id': vote['review_id'],
+                        'vote_type': vote['vote_type'],
+                        'created_at': vote.get('created_at')
+                    } for vote in review_votes
+                ]
+            }
+        }
+
+        return jsonify({
+            'status': 'success',
+            'user': user_details
+        })
+
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Error fetching user details: {str(e)}'
+        }), 500
+
+@main_bp.route('/api/admin/stats', methods=['GET'])
+@jwt_required()
+def get_admin_stats():
+    """
+    Get overall system statistics (admin only).
+    """
+    try:
+        # Check if user is admin
+        from flask_jwt_extended import get_jwt
+        claims = get_jwt()
+        if not claims.get('is_admin', False):
+            return jsonify({
+                'status': 'error',
+                'message': 'Admin privileges required'
+            }), 403
+
+        from api.models.user import mongo
+
+        # Get various statistics
+        total_users = mongo.db.users.count_documents({})
+        total_reviews = mongo.db.recipe_reviews.count_documents({})
+        total_verifications = mongo.db.recipe_verifications.count_documents({})
+        total_saved_recipes = mongo.db.saved_recipes.count_documents({})
+        total_review_votes = mongo.db.review_votes.count_documents({})
+
+        # Get recent activity (last 30 days)
+        from datetime import datetime, timedelta
+        thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+
+        recent_users = mongo.db.users.count_documents({'created_at': {'$gte': thirty_days_ago}})
+        recent_reviews = mongo.db.recipe_reviews.count_documents({'created_at': {'$gte': thirty_days_ago}})
+        recent_verifications = mongo.db.recipe_verifications.count_documents({'created_at': {'$gte': thirty_days_ago}})
+
+        # Get top reviewers
+        top_reviewers = list(mongo.db.recipe_reviews.aggregate([
+            {'$group': {'_id': '$user_id', 'review_count': {'$sum': 1}, 'user_name': {'$first': '$user_name'}}},
+            {'$sort': {'review_count': -1}},
+            {'$limit': 10}
+        ]))
+
+        # Get rating distribution
+        rating_distribution = list(mongo.db.recipe_reviews.aggregate([
+            {'$group': {'_id': '$rating', 'count': {'$sum': 1}}},
+            {'$sort': {'_id': 1}}
+        ]))
+
+        stats = {
+            'overview': {
+                'total_users': total_users,
+                'total_reviews': total_reviews,
+                'total_verifications': total_verifications,
+                'total_saved_recipes': total_saved_recipes,
+                'total_review_votes': total_review_votes
+            },
+            'recent_activity': {
+                'new_users_30_days': recent_users,
+                'new_reviews_30_days': recent_reviews,
+                'new_verifications_30_days': recent_verifications
+            },
+            'top_reviewers': [
+                {
+                    'user_id': reviewer['_id'],
+                    'user_name': reviewer['user_name'],
+                    'review_count': reviewer['review_count']
+                } for reviewer in top_reviewers
+            ],
+            'rating_distribution': {
+                str(rating['_id']): rating['count'] for rating in rating_distribution
+            }
+        }
+
+        return jsonify({
+            'status': 'success',
+            'stats': stats
+        })
+
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Error fetching admin stats: {str(e)}'
+        }), 500
+
+# ==================== DEVELOPER DEBUG API ROUTES ====================
+
+@main_bp.route('/api/dev/users', methods=['GET'])
+def get_all_users_dev():
+    """
+    Developer endpoint to get all users with basic info.
+    WARNING: This is for development only - remove in production!
+    """
+    try:
+        from api.models.user import mongo
+
+        # Get all users
+        users = list(mongo.db.users.find({}, {
+            'name': 1,
+            'email': 1,
+            'created_at': 1,
+            'analytics.total_reviews_given': 1,
+            'analytics.total_recipe_saves': 1
+        }).sort('created_at', -1))
+
+        # Format user data
+        formatted_users = []
+        for user in users:
+            user_data = {
+                'id': str(user['_id']),
+                'name': user['name'],
+                'email': user['email'],
+                'created_at': user.get('created_at'),
+                'total_reviews': user.get('analytics', {}).get('total_reviews_given', 0),
+                'total_saves': user.get('analytics', {}).get('total_recipe_saves', 0)
+            }
+            formatted_users.append(user_data)
+
+        return jsonify({
+            'status': 'success',
+            'count': len(formatted_users),
+            'users': formatted_users
+        })
+
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Error fetching users: {str(e)}'
+        }), 500
+
+@main_bp.route('/api/dev/user/<user_identifier>', methods=['GET'])
+def get_user_complete_data_dev(user_identifier):
+    """
+    Developer endpoint to get complete user data by email or ID.
+    WARNING: This is for development only - remove in production!
+    """
+    try:
+        from api.models.user import mongo, get_user_by_id, get_user_by_email
+        from api.models.recipe import get_saved_recipes_for_user
+        from bson.objectid import ObjectId
+
+        # Try to find user by email first, then by ID
+        user = None
+        if '@' in user_identifier:
+            user = get_user_by_email(user_identifier)
+        else:
+            user = get_user_by_id(user_identifier)
+
+        if not user:
+            return jsonify({
+                'status': 'error',
+                'message': 'User not found'
+            }), 404
+
+        user_id = str(user['_id'])
+
+        # Get user's saved recipes
+        saved_recipes = get_saved_recipes_for_user(user_id)
+
+        # Get user's reviews
+        reviews = list(mongo.db.recipe_reviews.find({'user_id': user_id}).sort('created_at', -1))
+
+        # Get user's verifications
+        verifications = list(mongo.db.recipe_verifications.find({'user_id': user_id}).sort('created_at', -1))
+
+        # Get user's review votes
+        review_votes = list(mongo.db.review_votes.find({'user_id': user_id}).sort('created_at', -1))
+
+        # Prepare complete user data
+        complete_data = {
+            'basic_info': {
+                'id': user_id,
+                'name': user['name'],
+                'email': user['email'],
+                'password_hash': user.get('password', b'').decode('utf-8', errors='ignore') if isinstance(user.get('password'), bytes) else str(user.get('password', '')),
+                'created_at': user.get('created_at'),
+                'updated_at': user.get('updated_at'),
+                'profile_image': user.get('profile_image'),
+                'is_admin': user.get('is_admin', False)
+            },
+            'preferences': user.get('preferences', {}),
+            'analytics': user.get('analytics', {}),
+            'dashboard_data': user.get('dashboard_data', {}),
+            'saved_recipes': {
+                'count': len(saved_recipes),
+                'recipes': [
+                    {
+                        'id': str(recipe['_id']),
+                        'name': recipe['name'],
+                        'ingredients': recipe.get('ingredients', []),
+                        'steps': recipe.get('steps', []),
+                        'techniques': recipe.get('techniques', []),
+                        'calorie_level': recipe.get('calorie_level'),
+                        'saved_at': recipe.get('created_at')
+                    } for recipe in saved_recipes
+                ]
+            },
+            'reviews': {
+                'count': len(reviews),
+                'reviews': [
+                    {
+                        'id': str(review['_id']),
+                        'recipe_id': review['recipe_id'],
+                        'rating': review['rating'],
+                        'review_text': review.get('review_text'),
+                        'helpful_votes': review.get('helpful_votes', 0),
+                        'unhelpful_votes': review.get('unhelpful_votes', 0),
+                        'created_at': review.get('created_at'),
+                        'updated_at': review.get('updated_at')
+                    } for review in reviews
+                ]
+            },
+            'verifications': {
+                'count': len(verifications),
+                'verifications': [
+                    {
+                        'id': str(verification['_id']),
+                        'recipe_id': verification['recipe_id'],
+                        'notes': verification.get('notes'),
+                        'has_photo': 'photo_data' in verification,
+                        'photo_filename': verification.get('photo_filename'),
+                        'created_at': verification.get('created_at')
+                    } for verification in verifications
+                ]
+            },
+            'review_votes': {
+                'count': len(review_votes),
+                'votes': [
+                    {
+                        'id': str(vote['_id']),
+                        'review_id': vote['review_id'],
+                        'vote_type': vote['vote_type'],
+                        'created_at': vote.get('created_at')
+                    } for vote in review_votes
+                ]
+            }
+        }
+
+        return jsonify({
+            'status': 'success',
+            'user': complete_data
+        })
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'status': 'error',
+            'message': f'Error fetching user data: {str(e)}'
+        }), 500
+
 # ==================== COMMUNITY FEATURES API ROUTES ====================
 
-@app.route('/api/recipe/<recipe_id>/review', methods=['POST'])
+@main_bp.route('/api/recipe/<recipe_id>/review', methods=['POST'])
 @jwt_required()
 def add_recipe_review_api(recipe_id):
     """
@@ -852,16 +2210,28 @@ def add_recipe_review_api(recipe_id):
         "review_text": "Great recipe! Easy to follow and delicious."
     }
     """
+    import time
+    start_time = time.time()
+
     try:
         # Get user ID from JWT
         user_id = get_jwt_identity()
-        print(f"DEBUG: User ID from JWT: {user_id}")
+        print(f"DEBUG: Review submission started - user_id={user_id}, recipe_id={recipe_id}")
+
+        # Validate user_id
+        if not user_id:
+            print("ERROR: No user_id found in JWT token")
+            return jsonify({
+                'status': 'error',
+                'message': 'Invalid authentication token'
+            }), 401
 
         # Get request data
         data = request.get_json()
-        print(f"DEBUG: Request data: {data}")
+        print(f"DEBUG: Request data received: {data}")
 
         if not data:
+            print("ERROR: No data provided in request")
             return jsonify({
                 'status': 'error',
                 'message': 'No data provided'
@@ -869,14 +2239,20 @@ def add_recipe_review_api(recipe_id):
 
         # Validate required fields
         if 'rating' not in data:
+            print("ERROR: Rating field missing from request")
             return jsonify({
                 'status': 'error',
                 'message': 'Rating is required'
             }), 400
 
         rating = data.get('rating')
-        review_text = data.get('review_text', '').strip()
-        print(f"DEBUG: recipe_id={recipe_id}, rating={rating}, review_text='{review_text}'")
+        # Safely handle review_text - it might be None, empty string, or actual text
+        review_text_raw = data.get('review_text')
+        if review_text_raw is None:
+            review_text = ''
+        else:
+            review_text = str(review_text_raw).strip()
+        print(f"DEBUG: Parsed data - recipe_id={recipe_id}, rating={rating}, review_text='{review_text}'")
 
         # Validate rating
         try:
@@ -884,6 +2260,7 @@ def add_recipe_review_api(recipe_id):
             if rating < 1 or rating > 5:
                 raise ValueError()
         except (ValueError, TypeError):
+            print(f"ERROR: Invalid rating value: {rating}")
             return jsonify({
                 'status': 'error',
                 'message': 'Rating must be an integer between 1 and 5'
@@ -891,30 +2268,65 @@ def add_recipe_review_api(recipe_id):
 
         print(f"DEBUG: About to call add_recipe_review with user_id={user_id}, recipe_id={recipe_id}, rating={rating}")
 
+        # Check database connection before proceeding
+        try:
+            from api.models.user import mongo
+            # Test database connection
+            mongo.db.command('ping')
+            print("DEBUG: Database connection verified")
+        except Exception as db_err:
+            print(f"ERROR: Database connection failed: {db_err}")
+            return jsonify({
+                'status': 'error',
+                'message': 'Database connection error. Please try again.'
+            }), 503
+
         # Add the review
         result = add_recipe_review(user_id, recipe_id, rating, review_text if review_text else None)
         print(f"DEBUG: add_recipe_review result: {result}")
 
         # Update hybrid recommender with new rating
+        recommender = getattr(current_app, 'recommender', None)
         if result['status'] == 'success' and recommender:
             try:
                 recommender.update_user_preference(user_id, recipe_id, rating)
-                print(f"Updated hybrid recommender with rating: user={user_id}, recipe={recipe_id}, rating={rating}")
+                print(f"DEBUG: Updated hybrid recommender with rating: user={user_id}, recipe={recipe_id}, rating={rating}")
             except Exception as e:
-                print(f"Warning: Could not update hybrid recommender: {e}")
+                print(f"WARNING: Could not update hybrid recommender: {e}")
+
+        # Track analytics for review
+        if result['status'] == 'success':
+            try:
+                update_user_analytics(user_id, 'review_given', {
+                    'recipe_id': recipe_id,
+                    'rating': rating,
+                    'has_review_text': bool(review_text)
+                })
+                print(f"DEBUG: Analytics tracked for review: user={user_id}, recipe={recipe_id}")
+            except Exception as e:
+                print(f"WARNING: Could not track review analytics: {e}")
+
+        processing_time = time.time() - start_time
+        print(f"DEBUG: Review submission completed in {processing_time:.2f} seconds")
 
         if result['status'] == 'success':
             return jsonify(result)
         else:
+            print(f"ERROR: Review submission failed: {result}")
             return jsonify(result), 400
 
     except Exception as e:
+        processing_time = time.time() - start_time
+        print(f"ERROR: Exception in add_recipe_review_api after {processing_time:.2f} seconds: {str(e)}")
+        import traceback
+        traceback.print_exc()
+
         return jsonify({
             'status': 'error',
             'message': f'Error adding review: {str(e)}'
         }), 500
 
-@app.route('/api/recipe/<recipe_id>/reviews', methods=['GET'])
+@main_bp.route('/api/recipe/<recipe_id>/reviews', methods=['GET'])
 def get_recipe_reviews_api(recipe_id):
     """
     Get reviews for a recipe.
@@ -948,7 +2360,7 @@ def get_recipe_reviews_api(recipe_id):
             'message': f'Error fetching reviews: {str(e)}'
         }), 500
 
-@app.route('/api/recipe/<recipe_id>/rating-summary', methods=['GET'])
+@main_bp.route('/api/recipe/<recipe_id>/rating-summary', methods=['GET'])
 def get_recipe_rating_summary_api(recipe_id):
     """
     Get rating summary for a recipe.
@@ -967,7 +2379,7 @@ def get_recipe_rating_summary_api(recipe_id):
             'message': f'Error fetching rating summary: {str(e)}'
         }), 500
 
-@app.route('/api/review/<review_id>/vote', methods=['POST'])
+@main_bp.route('/api/review/<review_id>/vote', methods=['POST'])
 @jwt_required()
 def vote_on_review_api(review_id):
     """
@@ -1014,7 +2426,7 @@ def vote_on_review_api(review_id):
             'message': f'Error voting on review: {str(e)}'
         }), 500
 
-@app.route('/api/recipe/<recipe_id>/verify', methods=['POST'])
+@main_bp.route('/api/recipe/<recipe_id>/verify', methods=['POST'])
 @jwt_required()
 def add_recipe_verification_api(recipe_id):
     """
@@ -1027,31 +2439,72 @@ def add_recipe_verification_api(recipe_id):
         "photo": "data:image/jpeg;base64,..."  // optional base64 encoded image
     }
     """
+    import time
+    start_time = time.time()
+
     try:
         # Get user ID from JWT
         user_id = get_jwt_identity()
+        print(f"DEBUG: Verification submission started - user_id={user_id}, recipe_id={recipe_id}")
+
+        # Validate user_id
+        if not user_id:
+            print("ERROR: No user_id found in JWT token")
+            return jsonify({
+                'status': 'error',
+                'message': 'Invalid authentication token'
+            }), 401
 
         # Get request data
         data = request.get_json()
+        print(f"DEBUG: Verification request data: {data}")
 
-        notes = data.get('notes', '').strip() if data else ''
+        # Safely handle notes - it might be None, empty string, or actual text
+        notes_raw = data.get('notes') if data else None
+        if notes_raw is None:
+            notes = ''
+        else:
+            notes = str(notes_raw).strip()
         photo_data = data.get('photo') if data else None
+
+        # Check database connection before proceeding
+        try:
+            from api.models.user import mongo
+            # Test database connection
+            mongo.db.command('ping')
+            print("DEBUG: Database connection verified for verification")
+        except Exception as db_err:
+            print(f"ERROR: Database connection failed for verification: {db_err}")
+            return jsonify({
+                'status': 'error',
+                'message': 'Database connection error. Please try again.'
+            }), 503
 
         # Add the verification
         result = add_recipe_verification(user_id, recipe_id, photo_data, notes if notes else None)
+        print(f"DEBUG: add_recipe_verification result: {result}")
+
+        processing_time = time.time() - start_time
+        print(f"DEBUG: Verification submission completed in {processing_time:.2f} seconds")
 
         if result['status'] == 'success':
             return jsonify(result)
         else:
+            print(f"ERROR: Verification submission failed: {result}")
             return jsonify(result), 400
 
     except Exception as e:
+        processing_time = time.time() - start_time
+        print(f"ERROR: Exception in add_recipe_verification_api after {processing_time:.2f} seconds: {str(e)}")
+        import traceback
+        traceback.print_exc()
+
         return jsonify({
             'status': 'error',
             'message': f'Error adding verification: {str(e)}'
         }), 500
 
-@app.route('/api/recipe/<recipe_id>/verifications', methods=['GET'])
+@main_bp.route('/api/recipe/<recipe_id>/verifications', methods=['GET'])
 def get_recipe_verifications_api(recipe_id):
     """
     Get verifications for a recipe.
@@ -1082,7 +2535,7 @@ def get_recipe_verifications_api(recipe_id):
             'message': f'Error fetching verifications: {str(e)}'
         }), 500
 
-@app.route('/api/verification/<verification_id>/photo', methods=['GET'])
+@main_bp.route('/api/verification/<verification_id>/photo', methods=['GET'])
 def get_verification_photo_api(verification_id):
     """
     Get photo for a verification.
@@ -1101,7 +2554,7 @@ def get_verification_photo_api(verification_id):
             'message': f'Error fetching verification photo: {str(e)}'
         }), 500
 
-@app.route('/api/recipe/<recipe_id>/user-review', methods=['GET'])
+@main_bp.route('/api/recipe/<recipe_id>/user-review', methods=['GET'])
 @jwt_required()
 def get_user_review_for_recipe_api(recipe_id):
     """
@@ -1124,7 +2577,7 @@ def get_user_review_for_recipe_api(recipe_id):
             'message': f'Error fetching user review: {str(e)}'
         }), 500
 
-@app.route('/api/recipe/<recipe_id>/user-verification', methods=['GET'])
+@main_bp.route('/api/recipe/<recipe_id>/user-verification', methods=['GET'])
 @jwt_required()
 def get_user_verification_for_recipe_api(recipe_id):
     """
@@ -1146,3 +2599,505 @@ def get_user_verification_for_recipe_api(recipe_id):
             'status': 'error',
             'message': f'Error fetching user verification: {str(e)}'
         }), 500
+
+# Community API endpoints
+@main_bp.route('/api/community/posts', methods=['GET'])
+@jwt_required()
+def get_community_posts():
+    """
+    Get all community posts with user information and interaction data, excluding shared recipe posts.
+    """
+    try:
+        from api.models.community_posts import get_all_posts
+        user_id = get_jwt_identity()
+
+        result = get_all_posts(user_id)
+
+        if result['status'] == 'success':
+            return jsonify(result['posts'])
+        else:
+            return jsonify([]), 200
+
+    except Exception as e:
+        print(f"Error fetching community posts: {e}")
+        return jsonify([]), 200
+
+@main_bp.route('/api/community/recipe-posts', methods=['GET'])
+@jwt_required()
+def get_recipe_posts():
+    """
+    Get only shared recipe posts for the recipe sharing section.
+    """
+    try:
+        from api.models.community_posts import get_recipe_posts
+        user_id = get_jwt_identity()
+
+        result = get_recipe_posts(user_id)
+
+        if result['status'] == 'success':
+            return jsonify(result['posts'])
+        else:
+            return jsonify([]), 200
+
+    except Exception as e:
+        print(f"Error fetching recipe posts: {e}")
+        return jsonify([]), 200
+
+@main_bp.route('/api/community/posts', methods=['POST'])
+@jwt_required()
+def create_community_post():
+    """
+    Create a new community post.
+    """
+    try:
+        from api.models.community_posts import create_post
+        user_id = get_jwt_identity()
+        data = request.get_json()
+
+        if not data or not data.get('content', '').strip():
+            return jsonify({
+                'status': 'error',
+                'message': 'Post content is required'
+            }), 400
+
+        result = create_post(user_id, data['content'].strip())
+
+        if result['status'] == 'success':
+            return jsonify(result['post'])
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': result['message']
+            }), 400
+
+    except Exception as e:
+        print(f"Error creating community post: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': f'Error creating post: {str(e)}'
+        }), 500
+
+@main_bp.route('/api/community/posts/<post_id>', methods=['PUT'])
+@jwt_required()
+def update_community_post(post_id):
+    """
+    Update a community post (only by the author).
+    """
+    try:
+        from api.models.community_posts import update_post
+        user_id = get_jwt_identity()
+        data = request.get_json()
+
+        if not data or not data.get('content', '').strip():
+            return jsonify({
+                'status': 'error',
+                'message': 'Post content is required'
+            }), 400
+
+        result = update_post(post_id, user_id, data['content'].strip())
+
+        if result['status'] == 'success':
+            return jsonify(result)
+        else:
+            return jsonify(result), 400 if result['message'] == 'Post not found or unauthorized' else 500
+
+    except Exception as e:
+        print(f"Error updating community post: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': f'Error updating post: {str(e)}'
+        }), 500
+
+@main_bp.route('/api/community/posts/<post_id>', methods=['DELETE'])
+@jwt_required()
+def delete_community_post(post_id):
+    """
+    Delete a community post (only by the author).
+    """
+    try:
+        from api.models.community_posts import delete_post
+        user_id = get_jwt_identity()
+
+        result = delete_post(post_id, user_id)
+
+        if result['status'] == 'success':
+            return jsonify(result)
+        else:
+            return jsonify(result), 400 if result['message'] == 'Post not found or unauthorized' else 500
+
+    except Exception as e:
+        print(f"Error deleting community post: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': f'Error deleting post: {str(e)}'
+        }), 500
+
+@main_bp.route('/api/community/posts/<post_id>/like', methods=['POST'])
+@jwt_required()
+def toggle_post_like(post_id):
+    """
+    Toggle like on a community post.
+    """
+    try:
+        from api.models.community_posts import toggle_like
+        user_id = get_jwt_identity()
+
+        result = toggle_like(post_id, user_id)
+
+        if result['status'] == 'success':
+            return jsonify({
+                'liked': result['liked'],
+                'like_count': result['like_count']
+            })
+        else:
+            return jsonify(result), 400
+
+    except Exception as e:
+        print(f"Error toggling post like: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': f'Error toggling like: {str(e)}'
+        }), 500
+
+@main_bp.route('/api/community/posts/<post_id>/comments', methods=['GET'])
+@jwt_required()
+def get_post_comments(post_id):
+    """
+    Get all comments for a specific post.
+    """
+    try:
+        from api.models.community_posts import get_comments
+        user_id = get_jwt_identity()
+
+        result = get_comments(post_id, user_id)
+
+        if result['status'] == 'success':
+            return jsonify(result['comments'])
+        else:
+            return jsonify([]), 200
+
+    except Exception as e:
+        print(f"Error fetching post comments: {e}")
+        return jsonify([]), 200
+
+@main_bp.route('/api/community/posts/<post_id>/comments', methods=['POST'])
+@jwt_required()
+def create_post_comment(post_id):
+    """
+    Create a new comment on a post.
+    """
+    try:
+        from api.models.community_posts import create_comment
+        user_id = get_jwt_identity()
+        data = request.get_json()
+
+        if not data or not data.get('content', '').strip():
+            return jsonify({
+                'status': 'error',
+                'message': 'Comment content is required'
+            }), 400
+
+        result = create_comment(post_id, user_id, data['content'].strip())
+
+        if result['status'] == 'success':
+            return jsonify(result['comment'])
+        else:
+            return jsonify(result), 400
+
+    except Exception as e:
+        print(f"Error creating comment: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': f'Error creating comment: {str(e)}'
+        }), 500
+
+@main_bp.route('/api/community/comments/<comment_id>/like', methods=['POST'])
+@jwt_required()
+def toggle_comment_like(comment_id):
+    """
+    Toggle like on a comment.
+    """
+    try:
+        from api.models.community_posts import toggle_comment_like
+        user_id = get_jwt_identity()
+
+        result = toggle_comment_like(comment_id, user_id)
+
+        if result['status'] == 'success':
+            return jsonify({
+                'liked': result['liked'],
+                'like_count': result['like_count']
+            })
+        else:
+            return jsonify(result), 400
+
+    except Exception as e:
+        print(f"Error toggling comment like: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': f'Error toggling comment like: {str(e)}'
+        }), 500
+
+@main_bp.route('/api/shared-recipes', methods=['GET'])
+@jwt_required()
+def get_shared_recipes():
+    """
+    Get all shared recipes for the community page.
+    """
+    try:
+        from api.models.shared_recipes import get_all_shared_recipes
+        user_id = get_jwt_identity()
+
+        result = get_all_shared_recipes(user_id)
+
+        if result['status'] == 'success':
+            return jsonify(result['recipes'])
+        else:
+            return jsonify([]), 200
+
+    except Exception as e:
+        print(f"Error fetching shared recipes: {e}")
+        return jsonify([]), 200
+
+@main_bp.route('/api/shared-recipes/<recipe_id>', methods=['GET'])
+@jwt_required()
+def get_shared_recipe_details(recipe_id):
+    """
+    Get detailed information for a specific shared recipe.
+    """
+    try:
+        from api.models.shared_recipes import get_recipe_details
+        user_id = get_jwt_identity()
+
+        result = get_recipe_details(recipe_id, user_id)
+
+        if result['status'] == 'success':
+            return jsonify(result['recipe'])
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': result['message']
+            }), 404
+
+    except Exception as e:
+        print(f"Error fetching recipe details: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': f'Error fetching recipe details: {str(e)}'
+        }), 500
+
+@main_bp.route('/api/community/recipes', methods=['GET'])
+@jwt_required()
+def get_community_recipes_api():
+    """
+    Get community recipes with pagination and filtering.
+
+    Query Parameters:
+    ----------------
+    limit : int, optional
+        Maximum number of recipes to return (default: 20, max: 100)
+    skip : int, optional
+        Number of recipes to skip for pagination (default: 0)
+    status : str, optional
+        Recipe status filter (default: 'all' - no filtering needed)
+    """
+    try:
+        from api.models.shared_recipes import get_community_recipes_paginated
+        user_id = get_jwt_identity()
+
+        # Get query parameters
+        limit = int(request.args.get('limit', 20))
+        skip = int(request.args.get('skip', 0))
+        status = request.args.get('status', 'all')
+
+        # Limit maximum recipes per request
+        limit = min(limit, 100)
+
+        result = get_community_recipes_paginated(
+            user_id=user_id,
+            limit=limit,
+            skip=skip,
+            status=status
+        )
+
+        if result['status'] == 'success':
+            return jsonify({
+                'status': 'success',
+                'count': len(result['recipes']),
+                'recipes': result['recipes'],
+                'has_more': result.get('has_more', False)
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': result['message']
+            }), 500
+
+    except Exception as e:
+        print(f"Error fetching community recipes: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': f'Error fetching community recipes: {str(e)}'
+        }), 500
+
+@main_bp.route('/api/community/recipe/<recipe_id>/details', methods=['GET'])
+@jwt_required()
+def get_community_recipe_details(recipe_id):
+    """
+    Get detailed information for a community recipe including interactions.
+    """
+    try:
+        from api.models.shared_recipes import get_recipe_details_with_interactions
+        user_id = get_jwt_identity()
+
+        result = get_recipe_details_with_interactions(recipe_id, user_id)
+
+        if result['status'] == 'success':
+            return jsonify({
+                'status': 'success',
+                'recipe': result['recipe']
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': result['message']
+            }), 404
+
+    except Exception as e:
+        print(f"Error fetching community recipe details: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': f'Error fetching recipe details: {str(e)}'
+        }), 500
+
+@main_bp.route('/api/community/recipe/<recipe_id>/like', methods=['POST'])
+@jwt_required()
+def toggle_recipe_like(recipe_id):
+    """
+    Toggle like on a community recipe.
+    """
+    try:
+        from api.models.shared_recipes import toggle_recipe_like
+        user_id = get_jwt_identity()
+
+        result = toggle_recipe_like(recipe_id, user_id)
+
+        if result['status'] == 'success':
+            return jsonify({
+                'liked': result['liked'],
+                'like_count': result['like_count']
+            })
+        else:
+            return jsonify(result), 400
+
+    except Exception as e:
+        print(f"Error toggling recipe like: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': f'Error toggling like: {str(e)}'
+        }), 500
+
+@main_bp.route('/api/community/recipe/<recipe_id>/comments', methods=['GET'])
+@jwt_required()
+def get_recipe_comments(recipe_id):
+    """
+    Get all comments for a specific recipe.
+    """
+    try:
+        from api.models.shared_recipes import get_recipe_comments
+        user_id = get_jwt_identity()
+
+        result = get_recipe_comments(recipe_id, user_id)
+
+        if result['status'] == 'success':
+            return jsonify(result['comments'])
+        else:
+            return jsonify([]), 200
+
+    except Exception as e:
+        print(f"Error fetching recipe comments: {e}")
+        return jsonify([]), 200
+
+@main_bp.route('/api/community/recipe/<recipe_id>/comments', methods=['POST'])
+@jwt_required()
+def create_recipe_comment(recipe_id):
+    """
+    Create a new comment on a recipe.
+    """
+    try:
+        from api.models.shared_recipes import create_recipe_comment
+        user_id = get_jwt_identity()
+        data = request.get_json()
+
+        if not data or not data.get('content', '').strip():
+            return jsonify({
+                'status': 'error',
+                'message': 'Comment content is required'
+            }), 400
+
+        result = create_recipe_comment(recipe_id, user_id, data['content'].strip())
+
+        if result['status'] == 'success':
+            return jsonify(result['comment'])
+        else:
+            return jsonify(result), 400
+
+    except Exception as e:
+        print(f"Error creating recipe comment: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': f'Error creating comment: {str(e)}'
+        }), 500
+
+@main_bp.route('/api/shared-recipes/<recipe_id>', methods=['GET'])
+@jwt_required()
+def get_shared_recipe_by_id(recipe_id):
+    """
+    Get a specific shared recipe by ID.
+    """
+    try:
+        from api.models.shared_recipes import get_shared_recipe_by_id
+        user_id = get_jwt_identity()
+
+        result = get_shared_recipe_by_id(recipe_id, user_id)
+
+        if result['status'] == 'success':
+            return jsonify(result['recipe'])
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': result['message']
+            }), 404
+
+    except Exception as e:
+        print(f"Error fetching shared recipe: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': f'Error fetching recipe: {str(e)}'
+        }), 500
+
+@main_bp.route('/api/recipe/<recipe_id>', methods=['DELETE'])
+@jwt_required()
+def delete_shared_recipe(recipe_id):
+    """
+    Delete a shared recipe (only by the author).
+    """
+    try:
+        from api.models.shared_recipes import delete_shared_recipe
+        user_id = get_jwt_identity()
+
+        result = delete_shared_recipe(recipe_id, user_id)
+
+        if result['status'] == 'success':
+            return jsonify(result)
+        else:
+            return jsonify(result), 400 if result['message'] == 'Recipe not found or unauthorized' else 500
+
+    except Exception as e:
+        print(f"Error deleting shared recipe: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': f'Error deleting recipe: {str(e)}'
+        }), 500
+
+

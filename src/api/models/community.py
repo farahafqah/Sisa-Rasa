@@ -31,6 +31,14 @@ def create_community_indexes():
         mongo.db.review_votes.create_index([('review_id', 1), ('user_id', 1)], unique=True)
         mongo.db.review_votes.create_index([('review_id', 1)])
 
+        # Community posts indexes
+        mongo.db.community_posts.create_index([('created_at', -1)])
+        mongo.db.community_posts.create_index([('user_id', 1)])
+
+        # Community comments indexes
+        mongo.db.community_comments.create_index([('post_id', 1), ('created_at', 1)])
+        mongo.db.community_comments.create_index([('user_id', 1)])
+
         print("Community indexes created successfully!")
         return True
     except Exception as e:
@@ -52,59 +60,114 @@ def add_recipe_review(user_id, recipe_id, rating, review_text=None):
     Returns:
         dict: Result with status and message
     """
+    import time
+    start_time = time.time()
+
     try:
+        print(f"DEBUG: add_recipe_review called with user_id={user_id}, recipe_id={recipe_id}, rating={rating}")
+
         # Validate rating
         if not isinstance(rating, int) or rating < 1 or rating > 5:
+            print(f"ERROR: Invalid rating: {rating}")
             return {'status': 'error', 'message': 'Rating must be between 1 and 5'}
 
-        # Get user info for review
+        # Get user info for review with retry logic
         from api.models.user import get_user_by_id
-        user = get_user_by_id(user_id)
+        user = None
+        for attempt in range(3):
+            try:
+                user = get_user_by_id(user_id)
+                if user:
+                    break
+                print(f"WARNING: User not found on attempt {attempt + 1}")
+                time.sleep(0.5)  # Brief delay before retry
+            except Exception as e:
+                print(f"ERROR: Failed to get user on attempt {attempt + 1}: {e}")
+                if attempt == 2:  # Last attempt
+                    raise
+                time.sleep(0.5)
+
         if not user:
+            print(f"ERROR: User {user_id} not found after retries")
             return {'status': 'error', 'message': 'User not found'}
 
-        # Check if review already exists
-        existing_review = mongo.db.recipe_reviews.find_one({
-            'recipe_id': recipe_id,
-            'user_id': user_id
-        })
+        print(f"DEBUG: User found: {user['name']}")
+
+        # Check if review already exists with retry logic
+        existing_review = None
+        for attempt in range(3):
+            try:
+                existing_review = mongo.db.recipe_reviews.find_one({
+                    'recipe_id': recipe_id,
+                    'user_id': user_id
+                })
+                break
+            except Exception as e:
+                print(f"ERROR: Failed to check existing review on attempt {attempt + 1}: {e}")
+                if attempt == 2:  # Last attempt
+                    raise
+                time.sleep(0.5)
 
         review_data = {
             'recipe_id': recipe_id,
             'user_id': user_id,
             'user_name': user['name'],
             'rating': rating,
-            'review_text': review_text.strip() if review_text else None,
-            'helpful_votes': 0,
-            'unhelpful_votes': 0,
+            'review_text': review_text.strip() if review_text and isinstance(review_text, str) else None,
+            'helpful_votes': existing_review.get('helpful_votes', 0) if existing_review else 0,
+            'unhelpful_votes': existing_review.get('unhelpful_votes', 0) if existing_review else 0,
             'updated_at': datetime.utcnow()
         }
 
-        if existing_review:
-            # Update existing review
-            result = mongo.db.recipe_reviews.update_one(
-                {'_id': existing_review['_id']},
-                {'$set': review_data}
-            )
-            review_id = str(existing_review['_id'])
-            action = 'updated'
-        else:
-            # Create new review
-            review_data['created_at'] = datetime.utcnow()
-            result = mongo.db.recipe_reviews.insert_one(review_data)
-            review_id = str(result.inserted_id)
-            action = 'created'
+        print(f"DEBUG: Review data prepared: {review_data}")
 
-        # Check if operation was successful
+        # Perform database operation with retry logic
         success = False
-        if action == 'updated':
-            success = result.modified_count > 0
-        else:  # action == 'created'
-            success = result.inserted_id is not None
+        review_id = None
+        action = None
+
+        for attempt in range(3):
+            try:
+                if existing_review:
+                    # Update existing review
+                    result = mongo.db.recipe_reviews.update_one(
+                        {'_id': existing_review['_id']},
+                        {'$set': review_data}
+                    )
+                    review_id = str(existing_review['_id'])
+                    action = 'updated'
+                    success = result.modified_count > 0 or result.matched_count > 0  # Consider matched as success too
+                    print(f"DEBUG: Update result - matched: {result.matched_count}, modified: {result.modified_count}")
+                else:
+                    # Create new review
+                    review_data['created_at'] = datetime.utcnow()
+                    result = mongo.db.recipe_reviews.insert_one(review_data)
+                    review_id = str(result.inserted_id)
+                    action = 'created'
+                    success = result.inserted_id is not None
+                    print(f"DEBUG: Insert result - inserted_id: {result.inserted_id}")
+
+                if success:
+                    break
+                else:
+                    print(f"WARNING: Database operation failed on attempt {attempt + 1}")
+
+            except Exception as e:
+                print(f"ERROR: Database operation failed on attempt {attempt + 1}: {e}")
+                if attempt == 2:  # Last attempt
+                    raise
+                time.sleep(0.5)
 
         if success:
-            # Update recipe rating aggregation
-            update_recipe_rating_aggregation(recipe_id)
+            # Update recipe rating aggregation (non-blocking)
+            try:
+                update_recipe_rating_aggregation(recipe_id)
+                print(f"DEBUG: Rating aggregation updated for recipe {recipe_id}")
+            except Exception as e:
+                print(f"WARNING: Failed to update rating aggregation: {e}")
+
+            processing_time = time.time() - start_time
+            print(f"DEBUG: Review {action} successfully in {processing_time:.2f} seconds")
 
             return {
                 'status': 'success',
@@ -112,9 +175,14 @@ def add_recipe_review(user_id, recipe_id, rating, review_text=None):
                 'review_id': review_id
             }
         else:
+            print(f"ERROR: Failed to save review after retries")
             return {'status': 'error', 'message': 'Failed to save review'}
 
     except Exception as e:
+        processing_time = time.time() - start_time
+        print(f"ERROR: Exception in add_recipe_review after {processing_time:.2f} seconds: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return {'status': 'error', 'message': f'Error saving review: {str(e)}'}
 
 def get_recipe_reviews(recipe_id, sort_by='helpful', limit=50, skip=0):
@@ -383,7 +451,7 @@ def add_recipe_verification(user_id, recipe_id, photo_data=None, notes=None):
             'recipe_id': recipe_id,
             'user_id': user_id,
             'user_name': user['name'],
-            'notes': notes.strip() if notes else None,
+            'notes': notes.strip() if notes and isinstance(notes, str) else None,
             'updated_at': datetime.utcnow()
         }
 

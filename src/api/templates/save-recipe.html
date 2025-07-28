@@ -11,7 +11,7 @@
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
 
   <!-- Vue -->
-  <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
 
   <!-- SweetAlert for notifications -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -248,12 +248,12 @@
           <small>Sisa Lama</small>
         </div>
         <nav class="nav-links">
-          <a href="dashboard"><i class='bx bx-grid-alt'></i>Dashboard</a>
-          <a href="save-recipe" class="active"><i class='bx bx-book-heart'></i>Save Recipe</a>
-          <a href="profile"><i class='bx bx-user'></i>Profile</a>
-          <a href="#"><i class='bx bx-cog'></i>Settings</a>
-          <a href="#" @click="logout"><i class='bx bx-log-out'></i>Log Out</a>
-          <a href="#"><i class='bx bx-help-circle'></i>Help</a>
+          <a href="{{ url_for('main.dashboard') }}"><i class='bx bx-grid-alt'></i>Dashboard</a>
+          <a href="{{ url_for('main.save_recipe_page') }}" class="active"><i class='bx bx-book-heart'></i>Save Recipe</a>
+          <a href="{{ url_for('main.shared_recipe_page') }}"><i class='bx bx-share-alt'></i>Share Recipe</a>
+          <a href="{{ url_for('main.community_page') }}"><i class='bx bx-group'></i>Community</a>
+          <a href="{{ url_for('main.profile_page') }}"><i class='bx bx-user'></i>Profile</a>
+          <a href="{{ url_for('main.home') }}" id="logoutBtn"><i class='bx bx-log-out'></i>Log Out</a>
         </nav>
       </div>
 
@@ -289,9 +289,6 @@
                   <div class="card-actions">
                     <button class="btn-save" @click="unsaveRecipe(recipe.id, index)">
                       <i :id="'heart-' + index" class='bx bxs-heart'></i>
-                    </button>
-                    <button class="btn-save">
-                      <i class='bx bx-dots-vertical-rounded'></i>
                     </button>
                   </div>
                 </div>

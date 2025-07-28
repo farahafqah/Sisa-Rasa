@@ -88,7 +88,7 @@ class HybridRecipeRecommender:
 
         print("Hybrid Recipe Recommender initialized successfully!")
 
-    def load_recipes(self, recipes_file, max_rows=None):
+    def load_recipes(self, recipes_file, max_rows=None, include_user_recipes=True):
         """
         Load recipes and initialize all recommendation components.
 
@@ -98,14 +98,31 @@ class HybridRecipeRecommender:
             Path to the recipes JSON file
         max_rows : int, optional
             Maximum number of recipes to load
+        include_user_recipes : bool, optional
+            Whether to include user-shared recipes from database (default: True)
         """
         print("Loading recipes for hybrid recommendation system...")
 
-        # Load recipes using the KNN recommender
+        # Load system recipes using the KNN recommender
         self.knn_recommender.load_recipes(recipes_file, max_rows)
-        self.recipes = self.knn_recommender.recipes
+        self.recipes = self.knn_recommender.recipes.copy()
 
-        print(f"Loaded {len(self.recipes)} recipes")
+        print(f"Loaded {len(self.recipes)} system recipes")
+
+        # Load user-shared recipes from database if requested
+        if include_user_recipes:
+            user_recipes = self._load_user_shared_recipes()
+            if user_recipes:
+                print(f"Loading {len(user_recipes)} user-shared recipes...")
+
+                # Add user recipes to the main recipe list
+                self.recipes.extend(user_recipes)
+
+                # Update KNN recommender's recipe list and indices
+                self.knn_recommender.recipes = self.recipes
+                self._update_knn_indices_with_user_recipes(user_recipes)
+
+                print(f"Total recipes after including user-shared: {len(self.recipes)}")
 
         # Initialize content-based filtering
         self._initialize_content_based_filtering()
@@ -114,6 +131,116 @@ class HybridRecipeRecommender:
         self._initialize_popularity_scores()
 
         print("Hybrid recommendation system ready!")
+
+    def _load_user_shared_recipes(self):
+        """
+        Load user-shared recipes from MongoDB database.
+
+        Returns:
+        --------
+        list
+            List of user-shared recipes in the same format as system recipes
+        """
+        try:
+            from api.models.user import mongo
+            if mongo is None or mongo.db is None:
+                print("Warning: MongoDB not available, skipping user-shared recipes")
+                return []
+
+            # Get all user-shared recipes from database (no approval required)
+            recipes_cursor = mongo.db.recipes.find({
+                'original_id': {'$regex': '^user_'}
+            })
+
+            user_recipes = []
+            for recipe in recipes_cursor:
+                try:
+                    # Parse ingredients if they're stored as string
+                    ingredients = recipe.get('ingredients', [])
+                    if isinstance(ingredients, str):
+                        try:
+                            import json
+                            ingredients = json.loads(ingredients)
+                        except:
+                            ingredients = [ingredients] if ingredients else []
+
+                    # Parse instructions if they're stored as string
+                    instructions = recipe.get('instructions', recipe.get('steps', []))
+                    if isinstance(instructions, str):
+                        try:
+                            import json
+                            instructions = json.loads(instructions)
+                        except:
+                            instructions = [instructions] if instructions else []
+
+                    # Ensure numeric fields are properly converted
+                    def safe_int(value, default):
+                        try:
+                            return int(value) if value is not None else default
+                        except (ValueError, TypeError):
+                            return default
+
+                    # Create recipe data in the same format as system recipes
+                    recipe_data = {
+                        'id': str(recipe['_id']),  # Use MongoDB ObjectId as string
+                        'name': recipe.get('name', 'Untitled Recipe'),
+                        'ingredients': ingredients,
+                        'instructions': instructions,
+                        'prep_time': safe_int(recipe.get('prep_time'), 30),
+                        'cook_time': safe_int(recipe.get('cook_time'), 45),
+                        'servings': safe_int(recipe.get('servings'), 4),
+                        'cuisine': recipe.get('cuisine', 'International'),
+                        'difficulty': recipe.get('difficulty', 'Medium'),
+                        'is_user_recipe': True,  # Mark as user recipe
+                        'submitted_by': recipe.get('submitted_by', ''),
+                        'created_at': recipe.get('created_at')
+                    }
+
+                    user_recipes.append(recipe_data)
+
+                except Exception as e:
+                    print(f"Warning: Error processing user recipe {recipe.get('_id', 'unknown')}: {e}")
+                    continue
+
+            return user_recipes
+
+        except Exception as e:
+            print(f"Warning: Error loading user-shared recipes: {e}")
+            return []
+
+    def _update_knn_indices_with_user_recipes(self, user_recipes):
+        """
+        Update KNN recommender's ingredient indices with user recipes.
+
+        Parameters:
+        -----------
+        user_recipes : list
+            List of user-shared recipes to add to indices
+        """
+        try:
+            # Get the starting index for new recipes
+            start_index = len(self.knn_recommender.recipes) - len(user_recipes)
+
+            # Add ingredients from user recipes to the KNN recommender's indices
+            for i, recipe in enumerate(user_recipes):
+                recipe_index = start_index + i
+
+                for ingredient in recipe.get('ingredients', []):
+                    ingredient_clean = ingredient.lower().strip()
+                    self.knn_recommender.ingredient_names.add(ingredient_clean)
+                    self.knn_recommender.ingredient_to_recipes[ingredient_clean].append(recipe_index)
+
+            # Recalculate ingredient importance scores with new recipes
+            self.knn_recommender._calculate_ingredient_importance()
+
+            # Recreate enhanced vectors and KNN model with all recipes
+            self.knn_recommender._create_enhanced_vectors()
+
+            print(f"Updated KNN indices with {len(user_recipes)} user recipes")
+            print(f"Total unique ingredients: {len(self.knn_recommender.ingredient_names)}")
+
+        except Exception as e:
+            print(f"Warning: Error updating KNN indices with user recipes: {e}")
 
     def _initialize_content_based_filtering(self):
         """Initialize content-based filtering components."""

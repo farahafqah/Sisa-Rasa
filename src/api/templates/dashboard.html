@@ -11,7 +11,7 @@
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
 
   <!-- VueJS -->
-  <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- SweetAlert for notifications -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -169,10 +169,12 @@
       outline: none;
       flex: 1;
       min-width: 150px;
-      padding: 0.5rem;
+      padding: 0.5rem 0.5rem 0.5rem 2.5rem;
       font-size: 1rem;
       background: transparent;
       color: #083640;
+      z-index: 10;
+      position: relative;
     }
     .ingredient-input::placeholder {
       color: #999;
@@ -183,7 +185,8 @@
       top: 50%;
       transform: translateY(-50%);
       color: #083640;
-      z-index: 2;
+      z-index: 1;
+      pointer-events: none;
     }
     .ingredient-suggestions {
       position: absolute;
@@ -489,6 +492,318 @@
     .recommend-section::-webkit-scrollbar-thumb { background-color: #ea5e18; border-radius: 10px; }
     .recommend-section::-webkit-scrollbar-thumb:hover { background-color: #ff7f3f; }
 
+    /* Analytics Section Styles */
+    .analytics-section {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .analytics-card {
+      background: white;
+      border-radius: 1rem;
+      padding: 1.5rem;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+    }
+
+    .analytics-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    }
+
+    .analytics-card h5 {
+      color: #083640;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+
+    .analytics-card h5 i {
+      color: #ea5e18;
+      margin-right: 0.5rem;
+    }
+
+    /* Recipe Cards - Aligned with Welcome Page Styling */
+    .recipe-card {
+      background: linear-gradient(135deg, #ffffff, #f8f9fa);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      border: 1px solid #e9ecef;
+      border-left: 4px solid #ea5e18;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .recipe-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(234, 94, 24, 0.15);
+      border-left-color: #d63384;
+    }
+
+    /* Clickable Recipe Cards */
+    .clickable-recipe-card {
+      cursor: pointer;
+    }
+
+    .clickable-recipe-card:hover {
+      transform: translateY(-5px) !important;
+      box-shadow: 0 10px 30px rgba(234, 94, 24, 0.2) !important;
+    }
+
+    /* Recipe Card Content */
+    .recipe-card-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #2c3e50;
+      margin-bottom: 0.5rem;
+      line-height: 1.3;
+    }
+
+    .recipe-card-description {
+      font-size: 0.9rem;
+      color: #6c757d;
+      margin-bottom: 1rem;
+      line-height: 1.4;
+    }
+
+    .recipe-card-ingredients {
+      margin-bottom: 1rem;
+    }
+
+    .ingredient-chip {
+      display: inline-block;
+      background: linear-gradient(135deg, #ea5e18, #ff6b35);
+      color: white;
+      padding: 0.25rem 0.5rem;
+      border-radius: 1rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      margin-right: 0.5rem;
+      margin-bottom: 0.25rem;
+      transition: all 0.2s ease;
+    }
+
+    .ingredient-chip:hover {
+      transform: scale(1.05);
+      box-shadow: 0 2px 8px rgba(234, 94, 24, 0.3);
+    }
+
+    .recipe-card-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+      color: #6c757d;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .recipe-card-meta span {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .recipe-card-meta i {
+      color: #ea5e18;
+    }
+
+    /* Animation Classes */
+    .fade-in-up {
+      animation: fadeInUp 0.6s ease-out;
+    }
+
+    .stagger-1 { animation-delay: 0.1s; }
+    .stagger-2 { animation-delay: 0.2s; }
+    .stagger-3 { animation-delay: 0.3s; }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Popular Recipes Container */
+    .popular-recipes-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .recipe-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+
+    .recipe-title {
+      color: #083640;
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin: 0;
+      flex: 1;
+    }
+
+    .trending-score, .rating-display {
+      background: #ea5e18;
+      color: white;
+      padding: 0.25rem 0.5rem;
+      border-radius: 1rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .rating-display {
+      background: #fedf2f;
+      color: #083640;
+    }
+
+    .recipe-ingredients {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.25rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .ingredient-chip {
+      background: rgba(234, 94, 24, 0.1);
+      color: #ea5e18;
+      padding: 0.2rem 0.5rem;
+      border-radius: 0.5rem;
+      font-size: 0.7rem;
+      font-weight: 500;
+      border: 1px solid rgba(234, 94, 24, 0.2);
+    }
+
+    .recipe-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: #6c757d;
+    }
+
+    .recipe-meta span {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    /* Leftover Solutions */
+    .section-subtitle {
+      color: #083640;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .section-subtitle i {
+      color: #ea5e18;
+      font-size: 1rem;
+    }
+
+    .user-ingredients, .leftover-ingredients {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .user-ingredient-tag {
+      background: linear-gradient(135deg, #083640, #0a4550);
+      color: white;
+      padding: 0.4rem 0.75rem;
+      border-radius: 1rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .leftover-ingredient-tag {
+      background: linear-gradient(135deg, #ea5e18, #fedf2f);
+      color: white;
+      padding: 0.4rem 0.75rem;
+      border-radius: 1rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .leftover-suggestion {
+      background: rgba(254, 223, 47, 0.1);
+      border-radius: 0.5rem;
+      padding: 0.75rem;
+      border-left: 3px solid #fedf2f;
+    }
+
+    .suggestion-header {
+      color: #083640;
+      font-size: 0.85rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .usage-count {
+      color: #6c757d;
+      font-weight: normal;
+      font-size: 0.75rem;
+    }
+
+    .suggestion-recipes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.25rem;
+    }
+
+    .recipe-suggestion {
+      background: rgba(8, 54, 64, 0.1);
+      color: #083640;
+      padding: 0.2rem 0.5rem;
+      border-radius: 0.5rem;
+      font-size: 0.7rem;
+      font-weight: 500;
+      border: 1px solid rgba(8, 54, 64, 0.2);
+    }
+
+    /* User Stats */
+    .user-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      text-align: center;
+    }
+
+    .stat-item {
+      background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+      border-radius: 0.75rem;
+      padding: 1rem 0.5rem;
+      transition: all 0.3s ease;
+    }
+
+    .stat-item:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .stat-number {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #ea5e18;
+      margin-bottom: 0.25rem;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: #6c757d;
+      font-weight: 500;
+    }
+
     /* Footer styles */
     .footer {
       background-color: #072a32;
@@ -577,6 +892,55 @@
       background-color: #ea5e18;
       transform: scale(1.05);
     }
+
+    /* Clickable Ingredients and Recipes */
+    .clickable-ingredient, .clickable-recipe {
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .clickable-ingredient:hover {
+      transform: scale(1.1);
+      box-shadow: 0 4px 15px rgba(234, 94, 24, 0.3);
+    }
+
+    .clickable-recipe:hover {
+      transform: scale(1.05);
+      background-color: rgba(234, 94, 24, 0.1);
+    }
+
+    .user-ingredient-tag, .leftover-ingredient-tag {
+      display: inline-block;
+      margin: 0.25rem;
+      padding: 0.5rem 1rem;
+      border-radius: 1rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .user-ingredient-tag {
+      background: linear-gradient(135deg, #ea5e18, #fedf2f);
+      color: white;
+    }
+
+    .leftover-ingredient-tag {
+      background: linear-gradient(135deg, #083640, #0a4550);
+      color: white;
+    }
+
+    .recipe-suggestion {
+      display: inline-block;
+      margin: 0.25rem;
+      padding: 0.25rem 0.75rem;
+      background: rgba(254, 223, 47, 0.2);
+      color: #083640;
+      border-radius: 1rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      border: 1px solid rgba(254, 223, 47, 0.3);
+      transition: all 0.3s ease;
+    }
     .ingredient-count {
       background-color: #fedf2f;
       color: #083640;
@@ -640,6 +1004,50 @@
       font-size: 0.85rem;
       color: #666;
       font-weight: 500;
+      margin-left: 0.5rem;
+    }
+
+    /* Enhanced rating display for analytics cards */
+    .rating-display {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: #fedf2f;
+      color: #083640;
+      padding: 0.25rem 0.5rem;
+      border-radius: 1rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .rating-display .rating-stars {
+      gap: 0.1rem;
+    }
+
+    .rating-display .star {
+      font-size: 0.8rem;
+      color: rgba(8, 54, 64, 0.3);
+    }
+
+    .rating-display .star.filled {
+      color: #083640;
+    }
+
+    .rating-display .rating-text {
+      font-size: 0.75rem;
+      color: #083640;
+      font-weight: 600;
+      margin-left: 0.25rem;
+    }
+
+    /* Recipe review preview */
+    .recipe-review-preview {
+      background: rgba(254, 223, 47, 0.1);
+      border-left: 3px solid #fedf2f;
+      padding: 0.5rem;
+      border-radius: 0.25rem;
+      font-style: italic;
     }
     .verification-badge {
       display: flex;
@@ -762,12 +1170,12 @@
           <small>Sisa Lama</small>
         </div>
         <nav class="nav-links">
-          <a href="{{ url_for('dashboard') }}" class="active"><i class='bx bx-grid-alt'></i>Dashboard</a>
-          <a href="{{ url_for('save_recipe_page') }}" id="savedRecipesLink"><i class='bx bx-book-heart'></i>Save Recipe</a>
-          <a href="{{ url_for('profile_page') }}" id="profileLink"><i class='bx bx-user'></i>Profile</a>
-          <a href="#" id="settingsLink"><i class='bx bx-cog'></i>Settings</a>
-          <a href="{{ url_for('welcome') }}" id="logoutBtn"><i class='bx bx-log-out'></i>Log Out</a>
-          <a href="#" id="helpLink"><i class='bx bx-help-circle'></i>Help</a>
+          <a href="{{ url_for('main.dashboard') }}" class="active"><i class='bx bx-grid-alt'></i>Dashboard</a>
+          <a href="{{ url_for('main.save_recipe_page') }}" id="savedRecipesLink"><i class='bx bx-book-heart'></i>Save Recipe</a>
+          <a href="{{ url_for('main.shared_recipe_page') }}"><i class='bx bx-share-alt'></i>Share Recipe</a>
+          <a href="{{ url_for('main.community_page') }}"><i class='bx bx-group'></i>Community</a>
+          <a href="{{ url_for('main.profile_page') }}" id="profileLink"><i class='bx bx-user'></i>Profile</a>
+          <a href="{{ url_for('main.home') }}" id="logoutBtn"><i class='bx bx-log-out'></i>Log Out</a>
         </nav>
       </div>
 
@@ -962,60 +1370,68 @@
 
             <!-- Right Column -->
             <div class="col-md-4">
-              <!-- Recommendations -->
-              <div class="recommend-section">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                  <h5 class="mb-0">Recommend</h5>
-                  <button v-if="recommendedRecipes.length > 0" @click="viewAllRecommendations" class="btn btn-sm" style="background-color: #ea5e18; color: white; border: none; border-radius: 1rem; padding: 0.25rem 0.75rem; font-size: 0.8rem;">
-                    View All
-                  </button>
-                </div>
-                <div v-if="loadingRecommendations" class="text-center">
-                  <div class="spinner-border text-warning" role="status"><span class="visually-hidden">Loading...</span></div>
-                </div>
-                <div v-else>
-                  <div v-if="recommendedRecipes.length > 0">
-                    <div v-for="(recipe, index) in recommendedRecipes" :key="index">
-                      <div class="recommend-card fade-in">
-                        <div class="card-header">
-                          <h6>${ recipe.name }</h6>
-                          <div class="card-actions">
-                            <button @click="saveRecipe(recipe)">
-                              <i :id="'heart-dashboard-' + index" :class="recipe.saved ? 'bx bxs-heart text-danger' : 'bx bx-heart'"></i>
-                            </button>
-                            <button @click="viewRecipeDetails(recipe)">
-                              <i class='bx bx-show'></i>
-                            </button>
-                            <button @click="showRatingModal(recipe)" title="Rate & Review">
-                              <i class='bx bx-star'></i>
-                            </button>
-                            <button @click="viewAllReviews(recipe)" title="View All Reviews" class="comment-btn">
-                              <i class='bx bx-comment'></i>
-                            </button>
-                          </div>
+              <!-- Prescriptive Analytics -->
+              <div class="analytics-section">
+
+
+                <!-- Popular Recipes -->
+                <div class="analytics-card mb-4">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0"><i class='bx bx-star'></i> Most Popular Recipes</h5>
+                    <small class="text-muted">Community favorites</small>
+                  </div>
+
+                  <!-- Loading State -->
+                  <div v-if="loadingAnalytics" class="text-center py-4">
+                    <div class="spinner-border text-warning" role="status">
+                      <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="text-muted mt-2 mb-0">Loading popular recipes...</p>
+                  </div>
+
+                  <!-- Popular Recipes Content -->
+                  <div v-else>
+                    <!-- Recipe Cards Container -->
+                    <div v-if="popularRecipes.length > 0" class="popular-recipes-container">
+                      <div v-for="(recipe, index) in popularRecipes"
+                           :key="recipe.id"
+                           class="recipe-card mb-3 clickable-recipe-card fade-in-up"
+                           :class="`stagger-${index + 1}`"
+                           @click="handlePopularRecipeClick(recipe)"
+                           :title="`View ${recipe.name} recipe details`">
+
+                        <!-- Recipe Title -->
+                        <div class="recipe-card-title">${ recipe.name }</div>
+
+                        <!-- Recipe Description -->
+                        <div class="recipe-card-description">${ recipe.description }</div>
+
+                        <!-- Ingredients Preview -->
+                        <div class="recipe-card-ingredients">
+                          <span v-for="ingredient in recipe.ingredients.slice(0, 4)"
+                                :key="ingredient"
+                                class="ingredient-chip">${ ingredient }</span>
                         </div>
 
-                        <!-- Rating Display -->
-                        <div v-if="recipe.rating_data && recipe.rating_data.total_reviews > 0" class="recipe-rating mb-2">
-                          <div class="rating-stars">
-                            <span v-for="star in 5" :key="star" class="star" :class="{ 'filled': star <= Math.round(recipe.rating_data.average_rating) }">★</span>
-                            <span class="rating-text">${ recipe.rating_data.average_rating }/5 (${ recipe.rating_data.total_reviews } review${ recipe.rating_data.total_reviews !== 1 ? 's' : '' })</span>
-                          </div>
+                        <!-- Recipe Meta Information -->
+                        <div class="recipe-card-meta">
+                          <span><i class='bx bx-time'></i> ${ recipe.prep_time } min</span>
+                          <span><i class='bx bx-star'></i> ${ recipe.rating ? recipe.rating.toFixed(1) : 'N/A' }</span>
+                          <span v-if="recipe.review_count > 0"><i class='bx bx-message-dots'></i> ${ recipe.review_count } reviews</span>
                         </div>
-
-                        <!-- Verification Badge -->
-                        <div v-if="recipe.verification_data && recipe.verification_data.verification_count > 0" class="verification-badge mb-2">
-                          <i class='bx bx-check-circle text-success'></i>
-                          <span class="verification-text">Verified by ${ recipe.verification_data.verification_count } user${ recipe.verification_data.verification_count !== 1 ? 's' : '' }</span>
-                        </div>
-
-                        <p><strong>Ingredients:</strong> ${ recipe.ingredients }</p>
-                        <p><strong>Instructions:</strong> ${ recipe.instructions }</p>
                       </div>
                     </div>
+
+                    <!-- Empty State -->
+                    <div v-else class="text-center text-muted py-4">
+                      <i class='bx bx-star' style="font-size: 2.5rem; opacity: 0.3; margin-bottom: 1rem;"></i>
+                      <p class="mb-1 fw-bold">No popular recipes yet</p>
+                      <small>Recipes will appear here as the community rates them</small>
+                    </div>
                   </div>
-                  <div v-else class="text-center">No recommendations yet. Start searching ingredients!</div>
                 </div>
+
+
               </div>
             </div>
           </div>
@@ -1052,19 +1468,6 @@
                     placeholder="Share your experience with this recipe..."></textarea>
         </div>
 
-        <div class="mb-3">
-          <label class="form-label">
-            <input type="checkbox" v-model="markAsVerified" class="me-2">
-            I've tried this recipe (mark as verified)
-          </label>
-        </div>
-
-        <div v-if="markAsVerified" class="mb-3">
-          <label class="form-label">Verification Notes (optional):</label>
-          <textarea v-model="verificationNotes"
-                    class="review-textarea"
-                    placeholder="Any tips or modifications you made..."></textarea>
-        </div>
 
         <div class="modal-buttons">
           <button class="btn-modal btn-secondary" @click="closeRatingModal">Cancel</button>
@@ -1105,6 +1508,13 @@
           recommendedRecipes: [],
           loadingRecommendations: true,
           savedRecipes: [],
+          // Prescriptive Analytics data
+          analyticsData: {
+            trending_recipes: [],
+            popular_recipes: [],
+            user_specific: {}
+          },
+          loadingAnalytics: true,
           // Personal Analytics data
           showAnalytics: true,
           personalAnalytics: {
@@ -1171,7 +1581,26 @@
             .sort((a, b) => b[1] - a[1])
             .slice(0, 8)
             .map(([name, count]) => ({ name, count }));
-        }
+        },
+        // Computed property for normalized popular recipes
+        popularRecipes() {
+          const recipes = this.analyticsData.popular_recipes || [];
+          return recipes
+            .filter(recipe => this.isValidRecipe(recipe))
+            .slice(0, 3)
+            .map(recipe => ({
+              id: recipe.id || recipe.name.toLowerCase().replace(/\s+/g, '-'),
+              name: recipe.name,
+              ingredients: this.safeArray(recipe.ingredients),
+              rating: this.normalizeRating(recipe),
+              review_count: Math.max(0, recipe.review_count || recipe.total_reviews || 0),
+              prep_time: Math.max(1, recipe.prep_time || 30),
+              saves: Math.max(0, recipe.saves || recipe.total_saves || 0),
+              latest_review: recipe.latest_review || null,
+              description: recipe.description || ''
+            }));
+        },
+
       },
       mounted() {
         if (!this.userName || this.userName === "Guest") {
@@ -1184,6 +1613,7 @@
         this.loadSavedRecipes();
         this.loadIngredientHistory();
         this.fetchPersonalAnalytics();
+        this.fetchPrescriptiveAnalytics();
         this.initCharts();
 
         // Load analytics preference
@@ -1192,16 +1622,215 @@
           this.showAnalytics = showAnalytics === 'true';
         }
 
+        // Set up periodic refresh of analytics data
+        this.setupAnalyticsRefresh();
+
         // Set up event listeners for navigation
         document.getElementById('logoutBtn').addEventListener('click', (e) => {
           e.preventDefault();
           localStorage.removeItem('token');
           localStorage.removeItem('userId');
           localStorage.removeItem('userName');
-          window.location.href = "/login";
+          window.location.href = "/";
         });
       },
       methods: {
+        // UTILITY FUNCTIONS FOR DATA VALIDATION AND NORMALIZATION
+
+        // Validate recipe object structure
+        isValidRecipe(recipe) {
+          return recipe &&
+                 typeof recipe === 'object' &&
+                 recipe.name &&
+                 typeof recipe.name === 'string' &&
+                 recipe.name.trim().length > 0;
+        },
+
+        // Normalize recipe rating value
+        normalizeRating(recipe) {
+          const rating = recipe.avg_rating || recipe.rating || 0;
+          return Math.max(0, Math.min(5, Number(rating) || 0));
+        },
+
+        // Safely get array property with fallback
+        safeArray(value, fallback = []) {
+          if (Array.isArray(value)) return value;
+          if (typeof value === 'string') return value.split(',').map(s => s.trim()).filter(s => s);
+          return fallback;
+        },
+
+        // UTILITY FUNCTION: Safely get recipe ID with comprehensive null checks
+        safeGetRecipeId(recipe, context = 'unknown') {
+          console.log(`safeGetRecipeId called from ${context} with recipe:`, recipe);
+
+          // Check if recipe exists
+          if (!recipe) {
+            console.error(`ERROR [${context}]: Recipe is null or undefined`);
+            return null;
+          }
+
+          // Check if recipe has an ID
+          if (recipe.id) {
+            console.log(`SUCCESS [${context}]: Using recipe.id = ${recipe.id}`);
+            return recipe.id;
+          }
+
+          // Check if recipe has a name to generate ID from
+          if (recipe.name && typeof recipe.name === 'string' && recipe.name.trim()) {
+            const generatedId = recipe.name.toLowerCase().replace(/\s+/g, '-');
+            console.log(`SUCCESS [${context}]: Generated ID from name = ${generatedId}`);
+            return generatedId;
+          }
+
+          // Last resort: check if recipe has any string property we can use
+          const stringProps = ['title', 'recipe_name', 'recipeName'];
+          for (const prop of stringProps) {
+            if (recipe[prop] && typeof recipe[prop] === 'string' && recipe[prop].trim()) {
+              const generatedId = recipe[prop].toLowerCase().replace(/\s+/g, '-');
+              console.log(`SUCCESS [${context}]: Generated ID from ${prop} = ${generatedId}`);
+              return generatedId;
+            }
+          }
+
+          console.error(`ERROR [${context}]: Cannot generate recipe ID - no usable properties found`);
+          console.error(`Recipe object:`, recipe);
+          return null;
+        },
+
+        // UTILITY FUNCTION: Safely validate recipe object
+        validateRecipe(recipe, context = 'unknown') {
+          console.log(`validateRecipe called from ${context} with recipe:`, recipe);
+
+          if (!recipe) {
+            console.error(`ERROR [${context}]: Recipe is null or undefined`);
+            return false;
+          }
+
+          if (!recipe.name || typeof recipe.name !== 'string' || !recipe.name.trim()) {
+            console.error(`ERROR [${context}]: Recipe missing valid name property`);
+            console.error(`Recipe object:`, recipe);
+            return false;
+          }
+
+          console.log(`SUCCESS [${context}]: Recipe validation passed`);
+          return true;
+        },
+
+        async fetchPrescriptiveAnalytics() {
+          try {
+            this.loadingAnalytics = true;
+            console.log('🔄 Fetching prescriptive analytics...');
+
+            const response = await fetch('/api/analytics/prescriptive', {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            });
+
+            console.log('📊 Analytics response status:', response.status);
+            const data = await response.json();
+            console.log('📊 Analytics data received:', data);
+
+            if (data.status === 'success' && data.data) {
+              // Normalize and structure the analytics data
+              this.analyticsData = {
+                ...this.analyticsData, // Keep existing structure
+                ...data.data, // Override with real data
+                // Normalize popular_recipes data structure
+                popular_recipes: (data.data.popular_recipes || []).map(recipe => ({
+                  id: recipe.id || recipe.name?.toLowerCase().replace(/\s+/g, '-') || 'unknown',
+                  name: recipe.name || 'Unknown Recipe',
+                  ingredients: Array.isArray(recipe.ingredients) ? recipe.ingredients :
+                              (recipe.ingredients ? recipe.ingredients.split(',').map(i => i.trim()) : []),
+                  description: recipe.description || '',
+                  // Standardize rating properties
+                  avg_rating: recipe.avg_rating || recipe.rating || 0,
+                  rating: recipe.avg_rating || recipe.rating || 0,
+                  review_count: recipe.review_count || recipe.total_reviews || 0,
+                  total_reviews: recipe.review_count || recipe.total_reviews || 0,
+                  saves: recipe.saves || recipe.total_saves || 0,
+                  total_saves: recipe.saves || recipe.total_saves || 0,
+                  prep_time: recipe.prep_time || 30,
+                  latest_review: recipe.latest_review || null
+                })),
+                // Keep user_specific data but remove leftover-related processing
+                user_specific: {
+                  ...data.data.user_specific
+                }
+              };
+              console.log('✅ Real-time analytics data loaded and normalized successfully');
+            } else {
+              console.warn('⚠️ API returned no data, using fallback analytics');
+              this.loadFallbackAnalytics();
+            }
+          } catch (error) {
+            console.error('❌ Error fetching prescriptive analytics:', error);
+            console.warn('⚠️ Using fallback analytics due to error');
+            this.loadFallbackAnalytics();
+          } finally {
+            this.loadingAnalytics = false;
+            console.log('🏁 Analytics loading completed');
+          }
+        },
+
+        loadFallbackAnalytics() {
+          // Enhanced fallback data with realistic review integration
+          this.analyticsData = {
+            popular_recipes: [
+              {
+                id: 'popular-1',
+                name: 'Classic Chicken Curry',
+                ingredients: ['chicken', 'curry powder', 'coconut milk', 'onion', 'garlic', 'ginger'],
+                description: 'Highly rated recipe perfect for leftover chicken',
+                avg_rating: 4.8,
+                review_count: 156,
+                prep_time: 45,
+                difficulty: 'Medium',
+                saves: 234,
+                latest_review: {
+                  text: 'Amazing flavor! Used leftover roasted chicken and it was perfect.',
+                  user_name: 'Sarah K.'
+                }
+              },
+              {
+                id: 'popular-2',
+                name: 'Homemade Fried Rice',
+                ingredients: ['rice', 'egg', 'soy sauce', 'vegetables', 'garlic', 'green onion'],
+                description: 'Community favorite for using leftover rice',
+                avg_rating: 4.6,
+                review_count: 89,
+                prep_time: 20,
+                difficulty: 'Easy',
+                saves: 189,
+                latest_review: {
+                  text: 'Great way to use day-old rice. Kids loved it too!',
+                  user_name: 'Mike R.'
+                }
+              },
+              {
+                id: 'popular-3',
+                name: 'Vegetable Stir Fry',
+                ingredients: ['mixed vegetables', 'soy sauce', 'garlic', 'ginger', 'sesame oil'],
+                description: 'Perfect for using up leftover vegetables',
+                avg_rating: 4.4,
+                review_count: 67,
+                prep_time: 15,
+                difficulty: 'Easy',
+                saves: 156,
+                latest_review: {
+                  text: 'Cleaned out my fridge and made something delicious!',
+                  user_name: 'Lisa M.'
+                }
+              }
+            ],
+            user_specific: {
+              total_searches: 45,
+              total_recipe_saves: 12,
+              recent_search_count: 8
+            }
+          };
+        },
 
         fetchProfileImage() {
           // Check if user has a profile image
@@ -1301,11 +1930,15 @@
             return;
           }
 
+          console.log('🔍 DEBUG: Starting search with ingredients:', this.selectedIngredients);
+
           // Save this search to recent searches
           const ingredientsString = this.selectedIngredients.join(', ');
+          console.log('🔍 DEBUG: Saving recent search:', ingredientsString);
           this.saveRecentSearch(ingredientsString, 'Search Results');
 
           // Track analytics event
+          console.log('🔍 DEBUG: Tracking search analytics event');
           this.trackEvent('search', {
             ingredients: this.selectedIngredients,
             ingredient_count: this.selectedIngredients.length
@@ -1313,6 +1946,7 @@
 
           // Redirect to search results page with ingredients as URL parameter
           const ingredientsParam = encodeURIComponent(this.selectedIngredients.join(','));
+          console.log('🔍 DEBUG: Redirecting to search results with params:', ingredientsParam);
           window.location.href = `/search-results?ingredients=${ingredientsParam}`;
         },
         fetchRecommendations() {
@@ -1511,6 +2145,12 @@
                 }
               }
               this.ingredientHistory = this.ingredientHistory.slice(0, 15);
+
+              // Refresh analytics after successful search save
+              setTimeout(() => {
+                this.fetchPersonalAnalytics();
+                this.fetchPrescriptiveAnalytics();
+              }, 1000); // Wait 1 second for database to update
             }
           })
           .catch(err => {
@@ -1726,6 +2366,7 @@
 
         // Personal Analytics Methods
         fetchPersonalAnalytics() {
+          console.log('🔍 DEBUG: Fetching personal analytics...');
           this.loadingAnalytics = true;
 
           fetch('/api/analytics/personal', {
@@ -1740,9 +2381,11 @@
             return res.json();
           })
           .then(data => {
+            console.log('🔍 DEBUG: Personal analytics response:', data);
             this.loadingAnalytics = false;
             if (data.status === 'success' && data.analytics) {
               this.personalAnalytics = data.analytics;
+              console.log('🔍 DEBUG: Updated personal analytics:', this.personalAnalytics);
             }
           })
           .catch(err => {
@@ -1770,8 +2413,35 @@
               event_data: eventData
             })
           })
+          .then(res => {
+            if (res.ok) {
+              // Refresh analytics after successful tracking
+              setTimeout(() => {
+                this.fetchPersonalAnalytics();
+                this.fetchPrescriptiveAnalytics();
+              }, 1000); // Wait 1 second for database to update
+            }
+          })
           .catch(err => {
             console.error('Error tracking event:', err);
+          });
+        },
+
+        setupAnalyticsRefresh() {
+          // Refresh analytics data every 30 seconds to show real-time updates
+          setInterval(() => {
+            console.log('🔄 Refreshing dashboard analytics...');
+            this.fetchPersonalAnalytics();
+            this.fetchPrescriptiveAnalytics();
+          }, 30000); // 30 seconds
+
+          // Also refresh when the page becomes visible again (user switches back to tab)
+          document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+              console.log('🔄 Page visible again, refreshing dashboard analytics...');
+              this.fetchPersonalAnalytics();
+              this.fetchPrescriptiveAnalytics();
+            }
           });
         },
         saveRecipe(recipe) {
@@ -1786,8 +2456,27 @@
             return;
           }
 
-          // If recipe has an ID, use it, otherwise use a fallback approach
-          const recipeId = recipe.id || recipe.name.toLowerCase().replace(/\s+/g, '-');
+          // Use utility function to validate and get recipe ID
+          if (!this.validateRecipe(recipe, 'saveRecipe')) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Recipe data is incomplete. Please try again.',
+              confirmButtonColor: '#ea5e18'
+            });
+            return;
+          }
+
+          const recipeId = this.safeGetRecipeId(recipe, 'saveRecipe');
+          if (!recipeId) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Recipe ID could not be determined. Please try again.',
+              confirmButtonColor: '#ea5e18'
+            });
+            return;
+          }
 
           fetch(`/api/recipe/${recipeId}/save`, {
             method: 'POST',
@@ -1905,9 +2594,22 @@
         },
 
         viewRecipeDetails(recipe) {
+          // Use utility function to validate recipe and get ID
+          if (!this.validateRecipe(recipe, 'viewRecipeDetails')) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Recipe data is incomplete.',
+              confirmButtonColor: '#ea5e18'
+            });
+            return;
+          }
+
+          const recipeId = this.safeGetRecipeId(recipe, 'viewRecipeDetails');
+
           // Track analytics event
           this.trackEvent('recipe_view', {
-            recipe_id: recipe.id,
+            recipe_id: recipeId,
             recipe_name: recipe.name
           });
 
@@ -1928,8 +2630,53 @@
           });
         },
 
+        handlePopularRecipeClick(recipe) {
+          // Enhanced recipe click handler for popular recipes
+          console.log('Popular recipe clicked:', recipe);
+
+          // Validate recipe data
+          if (!this.validateRecipe(recipe, 'handlePopularRecipeClick')) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Recipe data is incomplete.',
+              confirmButtonColor: '#ea5e18'
+            });
+            return;
+          }
+
+          const recipeId = this.safeGetRecipeId(recipe, 'handlePopularRecipeClick');
+
+          // Track analytics event
+          this.trackEvent('popular_recipe_click', {
+            recipe_id: recipeId,
+            recipe_name: recipe.name,
+            source: 'dashboard_popular_recipes'
+          });
+
+          // Try to fetch full recipe details first
+          fetch(`/api/recipe/${recipeId}`)
+            .then(response => response.json())
+            .then(data => {
+              if (data.status === 'ok' && data.recipe) {
+                // Show detailed recipe modal with full information
+                this.showDetailedRecipeModal(data.recipe);
+              } else {
+                // Fallback to basic modal with available data
+                this.showBasicRecipeModal(recipe);
+              }
+            })
+            .catch(error => {
+              console.error('Error fetching recipe details:', error);
+              // Fallback to basic modal
+              this.showBasicRecipeModal(recipe);
+            });
+        },
+
         viewAllReviews(recipe) {
-          if (!recipe.id) {
+          // Use safe utility function to get recipe ID
+          const recipeId = this.safeGetRecipeId(recipe, 'viewAllReviews');
+          if (!recipeId) {
             Swal.fire({
               icon: 'error',
               title: 'Error',
@@ -1948,7 +2695,7 @@
           });
 
           // Fetch reviews for this recipe
-          fetch(`/api/recipe/${recipe.id}/reviews?sort_by=recent&limit=20`)
+          fetch(`/api/recipe/${recipeId}/reviews?sort_by=recent&limit=20`)
           .then(res => res.json())
           .then(data => {
             if (data.status === 'success') {
@@ -2092,8 +2839,15 @@
         },
 
         fetchRecipeRatingData(recipe) {
+          // Use safe utility function to get recipe ID
+          const recipeId = this.safeGetRecipeId(recipe, 'fetchRecipeRatingData');
+          if (!recipeId) {
+            console.error('Cannot fetch rating data - no valid recipe ID');
+            return;
+          }
+
           // Fetch rating summary
-          fetch(`/api/recipe/${recipe.id}/rating-summary`)
+          fetch(`/api/recipe/${recipeId}/rating-summary`)
           .then(res => res.json())
           .then(data => {
             if (data.status === 'success' && data.total_reviews > 0) {
@@ -2109,7 +2863,7 @@
           });
 
           // Fetch verification count (this would be part of recipe data in a real implementation)
-          fetch(`/api/recipe/${recipe.id}/verifications?limit=1`)
+          fetch(`/api/recipe/${recipeId}/verifications?limit=1`)
           .then(res => res.json())
           .then(data => {
             if (data.status === 'success') {
@@ -2127,18 +2881,41 @@
         showRatingModal(recipe) {
           console.log('showRatingModal called with recipe:', recipe);
 
-          if (!recipe) {
-            console.error('No recipe provided to showRatingModal');
+          // Use utility function to validate recipe
+          if (!this.validateRecipe(recipe, 'showRatingModal')) {
             Swal.fire({
               icon: 'error',
               title: 'Error',
-              text: 'Recipe data not available. Please try again.',
+              text: 'Recipe data is incomplete. Please try again.',
               confirmButtonColor: '#ea5e18'
             });
             return;
           }
 
-          this.selectedRecipeForRating = recipe;
+          // Get safe recipe ID
+          const recipeId = this.safeGetRecipeId(recipe, 'showRatingModal');
+          if (!recipeId) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Recipe ID could not be determined. Please try again.',
+              confirmButtonColor: '#ea5e18'
+            });
+            return;
+          }
+
+          // Create a clean copy of the recipe with guaranteed properties
+          const cleanRecipe = {
+            id: recipeId,
+            name: recipe.name,
+            ingredients: recipe.ingredients || 'Ingredients not available',
+            instructions: recipe.instructions || 'Instructions not available',
+            // Copy other properties if they exist
+            ...recipe
+          };
+
+          console.log('Setting selectedRecipeForRating to:', cleanRecipe);
+          this.selectedRecipeForRating = cleanRecipe;
           this.showRatingModalFlag = true;
           this.currentRating = 0;
           this.currentReviewText = '';
@@ -2146,7 +2923,6 @@
           this.verificationNotes = '';
 
           // Load existing user review if any
-          const recipeId = recipe.id || recipe.name.toLowerCase().replace(/\s+/g, '-');
           console.log('Loading user review for recipe ID:', recipeId);
           this.loadUserReview(recipeId);
         },
@@ -2215,30 +2991,55 @@
             return;
           }
 
-          // Check if selectedRecipeForRating exists
-          if (!this.selectedRecipeForRating) {
+          // Get token
+          const token = localStorage.getItem('token');
+          if (!token) {
             Swal.fire({
               icon: 'error',
-              title: 'Error',
-              text: 'No recipe selected. Please try again.',
+              title: 'Authentication Required',
+              text: 'Please log in to submit a rating',
               confirmButtonColor: '#ea5e18'
             });
             return;
           }
 
-          const recipeId = this.selectedRecipeForRating.id || this.selectedRecipeForRating.name.toLowerCase().replace(/\s+/g, '-');
-          console.log('recipeId:', recipeId);
+          // Use utility function to validate recipe
+          if (!this.validateRecipe(this.selectedRecipeForRating, 'submitRating')) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'No recipe selected or recipe data is incomplete. Please close this dialog and try again.',
+              confirmButtonColor: '#ea5e18'
+            });
+            return;
+          }
 
-          // Check if recipe ID exists
+          // Disable the submit button to prevent double submissions
+          const submitButton = document.querySelector('.rating-modal .btn-primary');
+          if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.textContent = 'Submitting...';
+          }
+
+          // Use utility function to get recipe ID
+          const recipeId = this.safeGetRecipeId(this.selectedRecipeForRating, 'submitRating');
           if (!recipeId) {
+            console.error('ERROR: Cannot get recipe ID for rating submission');
             Swal.fire({
               icon: 'error',
               title: 'Error',
-              text: 'Recipe ID not found. Please try refreshing the page.',
+              text: 'Recipe ID could not be determined. Please try again.',
               confirmButtonColor: '#ea5e18'
             });
+            // Re-enable button
+            if (submitButton) {
+              submitButton.disabled = false;
+              submitButton.textContent = 'Submit Rating';
+            }
             return;
           }
+
+          console.log('Using recipeId for submission:', recipeId);
 
           // Submit review
           const reviewData = {
@@ -2299,16 +3100,41 @@
           })
           .catch(err => {
             console.error('Error submitting rating:', err);
-            Swal.fire({
-              icon: 'error',
-              title: 'Error',
-              text: 'Failed to submit rating. Please try again.',
-              confirmButtonColor: '#ea5e18'
-            });
+
+            // Check if it's a token expiration issue
+            if (err.message.includes('token') || err.message.includes('401') || err.message.includes('unauthorized')) {
+              Swal.fire({
+                icon: 'warning',
+                title: 'Session Expired',
+                text: 'Your session has expired. Please refresh the page and try again.',
+                confirmButtonColor: '#ea5e18',
+                confirmButtonText: 'Refresh Page'
+              }).then((result) => {
+                if (result.isConfirmed) {
+                  window.location.reload();
+                }
+              });
+            } else {
+              Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: err.message || 'Failed to submit rating. Please try again.',
+                confirmButtonColor: '#ea5e18'
+              });
+            }
+          })
+          .finally(() => {
+            // Re-enable the submit button
+            const submitButton = document.querySelector('.rating-modal .btn-primary');
+            if (submitButton) {
+              submitButton.disabled = false;
+              submitButton.textContent = 'Submit Rating';
+            }
           });
         },
 
         submitVerification(recipeId) {
+          const token = localStorage.getItem('token');
           const verificationData = {
             notes: this.verificationNotes.trim() || null
           };
@@ -2325,6 +3151,164 @@
           .then(data => {
             if (data.status !== 'success') {
               throw new Error(data.message || 'Failed to submit verification');
+            }
+          });
+        },
+
+        // Enhanced methods for analytics functionality
+        searchForIngredient(ingredient) {
+          // Add the ingredient to selected ingredients and search
+          this.selectedIngredients = [ingredient];
+          this.searchRecipes();
+        },
+
+        showDetailedRecipeModal(recipe) {
+          // Enhanced modal with ratings and reviews
+          const ratingStars = recipe.rating_data ?
+            '★'.repeat(Math.round(recipe.rating_data.average_rating)) + '☆'.repeat(5 - Math.round(recipe.rating_data.average_rating)) :
+            '☆☆☆☆☆';
+
+          const modalHtml = `
+            <div style="text-align: left; max-height: 600px; overflow-y: auto;">
+              <!-- Recipe Rating Section -->
+              <div style="text-align: center; margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 0.5rem;">
+                <div style="font-size: 1.5rem; color: #ffc107; margin-bottom: 0.5rem;">
+                  ${ratingStars}
+                </div>
+                <div style="font-size: 0.9rem; color: #666;">
+                  ${recipe.rating_data ? `${recipe.rating_data.average_rating.toFixed(1)}/5 stars (${recipe.rating_data.total_reviews} reviews)` : 'No ratings yet'}
+                  ${recipe.verification_data && recipe.verification_data.verification_count > 0 ? ` • ${recipe.verification_data.verification_count} verified` : ''}
+                </div>
+              </div>
+
+              <!-- Recipe Details -->
+              <div style="display: flex; justify-content: space-between; margin-bottom: 1rem; font-size: 0.9rem; color: #666;">
+                <span><i class='bx bx-time'></i> Prep: ${recipe.prep_time || 30} min</span>
+                <span><i class='bx bx-time'></i> Cook: ${recipe.cook_time || 45} min</span>
+                <span><i class='bx bx-user'></i> Serves: ${recipe.servings || 4}</span>
+                <span><i class='bx bx-trending-up'></i> ${recipe.difficulty || 'Medium'}</span>
+              </div>
+
+              <h6><strong>Ingredients (${recipe.ingredients.length}):</strong></h6>
+              <ul style="margin-bottom: 1.5rem;">
+                ${recipe.ingredients.map(ing => `<li>${ing}</li>`).join('')}
+              </ul>
+
+              <h6><strong>Instructions:</strong></h6>
+              <ol>
+                ${recipe.steps.map(step => `<li style="margin-bottom: 0.5rem;">${step}</li>`).join('')}
+              </ol>
+
+              ${recipe.techniques && recipe.techniques.length > 0 ? `
+                <h6><strong>Cooking Techniques:</strong></h6>
+                <div style="margin-bottom: 1rem;">
+                  ${recipe.techniques.map(tech => `<span style="background: #ea5e18; color: white; padding: 0.25rem 0.5rem; border-radius: 1rem; font-size: 0.75rem; margin-right: 0.5rem;">${tech}</span>`).join('')}
+                </div>
+              ` : ''}
+            </div>
+          `;
+
+          Swal.fire({
+            title: recipe.name,
+            html: modalHtml,
+            width: '800px',
+            confirmButtonColor: '#ea5e18',
+            confirmButtonText: 'Close',
+            showCancelButton: true,
+            cancelButtonText: 'Rate & Review',
+            cancelButtonColor: '#6c757d',
+            showDenyButton: true,
+            denyButtonText: 'View Reviews',
+            denyButtonColor: '#28a745'
+          }).then((result) => {
+            if (result.dismiss === Swal.DismissReason.cancel) {
+              // User clicked "Rate & Review" - open rating modal
+              this.showRatingModal(recipe);
+            } else if (result.isDenied) {
+              // User clicked "View Reviews" - show reviews modal
+              this.viewAllReviews(recipe);
+            }
+          });
+        },
+
+        showBasicRecipeModal(recipe) {
+          // Enhanced basic modal with better formatting
+          const rating = recipe.rating || recipe.avg_rating || 0;
+          const ratingStars = rating > 0 ?
+            '★'.repeat(Math.round(rating)) + '☆'.repeat(5 - Math.round(rating)) :
+            '☆☆☆☆☆';
+
+          const modalHtml = `
+            <div style="text-align: left; max-height: 500px; overflow-y: auto;">
+              <!-- Rating Section -->
+              ${rating > 0 ? `
+                <div style="text-align: center; margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 0.5rem;">
+                  <div style="font-size: 1.3rem; color: #ffc107; margin-bottom: 0.5rem;">
+                    ${ratingStars}
+                  </div>
+                  <div style="font-size: 0.9rem; color: #666;">
+                    ${rating.toFixed(1)}/5 stars${recipe.review_count ? ` (${recipe.review_count} reviews)` : ''}
+                  </div>
+                </div>
+              ` : ''}
+
+              <h6><strong>Ingredients:</strong></h6>
+              ${recipe.ingredients && Array.isArray(recipe.ingredients) ? `
+                <ul style="margin-bottom: 1.5rem;">
+                  ${recipe.ingredients.map(ing => `<li>${ing}</li>`).join('')}
+                </ul>
+              ` : `
+                <p style="margin-bottom: 1.5rem;">${recipe.ingredients || 'Ingredients not available'}</p>
+              `}
+
+              <h6><strong>Description:</strong></h6>
+              <p style="margin-bottom: 1.5rem;">${recipe.description || 'This is a popular recipe in our community!'}</p>
+
+              ${recipe.latest_review ? `
+                <h6><strong>Latest Review:</strong></h6>
+                <div style="background: #f8f9fa; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+                  <div style="color: #ffc107; margin-bottom: 0.5rem;">
+                    ${'★'.repeat(recipe.latest_review.rating)}${'☆'.repeat(5 - recipe.latest_review.rating)}
+                  </div>
+                  <p style="margin: 0; font-style: italic;">"${recipe.latest_review.text}"</p>
+                  <small style="color: #666;">- ${recipe.latest_review.user_name}</small>
+                </div>
+              ` : ''}
+
+              <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #eee;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: #666; flex-wrap: wrap; gap: 0.5rem;">
+                  <span><i class='bx bx-time'></i> ${recipe.prep_time || 30} min</span>
+                  <span><i class='bx bx-star'></i> ${rating > 0 ? rating.toFixed(1) : 'N/A'}</span>
+                  <span><i class='bx bx-message-dots'></i> ${recipe.review_count || 0} reviews</span>
+                  ${recipe.saves ? `<span><i class='bx bx-bookmark'></i> ${recipe.saves} saves</span>` : ''}
+                </div>
+              </div>
+            </div>
+          `;
+
+          Swal.fire({
+            title: recipe.name,
+            html: modalHtml,
+            width: '650px',
+            confirmButtonColor: '#ea5e18',
+            confirmButtonText: 'Search Similar',
+            showCancelButton: true,
+            cancelButtonText: 'Rate & Review',
+            cancelButtonColor: '#6c757d',
+            showDenyButton: recipe.review_count > 0,
+            denyButtonText: 'View Reviews',
+            denyButtonColor: '#28a745'
+          }).then((result) => {
+            if (result.isConfirmed) {
+              // Search for recipes with similar ingredients
+              if (recipe.ingredients && recipe.ingredients.length > 0) {
+                this.selectedIngredients = recipe.ingredients.slice(0, 3);
+                this.searchRecipes();
+              }
+            } else if (result.dismiss === Swal.DismissReason.cancel) {
+              this.showRatingModal(recipe);
+            } else if (result.isDenied) {
+              this.viewAllReviews(recipe);
             }
           });
         }

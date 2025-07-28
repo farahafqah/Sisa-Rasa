@@ -1,0 +1,3545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Community | Sisa Rasa</title>
+
+  <!-- Styles and Fonts -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&display=swap" rel="stylesheet">
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+
+  <!-- Vue -->
+  <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+
+  <!-- SweetAlert for notifications -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <style>
+    :root {
+      --primary-orange: #ea5e18;
+      --accent-yellow: hsl(51, 80%, 82%);
+      --dark-teal: #083640;
+      --darker-teal: #072a32;
+      --cream-accent: #e1cc7f;
+
+      /* Enhanced UX Colors */
+      --light-orange: #f4a261;
+      --soft-orange: #ffecd1;
+      --success-green: #2d6a4f;
+      --warning-amber: #f77f00;
+      --error-red: #d62828;
+      --neutral-100: #f8f9fa;
+      --neutral-200: #e9ecef;
+      --neutral-300: #dee2e6;
+      --neutral-400: #ced4da;
+      --neutral-500: #adb5bd;
+      --neutral-600: #6c757d;
+      --neutral-700: #495057;
+      --neutral-800: #343a40;
+      --neutral-900: #212529;
+
+      /* Shadows */
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+
+      /* Border Radius */
+      --radius-sm: 0.375rem;
+      --radius-md: 0.5rem;
+      --radius-lg: 0.75rem;
+      --radius-xl: 1rem;
+      --radius-2xl: 1.5rem;
+
+      /* Spacing */
+      --space-xs: 0.25rem;
+      --space-sm: 0.5rem;
+      --space-md: 1rem;
+      --space-lg: 1.5rem;
+      --space-xl: 2rem;
+      --space-2xl: 3rem;
+
+      /* Typography */
+      --font-size-xs: 0.75rem;
+      --font-size-sm: 0.875rem;
+      --font-size-base: 1rem;
+      --font-size-lg: 1.125rem;
+      --font-size-xl: 1.25rem;
+      --font-size-2xl: 1.5rem;
+      --font-size-3xl: 1.875rem;
+
+      /* Transitions */
+      --transition-fast: 150ms ease-in-out;
+      --transition-normal: 250ms ease-in-out;
+      --transition-slow: 350ms ease-in-out;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: url("{{ url_for('static', filename='images/bg.png') }}") no-repeat center center fixed;
+      background-size: cover;
+      margin: 0;
+    }
+    
+    /* Sidebar styles */
+    .sidebar {
+      background-color: #083640;
+      min-height: 100vh;
+      padding-top: 1rem;
+      color: white;
+      border-right: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    /* Logo styles */
+    .logo-container {
+      background-color: #072a32;
+      padding: 1.5rem 1rem;
+      margin-bottom: 2rem;
+      text-align: center;
+      border-radius: 0 0 10px 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    .logo-container img {
+      width: 80px;
+      height: auto;
+      margin-bottom: 0.75rem;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+      transition: transform 0.3s ease;
+    }
+
+    .logo-container:hover img {
+      transform: scale(1.05);
+    }
+
+    .logo-container h5 {
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+      color: white;
+    }
+
+    .logo-container small {
+      font-size: 0.8rem;
+      opacity: 0.9;
+      display: block;
+      color: #f5e8a3;
+    }
+    
+    /* Navigation styles */
+    .nav-links {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      padding: 0 1rem;
+    }
+
+    .nav-links a {
+      color: rgba(255,255,255,0.8);
+      text-decoration: none;
+      padding: 0.75rem 1rem;
+      border-radius: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 500;
+      transition: background 0.3s;
+      border-left: 4px solid transparent;
+    }
+
+    .nav-links a.active {
+      background-color: #ea5e18;
+      border-left: 4px solid #fedf2f;
+    }
+
+    .nav-links a:hover:not(.active) {
+      background-color: rgba(234, 94, 24, 0.3);
+    }
+    
+    /* Main content styles */
+    .main-content {
+      padding: 1rem;
+    }
+
+    .header-bar {
+      background-color: transparent;
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #083640;
+    }
+
+    .header-bar h5 {
+      font-weight: 700;
+      margin-bottom: 0;
+    }
+
+    .user-profile {
+      background-color: #083640;
+      border-radius: 2rem;
+      padding: 0.5rem 1rem;
+      display: flex;
+      align-items: center;
+      color: white;
+    }
+
+    .user-profile img {
+      border: 2px solid white;
+    }
+
+    .page-header {
+      background-color: #ea5e18;
+      color: white;
+      padding: 1.5rem;
+      border-radius: 1rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .page-header h5 {
+      color: #fedf2f;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .page-header p {
+      margin-bottom: 0;
+      opacity: 0.9;
+    }
+
+    /* Tab Navigation Styles */
+    .tab-navigation {
+      display: flex;
+      background-color: white;
+      border-radius: 12px;
+      padding: 8px;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      border: 1px solid #ea5e18;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 12px 20px;
+      border: none;
+      background: transparent;
+      color: #083640;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 600;
+      font-size: 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .tab-btn:hover {
+      background-color: hsl(51, 80%, 82%);
+      color: #083640;
+    }
+
+    .tab-btn.active {
+      background-color: #ea5e18;
+      color: white;
+      box-shadow: 0 2px 8px rgba(234, 94, 24, 0.3);
+    }
+
+    .tab-btn i {
+      font-size: 1.2rem;
+    }
+
+    /* Tab Content Styles */
+    .tab-content {
+      min-height: 400px;
+    }
+
+    /* Post Creation Form Styles */
+    .post-creation-form {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      border: 1px solid #ea5e18;
+    }
+
+    .post-form-header {
+      display: flex;
+      gap: 15px;
+    }
+
+    .user-avatar {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      background: #ea5e18;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+
+    .user-avatar.small {
+      width: 35px;
+      height: 35px;
+      font-size: 1rem;
+    }
+
+    .user-avatar img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .post-form-content {
+      flex: 1;
+    }
+
+    .post-textarea {
+      width: 100%;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      padding: 12px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.95rem;
+      resize: vertical;
+      min-height: 80px;
+      transition: border-color 0.3s ease;
+    }
+
+    .post-textarea:focus {
+      outline: none;
+      border-color: #ea5e18;
+    }
+
+    .post-form-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    .character-count {
+      font-size: 0.85rem;
+      color: #666;
+    }
+
+    .btn-post {
+      background: #ea5e18;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-post:hover:not(:disabled) {
+      background: #d15415;
+      transform: translateY(-1px);
+    }
+
+    .btn-post:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Posts Feed Styles */
+    /* Enhanced Loading States */
+    .loading-spinner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-2xl);
+      color: var(--neutral-600);
+      background: var(--neutral-100);
+      border-radius: var(--radius-2xl);
+      margin: var(--space-lg) 0;
+      text-align: center;
+    }
+
+    .loading-spinner i {
+      font-size: 4rem;
+      color: var(--primary-orange);
+      animation: spin 1.5s ease-in-out infinite;
+      margin-bottom: var(--space-lg);
+      filter: drop-shadow(0 4px 8px rgba(234, 94, 24, 0.3));
+    }
+
+    .loading-spinner p {
+      font-size: var(--font-size-lg);
+      font-weight: 600;
+      margin: 0;
+      color: var(--dark-teal);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: var(--space-2xl) var(--space-lg);
+      color: var(--neutral-600);
+      background: var(--neutral-100);
+      border-radius: var(--radius-2xl);
+      margin: var(--space-lg) 0;
+    }
+
+    .empty-state i {
+      font-size: 4rem;
+      color: var(--primary-orange);
+      margin-bottom: var(--space-lg);
+      display: block;
+      filter: drop-shadow(0 4px 8px rgba(234, 94, 24, 0.3));
+    }
+
+    /* Enhanced Empty State */
+    .empty-state-modern {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-2xl);
+      background: linear-gradient(135deg, var(--neutral-100) 0%, white 100%);
+      border-radius: var(--radius-2xl);
+      margin: var(--space-xl) 0;
+      border: 2px dashed var(--neutral-300);
+      text-align: center;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .empty-state-icon {
+      width: 120px;
+      height: 120px;
+      background: linear-gradient(135deg, var(--soft-orange) 0%, var(--accent-yellow) 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: var(--space-xl);
+      box-shadow: var(--shadow-lg);
+      position: relative;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .empty-state-icon::before {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, var(--primary-orange) 0%, var(--light-orange) 100%);
+      border-radius: 50%;
+      opacity: 0.2;
+      transform: scale(1.2);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .empty-state-icon i {
+      font-size: 4rem;
+      color: var(--dark-teal);
+      z-index: 1;
+      position: relative;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1.2); opacity: 0.2; }
+      50% { transform: scale(1.4); opacity: 0.1; }
+    }
+
+    .empty-state-content h3 {
+      font-size: var(--font-size-2xl);
+      font-weight: 700;
+      color: var(--dark-teal);
+      margin: 0 0 var(--space-md) 0;
+    }
+
+    .empty-state-content p {
+      font-size: var(--font-size-base);
+      color: var(--neutral-600);
+      line-height: 1.6;
+      margin: 0 0 var(--space-xl) 0;
+      max-width: 400px;
+    }
+
+    .empty-state-actions {
+      display: flex;
+      gap: var(--space-md);
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn-share-recipe, .btn-browse-recipes {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      padding: var(--space-md) var(--space-xl);
+      border-radius: var(--radius-xl);
+      font-weight: 700;
+      font-size: var(--font-size-sm);
+      text-decoration: none;
+      transition: all var(--transition-normal);
+      cursor: pointer;
+      border: none;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      box-shadow: var(--shadow-md);
+    }
+
+    .btn-share-recipe {
+      background: linear-gradient(135deg, var(--primary-orange) 0%, var(--light-orange) 100%);
+      color: white;
+    }
+
+    .btn-share-recipe:hover {
+      background: linear-gradient(135deg, var(--darker-teal) 0%, var(--dark-teal) 100%);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-xl);
+      color: white;
+      text-decoration: none;
+    }
+
+    .btn-browse-recipes {
+      background: white;
+      color: var(--dark-teal);
+      border: 2px solid var(--primary-orange);
+    }
+
+    .btn-browse-recipes:hover {
+      background: var(--primary-orange);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-xl);
+    }
+
+    /* Mobile responsive empty state */
+    @media (max-width: 480px) {
+      .empty-state-modern {
+        padding: var(--space-xl) var(--space-lg);
+        margin: var(--space-lg) var(--space-sm);
+      }
+
+      .empty-state-icon {
+        width: 80px;
+        height: 80px;
+        margin-bottom: var(--space-lg);
+      }
+
+      .empty-state-icon i {
+        font-size: 2.5rem;
+      }
+
+      .empty-state-content h3 {
+        font-size: var(--font-size-xl);
+      }
+
+      .empty-state-actions {
+        flex-direction: column;
+        gap: var(--space-sm);
+      }
+
+      .btn-share-recipe, .btn-browse-recipes {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
+    /* Accessibility Utilities */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* Focus management */
+    *:focus-visible {
+      outline: 2px solid var(--primary-orange);
+      outline-offset: 2px;
+      border-radius: var(--radius-sm);
+    }
+
+    /* High contrast mode support */
+    @media (prefers-contrast: high) {
+      .recipe-card-modern {
+        border: 2px solid var(--dark-teal);
+      }
+
+      .ingredient-tag {
+        border: 2px solid var(--dark-teal);
+      }
+    }
+
+    /* Reduced motion support */
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+
+      .recipe-card-modern:hover {
+        transform: none;
+      }
+
+      .btn-view-full-recipe:hover {
+        transform: none;
+      }
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg) scale(1); }
+      50% { transform: rotate(180deg) scale(1.1); }
+      100% { transform: rotate(360deg) scale(1); }
+    }
+
+    .empty-state h3 {
+      color: #083640;
+      margin-bottom: 0.5rem;
+    }
+
+    .share-recipe-link {
+      color: #ea5e18;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .share-recipe-link:hover {
+      text-decoration: underline;
+    }
+
+    .posts-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .post-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      border: 1px solid #ea5e18;
+    }
+
+    .post-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 15px;
+    }
+
+    .post-user-info {
+      display: flex;
+      gap: 12px;
+    }
+
+    .user-details h4 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #083640;
+      margin: 0;
+    }
+
+    .post-time, .comment-time {
+      font-size: 0.85rem;
+      color: #666;
+    }
+
+    .post-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .action-btn {
+      background: none;
+      border: none;
+      color: #666;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+      transition: all 0.3s ease;
+    }
+
+    .action-btn:hover {
+      background: #f0f0f0;
+      color: #ea5e18;
+    }
+
+    .post-content p {
+      color: #333;
+      line-height: 1.6;
+      margin-bottom: 10px;
+    }
+
+    .post-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .tag {
+      background: #fedf2f;
+      color: #083640;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    /* Recipe Card Preview Styles */
+    .recipe-card-preview {
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      border: 2px solid #ea5e18;
+      border-radius: 12px;
+      margin: 15px 0;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .recipe-card-preview:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(234, 94, 24, 0.15);
+    }
+
+    .recipe-preview-header {
+      background: linear-gradient(135deg, #ea5e18 0%, #d54e0f 100%);
+      color: white;
+      padding: 12px 16px;
+    }
+
+    .recipe-title {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .recipe-title i {
+      font-size: 1.2rem;
+    }
+
+    .recipe-preview-content {
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .recipe-image-preview {
+      flex-shrink: 0;
+    }
+
+    .recipe-img {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 2px solid #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .recipe-img-placeholder {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      border-radius: 8px;
+      border: 2px solid #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #6c757d;
+      font-size: 1.5rem;
+    }
+
+    .recipe-preview-actions {
+      flex: 1;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .btn-recipe-view {
+      background: #ea5e18;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.3s ease;
+    }
+
+    .btn-recipe-view:hover {
+      background: #d54e0f;
+      transform: translateY(-1px);
+    }
+
+    .post-interactions {
+      display: flex;
+      gap: 20px;
+      padding-top: 15px;
+      border-top: 1px solid #eee;
+      margin-top: 15px;
+    }
+
+    .interaction-btn {
+      background: none;
+      border: none;
+      color: #666;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      transition: all 0.3s ease;
+      font-size: 0.9rem;
+    }
+
+    .interaction-btn:hover {
+      background: #f0f0f0;
+      color: #ea5e18;
+    }
+
+    .interaction-btn.liked {
+      color: #ea5e18;
+    }
+
+    .interaction-btn.small {
+      padding: 4px 8px;
+      font-size: 0.8rem;
+    }
+
+    /* Comments Section Styles */
+    .comments-section {
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid #eee;
+    }
+
+    .add-comment-form {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .comment-input-container {
+      flex: 1;
+      display: flex;
+      gap: 8px;
+    }
+
+    .comment-textarea {
+      flex: 1;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.9rem;
+      resize: vertical;
+      transition: border-color 0.3s ease;
+    }
+
+    .comment-textarea:focus {
+      outline: none;
+      border-color: #ea5e18;
+    }
+
+    .btn-comment {
+      background: #ea5e18;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-comment:hover:not(:disabled) {
+      background: #d15415;
+    }
+
+    .btn-comment:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .comments-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .comment {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .comment-header {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .comment-details h5 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #083640;
+      margin: 0;
+    }
+
+    .comment-content p {
+      color: #333;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      margin: 0 0 8px 0;
+    }
+
+    .comment-interactions {
+      display: flex;
+      gap: 10px;
+    }
+
+    /* Enhanced Recipe Grid Styles */
+    .recipes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: var(--space-xl);
+      padding: var(--space-lg) 0;
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* Responsive Grid Adjustments */
+    @media (max-width: 480px) {
+      .recipes-grid {
+        grid-template-columns: 1fr;
+        gap: var(--space-lg);
+        padding: var(--space-md) var(--space-sm);
+      }
+    }
+
+    @media (min-width: 481px) and (max-width: 768px) {
+      .recipes-grid {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: var(--space-lg);
+        padding: var(--space-lg) var(--space-md);
+      }
+    }
+
+    @media (min-width: 769px) and (max-width: 1024px) {
+      .recipes-grid {
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: var(--space-xl);
+      }
+    }
+
+    @media (min-width: 1025px) {
+      .recipes-grid {
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: var(--space-2xl);
+      }
+    }
+
+    /* Enhanced Modern Recipe Card Styles */
+    .recipe-card-modern {
+      background: white;
+      border-radius: var(--radius-2xl);
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--neutral-200);
+      transition: all var(--transition-normal);
+      position: relative;
+      cursor: pointer;
+      height: fit-content;
+      display: flex;
+      flex-direction: column;
+
+      /* Accessibility */
+      outline: none;
+    }
+
+    .recipe-card-modern:focus-visible {
+      outline: 2px solid var(--primary-orange);
+      outline-offset: 2px;
+    }
+
+    .recipe-card-modern:hover {
+      transform: translateY(-6px);
+      box-shadow: var(--shadow-xl);
+      border-color: var(--primary-orange);
+    }
+
+    .recipe-card-modern:active {
+      transform: translateY(-2px);
+      transition: all var(--transition-fast);
+    }
+
+    /* Loading skeleton animation */
+    .recipe-card-skeleton {
+      background: linear-gradient(90deg, var(--neutral-200) 25%, var(--neutral-100) 50%, var(--neutral-200) 75%);
+      background-size: 200% 100%;
+      animation: loading 1.5s infinite;
+    }
+
+    @keyframes loading {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    .recipe-image-container {
+      position: relative;
+      height: 200px;
+      overflow: hidden;
+      background: var(--neutral-100);
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+
+      /* Aspect ratio maintenance */
+      aspect-ratio: 16/9;
+    }
+
+    .recipe-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform var(--transition-normal);
+    }
+
+    .recipe-card-modern:hover .recipe-image {
+      transform: scale(1.08);
+    }
+
+    /* Mobile responsive image container */
+    @media (max-width: 480px) {
+      .recipe-image-container {
+        height: 160px;
+        aspect-ratio: 4/3;
+      }
+    }
+
+    @media (min-width: 481px) and (max-width: 768px) {
+      .recipe-image-container {
+        height: 180px;
+        aspect-ratio: 16/10;
+      }
+    }
+
+    .recipe-no-image {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, var(--neutral-100) 0%, var(--neutral-200) 100%);
+      color: var(--neutral-500);
+      font-size: var(--font-size-sm);
+      font-weight: 500;
+      position: relative;
+
+      /* Subtle pattern overlay */
+      background-image: radial-gradient(circle at 1px 1px, var(--neutral-300) 1px, transparent 0);
+      background-size: 20px 20px;
+    }
+
+    .recipe-no-image i {
+      font-size: 3rem;
+      margin-bottom: var(--space-sm);
+      opacity: 0.4;
+      color: var(--primary-orange);
+      transition: all var(--transition-normal);
+    }
+
+    .recipe-card-modern:hover .recipe-no-image i {
+      opacity: 0.6;
+      transform: scale(1.1);
+    }
+
+    .recipe-no-image span {
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-size: var(--font-size-xs);
+    }
+
+    .recipe-content {
+      padding: var(--space-lg);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+
+    .recipe-title-modern {
+      font-size: var(--font-size-xl);
+      font-weight: 700;
+      color: var(--dark-teal);
+      margin: 0;
+      line-height: 1.3;
+
+      /* Text truncation for long titles */
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+
+      /* Hover effect */
+      transition: color var(--transition-fast);
+    }
+
+    .recipe-card-modern:hover .recipe-title-modern {
+      color: var(--primary-orange);
+    }
+
+    /* Mobile responsive title */
+    @media (max-width: 480px) {
+      .recipe-content {
+        padding: var(--space-md);
+        gap: var(--space-sm);
+      }
+
+      .recipe-title-modern {
+        font-size: var(--font-size-lg);
+      }
+    }
+
+    .recipe-author-info {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      font-size: var(--font-size-sm);
+      color: var(--neutral-600);
+      padding: var(--space-sm) var(--space-md);
+      background: var(--neutral-100);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--neutral-200);
+    }
+
+    .recipe-author-info i {
+      color: var(--primary-orange);
+      font-size: var(--font-size-base);
+      flex-shrink: 0;
+    }
+
+    .recipe-author-info span:first-of-type {
+      font-weight: 600;
+      color: var(--dark-teal);
+    }
+
+    .recipe-date-badge {
+      margin-left: auto;
+      background: var(--accent-yellow);
+      color: var(--dark-teal);
+      padding: var(--space-xs) var(--space-sm);
+      border-radius: var(--radius-md);
+      font-size: var(--font-size-xs);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      flex-shrink: 0;
+    }
+
+    /* Mobile responsive author info */
+    @media (max-width: 480px) {
+      .recipe-author-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-xs);
+      }
+
+      .recipe-date-badge {
+        margin-left: 0;
+        align-self: flex-end;
+      }
+    }
+
+    .recipe-timing-row, .recipe-meta-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-md);
+    }
+
+    .timing-info, .meta-info {
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+      font-size: var(--font-size-sm);
+      color: var(--neutral-600);
+      padding: var(--space-sm);
+      background: white;
+      border: 1px solid var(--neutral-200);
+      border-radius: var(--radius-md);
+      transition: all var(--transition-fast);
+    }
+
+    .timing-info:hover, .meta-info:hover {
+      border-color: var(--primary-orange);
+      background: var(--soft-orange);
+    }
+
+    .timing-info i, .meta-info i {
+      color: var(--primary-orange);
+      font-size: var(--font-size-base);
+      flex-shrink: 0;
+    }
+
+    .timing-info span, .meta-info span {
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .recipe-difficulty-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-sm);
+      font-size: var(--font-size-sm);
+      color: var(--neutral-600);
+      padding: var(--space-sm) var(--space-md);
+      background: linear-gradient(135deg, var(--neutral-100) 0%, var(--neutral-200) 100%);
+      border-radius: var(--radius-lg);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .recipe-difficulty-row i {
+      color: var(--primary-orange);
+      font-size: var(--font-size-lg);
+    }
+
+    /* Mobile responsive timing/meta */
+    @media (max-width: 480px) {
+      .recipe-timing-row, .recipe-meta-row {
+        grid-template-columns: 1fr;
+        gap: var(--space-sm);
+      }
+
+      .timing-info, .meta-info {
+        justify-content: center;
+        text-align: center;
+      }
+    }
+
+    .ingredients-preview {
+      background: var(--neutral-50, #fafafa);
+      border: 1px solid var(--neutral-200);
+      border-radius: var(--radius-lg);
+      padding: var(--space-md);
+    }
+
+    .ingredients-preview h4 {
+      font-size: var(--font-size-sm);
+      font-weight: 700;
+      color: var(--dark-teal);
+      margin: 0 0 var(--space-md) 0;
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .ingredients-preview h4 i {
+      color: var(--primary-orange);
+      font-size: var(--font-size-lg);
+    }
+
+    .ingredients-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-sm);
+      min-height: 32px;
+      align-items: flex-start;
+    }
+
+    .ingredient-tag {
+      background: var(--accent-yellow);
+      color: var(--dark-teal);
+      padding: var(--space-xs) var(--space-sm);
+      border-radius: var(--radius-xl);
+      font-size: var(--font-size-xs);
+      font-weight: 600;
+      text-transform: capitalize;
+      border: 1px solid rgba(234, 94, 24, 0.2);
+      transition: all var(--transition-fast);
+
+      /* Truncate long ingredient names */
+      max-width: 120px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .ingredient-tag:hover {
+      background: var(--primary-orange);
+      color: white;
+      transform: translateY(-1px);
+    }
+
+    .more-ingredients {
+      background: var(--neutral-200);
+      color: var(--neutral-600);
+      padding: var(--space-xs) var(--space-sm);
+      border-radius: var(--radius-xl);
+      font-size: var(--font-size-xs);
+      font-weight: 600;
+      border: 1px solid var(--neutral-300);
+      transition: all var(--transition-fast);
+    }
+
+    .more-ingredients:hover {
+      background: var(--neutral-300);
+      color: var(--dark-teal);
+    }
+
+    /* Mobile responsive ingredients */
+    @media (max-width: 480px) {
+      .ingredients-preview {
+        padding: var(--space-sm);
+      }
+
+      .ingredient-tag {
+        max-width: 100px;
+        font-size: 0.7rem;
+      }
+    }
+
+    .recipe-actions {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+      margin-top: auto;
+      padding-top: var(--space-md);
+      border-top: 1px solid var(--neutral-200);
+    }
+
+    .btn-view-full-recipe {
+      background: linear-gradient(135deg, var(--primary-orange) 0%, var(--light-orange) 100%);
+      color: white;
+      border: none;
+      padding: var(--space-md) var(--space-lg);
+      border-radius: var(--radius-xl);
+      font-weight: 700;
+      font-size: var(--font-size-sm);
+      cursor: pointer;
+      transition: all var(--transition-normal);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-sm);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      overflow: hidden;
+
+      /* Accessibility */
+      outline: none;
+    }
+
+    .btn-view-full-recipe:focus-visible {
+      outline: 2px solid var(--primary-orange);
+      outline-offset: 2px;
+    }
+
+    .btn-view-full-recipe::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left var(--transition-slow);
+    }
+
+    .btn-view-full-recipe:hover::before {
+      left: 100%;
+    }
+
+    .btn-view-full-recipe:hover {
+      background: linear-gradient(135deg, var(--darker-teal) 0%, var(--dark-teal) 100%);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .btn-view-full-recipe:active {
+      transform: translateY(0);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-view-full-recipe i {
+      font-size: var(--font-size-lg);
+      transition: transform var(--transition-fast);
+    }
+
+    .btn-view-full-recipe:hover i {
+      transform: scale(1.1);
+    }
+
+    .recipe-action-buttons {
+      display: flex;
+      gap: var(--space-sm);
+      justify-content: center;
+    }
+
+    .btn-delete-recipe {
+      background: var(--neutral-100);
+      border: 2px solid var(--neutral-200);
+      color: var(--neutral-600);
+      padding: var(--space-sm);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all var(--transition-normal);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      font-size: var(--font-size-lg);
+      position: relative;
+      overflow: hidden;
+
+      /* Accessibility */
+      outline: none;
+    }
+
+    .btn-delete-recipe:focus-visible {
+      outline: 2px solid var(--primary-orange);
+      outline-offset: 2px;
+    }
+
+    .btn-delete-recipe:hover {
+      background: var(--error-red);
+      border-color: var(--error-red);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .btn-delete-recipe:active {
+      transform: translateY(0);
+    }
+
+    /* Mobile responsive actions */
+    @media (max-width: 480px) {
+      .recipe-actions {
+        gap: var(--space-sm);
+      }
+
+      .btn-view-full-recipe {
+        padding: var(--space-sm) var(--space-md);
+        font-size: var(--font-size-xs);
+      }
+
+      .btn-delete-recipe {
+        width: 40px;
+        height: 40px;
+        font-size: var(--font-size-base);
+      }
+    }
+
+    .recipe-card {
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      border: 1px solid #ea5e18;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .recipe-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+
+    .recipe-image-container {
+      position: relative;
+      height: 200px;
+      overflow: hidden;
+    }
+
+    .recipe-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+
+    .recipe-card:hover .recipe-image {
+      transform: scale(1.05);
+    }
+
+    .recipe-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(8, 54, 64, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .recipe-card:hover .recipe-overlay {
+      opacity: 1;
+    }
+
+    .btn-view-recipe {
+      background: #ea5e18;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-view-recipe:hover {
+      background: #d15415;
+      transform: translateY(-2px);
+    }
+
+    .recipe-info {
+      padding: 1.5rem;
+    }
+
+    .recipe-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #083640;
+      margin-bottom: 0.5rem;
+      line-height: 1.3;
+    }
+
+    .recipe-description {
+      color: #666;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      margin-bottom: 1rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .recipe-meta {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+    }
+
+    .recipe-cuisine, .recipe-author {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.85rem;
+      color: #666;
+    }
+
+    .recipe-stats {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .recipe-date {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.8rem;
+      color: #999;
+    }
+
+    /* Recipe Modal Styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 2rem;
+    }
+
+    .recipe-modal {
+      background: white;
+      border-radius: 12px;
+      max-width: 800px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem;
+      border-bottom: 1px solid #eee;
+      background: #ea5e18;
+      color: white;
+      border-radius: 12px 12px 0 0;
+    }
+
+    .modal-header h3 {
+      margin: 0;
+      font-weight: 600;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+      transition: background 0.3s ease;
+    }
+
+    .close-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .modal-content {
+      padding: 1.5rem;
+    }
+
+    .recipe-modal-image {
+      margin-bottom: 1.5rem;
+    }
+
+    .recipe-modal-image img {
+      width: 100%;
+      height: 250px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+
+    .recipe-modal-meta {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .recipe-modal-meta span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.9rem;
+      color: #666;
+      background: #f8f9fa;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+
+    .recipe-modal-description {
+      color: #333;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+    }
+
+    .recipe-details {
+      display: grid;
+      gap: 2rem;
+    }
+
+    .ingredients-section, .instructions-section, .recipe-details-section {
+      background: #f8f9fa;
+      padding: 1.5rem;
+      border-radius: 8px;
+    }
+
+    .ingredients-section h4, .instructions-section h4, .recipe-details-section h4 {
+      color: #083640;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .ingredients-list, .instructions-list {
+      margin: 0;
+      padding-left: 1.5rem;
+    }
+
+    .ingredients-list li, .instructions-list li {
+      margin-bottom: 0.5rem;
+      line-height: 1.5;
+    }
+
+    .recipe-details-section p {
+      margin: 0;
+      line-height: 1.6;
+      color: #333;
+    }
+
+    /* Enhanced Modal Styles */
+    .recipe-title-section h2 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--dark-teal);
+      margin: 0 0 0.5rem 0;
+    }
+
+    .recipe-meta-info {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .cuisine-tag, .difficulty-tag {
+      background: var(--accent-yellow);
+      color: var(--dark-teal);
+      padding: 0.4rem 0.8rem;
+      border-radius: 15px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .recipe-header-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .recipe-image-container {
+      position: relative;
+    }
+
+    .recipe-modal-image {
+      width: 100%;
+      height: 300px;
+      object-fit: cover;
+      border-radius: 10px;
+    }
+
+    .recipe-modal-no-image {
+      width: 100%;
+      height: 300px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      border-radius: 10px;
+      color: #6c757d;
+      font-size: 1.1rem;
+    }
+
+    .recipe-modal-no-image i {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    .recipe-info-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .recipe-author-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem;
+      background: #f8f9fa;
+      border-radius: 10px;
+    }
+
+    .author-avatar-large {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .author-details {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .author-details .author-name {
+      font-weight: 700;
+      color: var(--dark-teal);
+      font-size: 1.1rem;
+    }
+
+    .recipe-timing-info {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .timing-item {
+      background: #f8f9fa;
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 600;
+      color: var(--dark-teal);
+    }
+
+    .timing-item i {
+      color: var(--primary-orange);
+      font-size: 1.1rem;
+    }
+
+    .recipe-interactions {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .interaction-btn {
+      background: #f8f9fa;
+      border: 2px solid transparent;
+      padding: 0.75rem 1rem;
+      border-radius: 25px;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .like-btn {
+      color: var(--dark-teal);
+    }
+
+    .like-btn:hover {
+      background: var(--primary-orange);
+      color: white;
+      border-color: var(--primary-orange);
+    }
+
+    .like-btn.liked {
+      background: var(--primary-orange);
+      color: white;
+      border-color: var(--primary-orange);
+    }
+
+    .comment-count {
+      color: var(--dark-teal);
+      cursor: default;
+    }
+
+    .recipe-details-section {
+      margin: 2rem 0;
+    }
+
+    .recipe-details-section h3 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--dark-teal);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .recipe-details-section h3 i {
+      color: var(--primary-orange);
+    }
+
+    .ingredients-section, .instructions-section, .additional-details {
+      margin-bottom: 2rem;
+      padding: 1.5rem;
+      background: #f8f9fa;
+      border-radius: 10px;
+    }
+
+    .ingredients-list {
+      list-style: none;
+      padding: 0;
+    }
+
+    .ingredients-list li {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #eee;
+      position: relative;
+      padding-left: 1.5rem;
+    }
+
+    .ingredients-list li:before {
+      content: "•";
+      color: var(--primary-orange);
+      font-weight: bold;
+      position: absolute;
+      left: 0;
+    }
+
+    .instructions-list {
+      padding-left: 1.5rem;
+    }
+
+    .instructions-list li {
+      padding: 0.75rem 0;
+      line-height: 1.6;
+      color: #333;
+    }
+
+    .comments-section {
+      margin-top: 2rem;
+      padding-top: 2rem;
+      border-top: 2px solid #eee;
+    }
+
+    .comments-section h3 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--dark-teal);
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .add-comment-form {
+      margin-bottom: 2rem;
+      padding: 1.5rem;
+      background: #f8f9fa;
+      border-radius: 10px;
+    }
+
+    .comment-input {
+      width: 100%;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      padding: 1rem;
+      font-family: inherit;
+      resize: vertical;
+      margin-bottom: 1rem;
+    }
+
+    .comment-input:focus {
+      outline: none;
+      border-color: var(--primary-orange);
+    }
+
+    .comment-submit-btn {
+      background: var(--primary-orange);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 25px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.3s ease;
+    }
+
+    .comment-submit-btn:hover {
+      background: var(--darker-teal);
+      transform: translateY(-2px);
+    }
+
+    .comment-submit-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .comments-list {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .comment-item {
+      padding: 1rem;
+      border: 1px solid #eee;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      background: white;
+    }
+
+    .comment-author {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .comment-avatar {
+      width: 35px;
+      height: 35px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .comment-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .comment-author-name {
+      font-weight: 600;
+      color: var(--dark-teal);
+      font-size: 0.9rem;
+    }
+
+    .comment-date {
+      color: #888;
+      font-size: 0.8rem;
+    }
+
+    .comment-content {
+      margin: 0 0 0.75rem 0;
+      line-height: 1.5;
+      color: #333;
+    }
+
+    .comment-actions {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .comment-like-btn {
+      background: none;
+      border: none;
+      color: #666;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: color 0.3s ease;
+    }
+
+    .comment-like-btn:hover {
+      color: var(--primary-orange);
+    }
+
+    .comment-like-btn.liked {
+      color: var(--primary-orange);
+    }
+
+    .no-comments {
+      text-align: center;
+      padding: 2rem;
+      color: #666;
+    }
+
+    .no-comments i {
+      font-size: 3rem;
+      color: #ddd;
+      margin-bottom: 1rem;
+    }
+
+    .loading-comments {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 2rem;
+      color: #666;
+    }
+
+    .modal-loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 4rem 2rem;
+      color: #666;
+    }
+
+    .modal-loading i {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      color: var(--primary-orange);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .recipe-header-section {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+
+      .recipe-modal {
+        max-width: 95vw;
+        margin: 1rem;
+      }
+
+      .recipe-meta {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .timing-item {
+        flex: 1;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app" class="container-fluid">
+    <div class="row">
+      <!-- Sidebar -->
+      <div class="col-md-2 sidebar">
+        <div class="logo-container">
+          <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Sisa Rasa Logo">
+          <h5>Sisa Rasa</h5>
+          <small>Rasa Baru</small>
+          <small>Sisa Lama</small>
+        </div>
+        <nav class="nav-links">
+          <a href="{{ url_for('main.dashboard') }}"><i class='bx bx-grid-alt'></i>Dashboard</a>
+          <a href="{{ url_for('main.save_recipe_page') }}"><i class='bx bx-book-heart'></i>Save Recipe</a>
+          <a href="{{ url_for('main.shared_recipe_page') }}"><i class='bx bx-share-alt'></i>Share Recipe</a>
+          <a href="{{ url_for('main.community_page') }}" class="active"><i class='bx bx-group'></i>Community</a>
+          <a href="{{ url_for('main.profile_page') }}"><i class='bx bx-user'></i>Profile</a>
+          <a href="{{ url_for('main.home') }}" id="logoutBtn"><i class='bx bx-log-out'></i>Log Out</a>
+        </nav>
+      </div>
+
+      <!-- Main Content -->
+      <div class="col-md-10 main-content">
+        <!-- Header Bar -->
+        <div class="header-bar">
+          <h5>Community</h5>
+          <div class="user-profile">
+            <img :src="currentUserProfileImage || '{{ url_for('static', filename='images/user.png') }}'"
+                 alt="User Profile"
+                 width="32"
+                 height="32"
+                 class="rounded-circle me-2"
+                 @error="handleProfileImageError">
+            <span id="userNameDisplay">${ currentUserName || 'User' }</span>
+          </div>
+        </div>
+
+        <!-- Page Header -->
+        <div class="page-header">
+          <h5><i class='bx bx-group'></i>Community</h5>
+          <p>Connect with fellow food enthusiasts, share experiences, and discover amazing recipes!</p>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+          <button
+            class="tab-btn"
+            :class="{ active: activeTab === 'community' }"
+            @click="switchTab('community')"
+          >
+            <i class='bx bx-chat'></i> Community Feed
+          </button>
+          <button
+            class="tab-btn"
+            :class="{ active: activeTab === 'recipes' }"
+            @click="switchTab('recipes')"
+          >
+            <i class='bx bx-food-menu'></i> Recipe Sharing
+          </button>
+        </div>
+
+        <!-- Community Feed Tab -->
+        <div v-if="activeTab === 'community'" class="tab-content">
+          <!-- Post Creation Form -->
+          <div class="post-creation-form">
+            <div class="post-form-header">
+              <div class="user-avatar">
+                <img v-if="currentUserProfileImage" :src="currentUserProfileImage" alt="Your Profile">
+                <i v-else class='bx bx-user'></i>
+              </div>
+              <div class="post-form-content">
+                <textarea
+                  v-model="newPostContent"
+                  placeholder="What's on your mind about food and cooking? Share tips, ask questions, or discuss food waste solutions..."
+                  class="post-textarea"
+                  rows="3"
+                  maxlength="2000"
+                ></textarea>
+                <div class="post-form-actions">
+                  <div class="character-count">
+                    ${ newPostContent.length }/2000
+                  </div>
+                  <button
+                    class="btn btn-post"
+                    @click="createPost"
+                    :disabled="!newPostContent.trim() || creatingPost"
+                  >
+                    <i class='bx bx-loader-alt bx-spin' v-if="creatingPost"></i>
+                    <i class='bx bx-send' v-else></i>
+                    ${ creatingPost ? 'Posting...' : 'Post' }
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Posts Feed -->
+          <div class="posts-feed">
+            <!-- Loading State -->
+            <div v-if="loadingPosts" class="loading-spinner">
+              <i class='bx bx-loader-alt'></i>
+              <p>Loading community posts...</p>
+            </div>
+
+            <!-- Empty State -->
+            <div v-else-if="posts.length === 0" class="empty-state">
+              <i class='bx bx-chat'></i>
+              <h3>No Posts Yet</h3>
+              <p>Be the first to start a conversation about food and cooking!<br>
+              Share your experiences, tips, or ask questions about reducing food waste.</p>
+            </div>
+
+            <!-- Posts List -->
+            <div v-else class="posts-list">
+              <div v-for="post in posts" :key="post.id" class="post-card">
+                <!-- Post Header -->
+                <div class="post-header">
+                  <div class="post-user-info">
+                    <div class="user-avatar">
+                      <img v-if="post.user_profile_image" :src="post.user_profile_image" :alt="post.user_name">
+                      <i v-else class='bx bx-user'></i>
+                    </div>
+                    <div class="user-details">
+                      <h4 class="user-name">${ post.user_name }</h4>
+                      <span class="post-time">${ formatDate(post.created_at) }</span>
+                    </div>
+                  </div>
+                  <div v-if="post.user_id === currentUserId" class="post-actions">
+                    <button class="action-btn" @click="editPost(post)">
+                      <i class='bx bx-edit'></i>
+                    </button>
+                    <button class="action-btn" @click="deletePost(post.id)">
+                      <i class='bx bx-trash'></i>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Post Content -->
+                <div class="post-content">
+                  <p>${ post.content }</p>
+
+                  <!-- Recipe Card (if this is a recipe post) -->
+                  <div v-if="post.post_type === 'shared_recipe'" class="recipe-card-preview">
+                    <div class="recipe-preview-header">
+                      <h5 class="recipe-title">
+                        <i class='bx bx-restaurant'></i>
+                        ${ post.recipe_name }
+                      </h5>
+                    </div>
+                    <div class="recipe-preview-content">
+                      <div v-if="post.recipe_image" class="recipe-image-preview">
+                        <img :src="post.recipe_image" :alt="post.recipe_name" class="recipe-img">
+                      </div>
+                      <div v-else class="recipe-image-preview">
+                        <div class="recipe-img-placeholder">
+                          <i class='bx bx-image'></i>
+                        </div>
+                      </div>
+                      <div class="recipe-preview-actions">
+                        <button class="btn btn-recipe-view" @click="viewRecipeFromPost(post)">
+                          <i class='bx bx-show'></i>
+                          View Full Recipe
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div v-if="post.tags && post.tags.length > 0" class="post-tags">
+                    <span v-for="tag in post.tags" :key="tag" class="tag">#${ tag }</span>
+                  </div>
+                </div>
+
+                <!-- Post Interactions -->
+                <div class="post-interactions">
+                  <button
+                    class="interaction-btn"
+                    :class="{ liked: post.user_liked }"
+                    @click="toggleLike(post)"
+                  >
+                    <i class='bx bx-heart'></i>
+                    <span>${ post.like_count }</span>
+                  </button>
+                  <button class="interaction-btn" @click="toggleComments(post)">
+                    <i class='bx bx-comment'></i>
+                    <span>${ post.comment_count }</span>
+                  </button>
+                </div>
+
+                <!-- Comments Section -->
+                <div v-if="post.showComments" class="comments-section">
+                  <!-- Add Comment Form -->
+                  <div class="add-comment-form">
+                    <div class="user-avatar small">
+                      <i class='bx bx-user'></i>
+                    </div>
+                    <div class="comment-input-container">
+                      <textarea
+                        v-model="post.newComment"
+                        placeholder="Write a comment..."
+                        class="comment-textarea"
+                        rows="2"
+                        maxlength="500"
+                      ></textarea>
+                      <button
+                        class="btn btn-comment"
+                        @click="addComment(post)"
+                        :disabled="!post.newComment?.trim() || post.addingComment"
+                      >
+                        <i class='bx bx-loader-alt bx-spin' v-if="post.addingComment"></i>
+                        <i class='bx bx-send' v-else></i>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Comments List -->
+                  <div v-if="post.comments && post.comments.length > 0" class="comments-list">
+                    <div v-for="comment in post.comments" :key="comment.id" class="comment">
+                      <div class="comment-header">
+                        <div class="user-avatar small">
+                          <img v-if="comment.user_profile_image" :src="comment.user_profile_image" :alt="comment.user_name">
+                          <i v-else class='bx bx-user'></i>
+                        </div>
+                        <div class="comment-details">
+                          <h5 class="comment-user-name">${ comment.user_name }</h5>
+                          <span class="comment-time">${ formatDate(comment.created_at) }</span>
+                        </div>
+                      </div>
+                      <div class="comment-content">
+                        <p>${ comment.content }</p>
+                      </div>
+                      <div class="comment-interactions">
+                        <button
+                          class="interaction-btn small"
+                          :class="{ liked: comment.user_liked }"
+                          @click="toggleCommentLike(comment)"
+                        >
+                          <i class='bx bx-heart'></i>
+                          <span v-if="comment.like_count > 0">${ comment.like_count }</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recipe Sharing Tab -->
+        <div v-if="activeTab === 'recipes'" class="tab-content">
+          <!-- Loading State -->
+          <div v-if="loading" class="loading-spinner">
+            <i class='bx bx-loader-alt'></i>
+            <p>Loading community recipes...</p>
+          </div>
+
+          <!-- Enhanced Recipe Cards Grid -->
+          <div v-else-if="recipes.length > 0" class="recipes-grid" role="grid" aria-label="Recipe cards">
+            <article v-for="recipe in recipes" :key="recipe.id"
+                     class="recipe-card-modern"
+                     role="gridcell"
+                     :aria-label="`Recipe: ${recipe.name} by ${recipe.username}`"
+                     :data-recipe-id="recipe.id"
+                     tabindex="0"
+                     @keydown.enter="openRecipeModal(recipe.id)"
+                     @keydown.space.prevent="openRecipeModal(recipe.id)">
+
+              <!-- Recipe Image -->
+              <div class="recipe-image-container" role="img" :aria-label="recipe.image ? `Image of ${recipe.name}` : 'No image available'">
+                <img v-if="recipe.image && recipe.image.trim()"
+                     :src="recipe.image"
+                     :alt="`${recipe.name} recipe image`"
+                     class="recipe-image"
+                     loading="lazy"
+                     @error="handleImageError($event)"
+                     @load="handleImageLoad($event)" />
+                <div v-show="!recipe.image || !recipe.image.trim() || recipe.imageError"
+                     class="recipe-no-image"
+                     role="img"
+                     aria-label="No image available">
+                  <i class='bx bx-image' aria-hidden="true"></i>
+                  <span>No image</span>
+                </div>
+              </div>
+
+              <!-- Recipe Content -->
+              <div class="recipe-content">
+                <!-- Recipe Title -->
+                <h3 class="recipe-title-modern" :title="recipe.name">${recipe.name}</h3>
+
+                <!-- Recipe Author -->
+                <div class="recipe-author-info" role="group" aria-label="Recipe author information">
+                  <i class='bx bx-user' aria-hidden="true"></i>
+                  <span>Shared by <strong>${recipe.username || 'Unknown'}</strong></span>
+                  <time class="recipe-date-badge" :datetime="recipe.created_at" :title="`Shared on ${formatDate(recipe.created_at)}`">
+                    ${formatDate(recipe.created_at)}
+                  </time>
+                </div>
+
+                <!-- Recipe Timing Info -->
+                <div class="recipe-timing-row" role="group" aria-label="Recipe timing information">
+                  <div class="timing-info" :title="`Preparation time: ${recipe.prep_time || 0} minutes`">
+                    <i class='bx bx-time' aria-hidden="true"></i>
+                    <span>${recipe.prep_time || 0} min prep</span>
+                  </div>
+                  <div class="timing-info" :title="`Cooking time: ${recipe.cook_time || 0} minutes`">
+                    <i class='bx bx-timer' aria-hidden="true"></i>
+                    <span>${recipe.cook_time || 0} min cook</span>
+                  </div>
+                </div>
+
+                <!-- Recipe Meta Info -->
+                <div class="recipe-meta-row" role="group" aria-label="Recipe details">
+                  <div class="meta-info" :title="`Serves ${recipe.servings || 4} people`">
+                    <i class='bx bx-group' aria-hidden="true"></i>
+                    <span>${recipe.servings || 4} servings</span>
+                  </div>
+                  <div class="meta-info" :title="`Cuisine: ${recipe.cuisine || 'International'}`">
+                    <i class='bx bx-world' aria-hidden="true"></i>
+                    <span>${recipe.cuisine || 'International'}</span>
+                  </div>
+                </div>
+
+                <!-- Recipe Difficulty -->
+                <div class="recipe-difficulty-row" role="group" aria-label="Recipe difficulty" :title="`Difficulty level: ${recipe.difficulty || 'Medium'}`">
+                  <i class='bx bx-bar-chart-alt-2' aria-hidden="true"></i>
+                  <span>${recipe.difficulty || 'Medium'}</span>
+                </div>
+
+                <!-- Ingredients Preview -->
+                <section class="ingredients-preview" role="region" aria-label="Recipe ingredients preview">
+                  <h4>
+                    <i class='bx bx-list-ul' aria-hidden="true"></i>
+                    Ingredients (${recipe.ingredients ? recipe.ingredients.length : 0})
+                  </h4>
+                  <div class="ingredients-tags" role="list" aria-label="Ingredient list">
+                    <span v-for="(ingredient, index) in (recipe.ingredients || []).slice(0, 3)"
+                          :key="index"
+                          class="ingredient-tag"
+                          role="listitem"
+                          :title="ingredient">
+                      ${ingredient.length > 15 ? ingredient.substring(0, 15) + '...' : ingredient}
+                    </span>
+                    <span v-if="recipe.ingredients && recipe.ingredients.length > 3"
+                          class="more-ingredients"
+                          role="listitem"
+                          :title="`${recipe.ingredients.length - 3} more ingredients`">
+                      +${recipe.ingredients.length - 3} more
+                    </span>
+                  </div>
+                </section>
+
+                <!-- Action Buttons -->
+                <div class="recipe-actions" role="group" aria-label="Recipe actions">
+                  <button class="btn-view-full-recipe"
+                          @click="openRecipeModal(recipe.id)"
+                          :aria-label="`View full recipe for ${recipe.name}`"
+                          type="button">
+                    <i class='bx bx-show' aria-hidden="true"></i>
+                    View Full Recipe
+                  </button>
+                  <div v-if="recipe.user_id === currentUserId" class="recipe-action-buttons">
+                    <button class="btn-delete-recipe"
+                            :aria-label="`Delete ${recipe.name} recipe`"
+                            type="button"
+                            @click="deleteRecipe(recipe.id)">
+                      <i class='bx bx-trash' aria-hidden="true"></i>
+                      <span class="sr-only">Delete</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Load More Button -->
+          <div v-if="hasMore && !loading" class="load-more-container">
+            <button @click="loadMoreRecipes" :disabled="loadingMore" class="btn btn-outline-primary">
+              <i v-if="loadingMore" class='bx bx-loader-alt bx-spin'></i>
+              <i v-else class='bx bx-plus'></i>
+              ${loadingMore ? 'Loading...' : 'Load More Recipes'}
+            </button>
+          </div>
+
+          <!-- Enhanced Empty State -->
+          <div v-else-if="!loading && recipes.length === 0" class="empty-state-modern">
+            <div class="empty-state-icon">
+              <i class='bx bx-bowl-hot'></i>
+            </div>
+            <div class="empty-state-content">
+              <h3>No Community Recipes Yet</h3>
+              <p>Be the first to share a delicious recipe with the community! Your culinary creations could inspire others and bring joy to fellow food lovers.</p>
+              <div class="empty-state-actions">
+                <a href="/shared-recipe" class="btn-share-recipe">
+                  <i class='bx bx-plus-circle'></i>
+                  Share Your Recipe
+                </a>
+                <button class="btn-browse-recipes" @click="exploreRecipes">
+                  <i class='bx bx-search'></i>
+                  Browse Recipe Ideas
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Enhanced Recipe Modal -->
+        <div v-if="showModal && selectedRecipe" class="modal-overlay" @click="closeModal">
+          <div class="recipe-modal" @click.stop>
+            <!-- Modal Header -->
+            <div class="modal-header">
+              <div class="recipe-title-section">
+                <h2>${selectedRecipe.name}</h2>
+                <div class="recipe-meta-info">
+                  <span class="cuisine-tag">
+                    <i class='bx bx-world'></i>
+                    ${selectedRecipe.cuisine}
+                  </span>
+                  <span class="difficulty-tag">
+                    <i class='bx bx-bar-chart-alt-2'></i>
+                    ${selectedRecipe.difficulty}
+                  </span>
+                </div>
+              </div>
+              <button class="close-btn" @click="closeModal">
+                <i class='bx bx-x'></i>
+              </button>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="modal-content" v-if="!loadingRecipeDetails">
+              <!-- Recipe Image and Basic Info -->
+              <div class="recipe-header-section">
+                <div class="recipe-image-container">
+                  <img v-if="selectedRecipe.image" :src="selectedRecipe.image" :alt="selectedRecipe.name" class="recipe-modal-image">
+                  <div v-else class="recipe-modal-no-image">
+                    <i class='bx bx-image'></i>
+                    <span>No image available</span>
+                  </div>
+                </div>
+                <div class="recipe-info-panel">
+                  <div class="recipe-author-info">
+                    <img :src="selectedRecipe.user_profile_image || selectedRecipe.profile_picture || '/static/images/user.png'" :alt="selectedRecipe.user_name || selectedRecipe.username" class="author-avatar-large">
+                    <div class="author-details">
+                      <span class="author-name">${selectedRecipe.user_name || selectedRecipe.username}</span>
+                      <span class="recipe-date">${formatDate(selectedRecipe.created_at)}</span>
+                    </div>
+                  </div>
+
+                  <p class="recipe-description">${selectedRecipe.description}</p>
+
+                  <div class="recipe-timing-info">
+                    <div class="timing-item">
+                      <i class='bx bx-time'></i>
+                      <span>Prep: ${selectedRecipe.prep_time || 0} min</span>
+                    </div>
+                    <div class="timing-item">
+                      <i class='bx bx-timer'></i>
+                      <span>Cook: ${selectedRecipe.cook_time || 0} min</span>
+                    </div>
+                    <div class="timing-item">
+                      <i class='bx bx-group'></i>
+                      <span>Serves: ${selectedRecipe.servings || 1}</span>
+                    </div>
+                  </div>
+
+                  <!-- Recipe Interactions -->
+                  <div class="recipe-interactions">
+                    <button @click="toggleRecipeLike(selectedRecipe.id)"
+                            :class="['interaction-btn', 'like-btn', { 'liked': recipeInteractions.user_liked }]"
+                            :disabled="likingInProgress">
+                      <i class='bx bx-heart'></i>
+                      <span>${recipeInteractions.like_count}</span>
+                    </button>
+                    <div class="interaction-btn comment-count">
+                      <i class='bx bx-comment'></i>
+                      <span>${comments.length}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Recipe Details -->
+              <div class="recipe-details-section">
+                <!-- Ingredients -->
+                <div class="ingredients-section">
+                  <h3><i class='bx bx-list-ul'></i> Ingredients</h3>
+                  <ul class="ingredients-list">
+                    <li v-for="(ingredient, index) in selectedRecipe.ingredients" :key="index">
+                      ${ingredient}
+                    </li>
+                  </ul>
+                </div>
+
+                <!-- Instructions -->
+                <div class="instructions-section">
+                  <h3><i class='bx bx-book-open'></i> Instructions</h3>
+                  <ol class="instructions-list">
+                    <li v-for="(instruction, index) in selectedRecipe.instructions" :key="index">
+                      ${instruction}
+                    </li>
+                  </ol>
+                </div>
+
+                <!-- Additional Recipe Details -->
+                <div v-if="selectedRecipe.recipe_details" class="additional-details">
+                  <h3><i class='bx bx-info-circle'></i> Additional Notes</h3>
+                  <p>${selectedRecipe.recipe_details}</p>
+                </div>
+              </div>
+
+              <!-- Comments Section -->
+              <div class="comments-section">
+                <h3><i class='bx bx-comment'></i> Comments (${comments.length})</h3>
+
+                <!-- Add Comment Form -->
+                <div class="add-comment-form">
+                  <textarea v-model="newComment"
+                           placeholder="Share your thoughts about this recipe..."
+                           class="comment-input"
+                           rows="3"></textarea>
+                  <button @click="addRecipeComment(selectedRecipe.id)"
+                          :disabled="!newComment.trim() || addingComment"
+                          class="btn btn-primary comment-submit-btn">
+                    <i v-if="addingComment" class='bx bx-loader-alt bx-spin'></i>
+                    <i v-else class='bx bx-send'></i>
+                    ${addingComment ? 'Posting...' : 'Post Comment'}
+                  </button>
+                </div>
+
+                <!-- Comments List -->
+                <div class="comments-list">
+                  <div v-if="loadingComments" class="loading-comments">
+                    <i class='bx bx-loader-alt bx-spin'></i>
+                    <span>Loading comments...</span>
+                  </div>
+                  <div v-else-if="comments.length === 0" class="no-comments">
+                    <i class='bx bx-message-dots'></i>
+                    <p>No comments yet. Be the first to share your thoughts!</p>
+                  </div>
+                  <div v-else>
+                    <div v-for="comment in comments" :key="comment.id" class="comment-item">
+                      <div class="comment-author">
+                        <img :src="comment.user_profile_image || '/static/images/user.png'"
+                             :alt="comment.user_name" class="comment-avatar">
+                        <div class="comment-info">
+                          <span class="comment-author-name">${comment.user_name}</span>
+                          <span class="comment-date">${formatDate(comment.created_at)}</span>
+                        </div>
+                      </div>
+                      <p class="comment-content">${comment.content}</p>
+                      <div class="comment-actions">
+                        <button class="comment-like-btn" :class="{ 'liked': comment.user_liked }">
+                          <i class='bx bx-heart'></i>
+                          <span>${comment.like_count || 0}</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Loading State -->
+            <div v-else class="modal-loading">
+              <i class='bx bx-loader-alt bx-spin'></i>
+              <p>Loading recipe details...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+
+    createApp({
+      delimiters: ['${', '}'],
+      data() {
+        return {
+          // Tab management
+          activeTab: 'community',
+
+          // Recipe data
+          recipes: [],
+          loading: true,
+          loadingMore: false,
+          hasMore: true,
+          currentPage: 0,
+          recipesPerPage: 10,
+
+          // Modal management
+          showModal: false,
+          selectedRecipe: null,
+          loadingRecipeDetails: false,
+
+          // Comments system
+          comments: [],
+          loadingComments: false,
+          newComment: '',
+          addingComment: false,
+
+          // Social features
+          posts: [],
+          loadingPosts: true,
+          newPostContent: '',
+          creatingPost: false,
+
+          // User management
+          currentUserId: null,
+          currentUserName: null,
+          currentUserProfileImage: null,
+
+          // Recipe interactions
+          recipeInteractions: {
+            like_count: 0,
+            user_liked: false
+          },
+          likingInProgress: false,
+
+          // Legacy data for compatibility
+          sharedRecipes: [],
+          loadingRecipes: false
+        };
+      },
+
+      async mounted() {
+        await this.initializeUser();
+        await this.loadPosts();
+        await this.loadRecipes();
+        await this.loadSharedRecipes();
+      },
+
+      methods: {
+        async initializeUser() {
+          try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+              window.location.href = '/';
+              return;
+            }
+
+            const response = await fetch('/api/auth/me', {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+
+            if (response.ok) {
+              const userData = await response.json();
+              console.log('User data from /api/auth/me:', userData); // Debug log
+              if (userData.status === 'success' && userData.user) {
+                this.currentUserId = userData.user.id;
+                this.currentUserName = userData.user.name;
+                this.currentUserProfileImage = userData.user.profile_image;
+                console.log('Profile image from /me endpoint:', this.currentUserProfileImage); // Debug log
+
+                // If profile_image is not available from /me endpoint, try the dedicated endpoint
+                if (!this.currentUserProfileImage) {
+                  await this.fetchProfileImage();
+                }
+              } else {
+                throw new Error('Invalid response format');
+              }
+            } else {
+              localStorage.removeItem('token');
+              window.location.href = '/';
+            }
+          } catch (error) {
+            console.error('Error initializing user:', error);
+            localStorage.removeItem('token');
+            window.location.href = '/';
+          }
+        },
+
+        async fetchProfileImage() {
+          try {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+
+            const response = await fetch('/api/auth/profile-image/current', {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              console.log('Profile image data from dedicated endpoint:', data); // Debug log
+              if (data && data.status === 'success' && data.profile_image) {
+                this.currentUserProfileImage = data.profile_image;
+                console.log('Profile image set from dedicated endpoint:', this.currentUserProfileImage); // Debug log
+              }
+            } else if (response.status !== 404) {
+              console.error('Error fetching profile image:', response.statusText);
+            } else {
+              console.log('No profile image found (404)'); // Debug log
+            }
+          } catch (error) {
+            console.error('Error fetching profile image:', error);
+          }
+        },
+
+        switchTab(tab) {
+          this.activeTab = tab;
+          if (tab === 'community' && this.posts.length === 0) {
+            this.loadPosts();
+          } else if (tab === 'recipes' && this.recipes.length === 0) {
+            this.loadRecipes();
+          }
+        },
+
+        async createPost() {
+          if (!this.newPostContent.trim() || this.creatingPost) return;
+
+          this.creatingPost = true;
+          try {
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/community/posts', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                content: this.newPostContent.trim()
+              })
+            });
+
+            if (response.ok) {
+              const newPost = await response.json();
+              this.posts.unshift(newPost);
+              this.newPostContent = '';
+
+              Swal.fire({
+                icon: 'success',
+                title: 'Post Created!',
+                text: 'Your post has been shared with the community.',
+                timer: 2000,
+                showConfirmButton: false
+              });
+            } else {
+              throw new Error('Failed to create post');
+            }
+          } catch (error) {
+            console.error('Error creating post:', error);
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Failed to create post. Please try again.'
+            });
+          } finally {
+            this.creatingPost = false;
+          }
+        },
+
+        async loadPosts() {
+          this.loadingPosts = true;
+          try {
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/community/posts', {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+
+            if (response.ok) {
+              this.posts = await response.json();
+              // Initialize comment-related properties for each post
+              this.posts.forEach(post => {
+                post.showComments = false;
+                post.newComment = '';
+                post.addingComment = false;
+                post.comments = post.comments || [];
+              });
+            }
+          } catch (error) {
+            console.error('Error loading posts:', error);
+          } finally {
+            this.loadingPosts = false;
+          }
+        },
+
+        async loadRecipes() {
+          try {
+            this.loading = true;
+            const token = localStorage.getItem('token');
+            const response = await fetch(`/api/shared-recipes`, {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              console.log('Raw recipe data:', data); // Debug log
+
+              // Transform the data to match the expected format
+              this.recipes = data.map(recipe => {
+                // Handle image field - check both 'image' and 'image_data'
+                let imageUrl = recipe.image || recipe.image_data || '';
+
+                // If it's base64 data, ensure it has proper data URL prefix
+                if (imageUrl && !imageUrl.startsWith('http') && !imageUrl.startsWith('data:')) {
+                  imageUrl = `data:image/jpeg;base64,${imageUrl}`;
+                }
+
+                console.log(`Recipe ${recipe.name} image:`, imageUrl ? 'Has image' : 'No image'); // Debug log
+
+                return {
+                  id: recipe.id,
+                  name: recipe.name,
+                  description: recipe.description,
+                  cuisine: recipe.cuisine,
+                  image: imageUrl,
+                  ingredients: recipe.ingredients,
+                  instructions: recipe.instructions,
+                  recipe_details: recipe.recipe_details,
+                  prep_time: recipe.prep_time || 30,
+                  cook_time: recipe.cook_time || 45,
+                  servings: recipe.servings || 4,
+                  difficulty: recipe.difficulty || 'Medium',
+                  username: recipe.username || recipe.user_name,
+                  user_id: recipe.user_id,
+                  profile_picture: recipe.profile_picture || recipe.user_profile_image,
+                  created_at: recipe.created_at,
+                  like_count: 0, // Will be loaded when modal opens
+                  comment_count: 0 // Will be loaded when modal opens
+                };
+              });
+
+              console.log(`Loaded ${this.recipes.length} recipes`); // Debug log
+              this.hasMore = false; // The /api/shared-recipes endpoint doesn't support pagination yet
+            } else {
+              console.error('Failed to load recipes');
+              this.recipes = [];
+              this.hasMore = false;
+            }
+          } catch (error) {
+            console.error('Error loading recipes:', error);
+            this.recipes = [];
+            this.hasMore = false;
+          } finally {
+            this.loading = false;
+          }
+        },
+
+        async loadSharedRecipes() {
+          this.loadingRecipes = true;
+          try {
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/shared-recipes', {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+
+            if (response.ok) {
+              this.sharedRecipes = await response.json();
+            }
+          } catch (error) {
+            console.error('Error loading shared recipes:', error);
+          } finally {
+            this.loadingRecipes = false;
+          }
+        },
+
+        async loadMoreRecipes() {
+          if (this.loadingMore || !this.hasMore) return;
+
+          this.loadingMore = true;
+          this.currentPage++;
+
+          try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`/api/community/recipes?limit=${this.recipesPerPage}&skip=${this.currentPage * this.recipesPerPage}`, {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+            const result = await response.json();
+
+            if (result.status === 'success') {
+              this.recipes.push(...result.recipes);
+              this.hasMore = result.recipes.length === this.recipesPerPage;
+            }
+          } catch (error) {
+            this.currentPage--; // Revert on error
+          } finally {
+            this.loadingMore = false;
+          }
+        },
+
+        async toggleLike(post) {
+          try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`/api/community/posts/${post.id}/like`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+
+            if (response.ok) {
+              const result = await response.json();
+              post.user_liked = result.liked;
+              post.like_count = result.like_count;
+            }
+          } catch (error) {
+            console.error('Error toggling like:', error);
+          }
+        },
+
+        async toggleComments(post) {
+          post.showComments = !post.showComments;
+
+          if (post.showComments && (!post.comments || post.comments.length === 0)) {
+            await this.loadComments(post);
+          }
+        },
+
+        async loadComments(post) {
+          try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`/api/community/posts/${post.id}/comments`, {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+
+            if (response.ok) {
+              post.comments = await response.json();
+            }
+          } catch (error) {
+            console.error('Error loading comments:', error);
+          }
+        },
+
+        async addComment(post) {
+          if (!post.newComment?.trim() || post.addingComment) return;
+
+          post.addingComment = true;
+          try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`/api/community/posts/${post.id}/comments`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                content: post.newComment.trim()
+              })
+            });
+
+            if (response.ok) {
+              const newComment = await response.json();
+              post.comments.push(newComment);
+              post.comment_count = (post.comment_count || 0) + 1;
+              post.newComment = '';
+            } else {
+              throw new Error('Failed to add comment');
+            }
+          } catch (error) {
+            console.error('Error adding comment:', error);
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Failed to add comment. Please try again.'
+            });
+          } finally {
+            post.addingComment = false;
+          }
+        },
+
+        async toggleCommentLike(comment) {
+          try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`/api/community/comments/${comment.id}/like`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+
+            if (response.ok) {
+              const result = await response.json();
+              comment.user_liked = result.liked;
+              comment.like_count = result.like_count;
+            }
+          } catch (error) {
+            console.error('Error toggling comment like:', error);
+          }
+        },
+
+        async editPost(post) {
+          const { value: newContent } = await Swal.fire({
+            title: 'Edit Post',
+            input: 'textarea',
+            inputValue: post.content,
+            inputAttributes: {
+              'aria-label': 'Edit your post content'
+            },
+            showCancelButton: true,
+            confirmButtonText: 'Update',
+            confirmButtonColor: '#ea5e18'
+          });
+
+          if (newContent && newContent.trim() !== post.content) {
+            try {
+              const token = localStorage.getItem('token');
+              const response = await fetch(`/api/community/posts/${post.id}`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                  content: newContent.trim()
+                })
+              });
+
+              if (response.ok) {
+                post.content = newContent.trim();
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Post Updated!',
+                  timer: 2000,
+                  showConfirmButton: false
+                });
+              } else {
+                throw new Error('Failed to update post');
+              }
+            } catch (error) {
+              console.error('Error updating post:', error);
+              Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Failed to update post. Please try again.'
+              });
+            }
+          }
+        },
+
+        async deletePost(postId) {
+          const result = await Swal.fire({
+            title: 'Delete Post?',
+            text: 'This action cannot be undone.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ea5e18',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, delete it!'
+          });
+
+          if (result.isConfirmed) {
+            try {
+              const token = localStorage.getItem('token');
+              const response = await fetch(`/api/community/posts/${postId}`, {
+                method: 'DELETE',
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                }
+              });
+
+              if (response.ok) {
+                this.posts = this.posts.filter(post => post.id !== postId);
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Post Deleted!',
+                  timer: 2000,
+                  showConfirmButton: false
+                });
+              } else {
+                throw new Error('Failed to delete post');
+              }
+            } catch (error) {
+              console.error('Error deleting post:', error);
+              Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Failed to delete post. Please try again.'
+              });
+            }
+          }
+        },
+
+        viewRecipe(recipe) {
+          this.selectedRecipe = recipe;
+        },
+
+        async viewRecipeFromPost(post) {
+          // Get the full recipe details using the recipe_id from the post
+          if (post.recipe_id) {
+            try {
+              const token = localStorage.getItem('token');
+              const response = await fetch(`/api/shared-recipes/${post.recipe_id}`, {
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                }
+              });
+
+              if (response.ok) {
+                const recipe = await response.json();
+                this.selectedRecipe = recipe;
+              } else {
+                // Fallback: create a basic recipe object from post data
+                this.selectedRecipe = {
+                  name: post.recipe_name,
+                  image_data: post.recipe_image,
+                  description: 'Recipe shared from community post',
+                  ingredients: [],
+                  instructions: [],
+                  cuisine: 'Various',
+                  prep_time: 'N/A',
+                  cook_time: 'N/A',
+                  servings: 'N/A',
+                  difficulty: 'N/A'
+                };
+              }
+            } catch (error) {
+              console.error('Error fetching recipe details:', error);
+              // Fallback: create a basic recipe object from post data
+              this.selectedRecipe = {
+                name: post.recipe_name,
+                image_data: post.recipe_image,
+                description: 'Recipe shared from community post',
+                ingredients: [],
+                instructions: [],
+                cuisine: 'Various',
+                prep_time: 'N/A',
+                cook_time: 'N/A',
+                servings: 'N/A',
+                difficulty: 'N/A'
+              };
+            }
+          }
+        },
+
+        async openRecipeModal(recipeId) {
+          this.showModal = true;
+          this.loadingRecipeDetails = true;
+
+          try {
+            const token = localStorage.getItem('token');
+            // Fetch recipe details
+            const recipeResponse = await fetch(`/api/community/recipe/${recipeId}/details`, {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+            const recipeResult = await recipeResponse.json();
+
+            if (recipeResult.status === 'success') {
+              this.selectedRecipe = recipeResult.recipe;
+              this.recipeInteractions = {
+                like_count: recipeResult.recipe.like_count || 0,
+                user_liked: recipeResult.recipe.user_liked || false
+              };
+            }
+
+            // Load recipe comments
+            await this.loadRecipeComments(recipeId);
+
+          } catch (error) {
+            console.error('Error loading recipe details:', error);
+          } finally {
+            this.loadingRecipeDetails = false;
+          }
+        },
+
+        closeModal() {
+          this.showModal = false;
+          this.selectedRecipe = null;
+          this.comments = [];
+          this.newComment = '';
+        },
+
+        closeRecipeModal() {
+          this.selectedRecipe = null;
+        },
+
+        async loadRecipeComments(recipeId) {
+          try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`/api/community/recipe/${recipeId}/comments`, {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+
+            if (response.ok) {
+              this.comments = await response.json();
+            }
+          } catch (error) {
+            console.error('Error loading recipe comments:', error);
+          }
+        },
+
+        async addRecipeComment(recipeId) {
+          if (!this.newComment.trim() || this.addingComment) return;
+
+          this.addingComment = true;
+          try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`/api/community/recipe/${recipeId}/comments`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                content: this.newComment.trim()
+              })
+            });
+
+            if (response.ok) {
+              const newComment = await response.json();
+              this.comments.push(newComment);
+              this.newComment = '';
+            }
+          } catch (error) {
+            console.error('Error adding recipe comment:', error);
+          } finally {
+            this.addingComment = false;
+          }
+        },
+
+        async toggleRecipeLike(recipeId) {
+          if (this.likingInProgress) return;
+
+          this.likingInProgress = true;
+          try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`/api/community/recipe/${recipeId}/like`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+
+            if (response.ok) {
+              const result = await response.json();
+              this.recipeInteractions.user_liked = result.liked;
+              this.recipeInteractions.like_count = result.like_count;
+
+              // Update the recipe in the list if it exists
+              const recipeIndex = this.recipes.findIndex(r => r.id === recipeId);
+              if (recipeIndex !== -1) {
+                this.recipes[recipeIndex].like_count = result.like_count;
+                this.recipes[recipeIndex].user_liked = result.liked;
+              }
+            }
+          } catch (error) {
+            console.error('Error toggling recipe like:', error);
+          } finally {
+            this.likingInProgress = false;
+          }
+        },
+
+        // Enhanced Recipe Management Functions
+
+        async deleteRecipe(recipeId) {
+          try {
+            // Show confirmation dialog
+            const result = await Swal.fire({
+              title: 'Delete Recipe',
+              text: 'Are you sure you want to delete this recipe? This action cannot be undone.',
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonColor: '#d62828',
+              cancelButtonColor: '#6c757d',
+              confirmButtonText: 'Yes, delete it!',
+              cancelButtonText: 'Cancel',
+              reverseButtons: true
+            });
+
+            if (result.isConfirmed) {
+              const token = localStorage.getItem('token');
+              const response = await fetch(`/api/recipe/${recipeId}`, {
+                method: 'DELETE',
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                }
+              });
+
+              if (response.ok) {
+                // Remove recipe from local array
+                this.recipes = this.recipes.filter(recipe => recipe.id !== recipeId);
+
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Deleted!',
+                  text: 'Your recipe has been deleted.',
+                  timer: 2000,
+                  showConfirmButton: false
+                });
+              } else {
+                throw new Error('Failed to delete recipe');
+              }
+            }
+          } catch (error) {
+            console.error('Error deleting recipe:', error);
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Failed to delete recipe. Please try again.'
+            });
+          }
+        },
+
+        handleProfileImageError(event) {
+          // Fallback to default user image if profile image fails to load
+          event.target.src = '/static/images/user.png';
+        },
+
+        async exploreRecipes() {
+          try {
+            // Show loading state
+            Swal.fire({
+              title: 'Exploring Recipes...',
+              text: 'Finding recipe inspiration for you!',
+              icon: 'info',
+              allowOutsideClick: false,
+              showConfirmButton: false,
+              willOpen: () => {
+                Swal.showLoading();
+              }
+            });
+
+            // Simulate API call or redirect to recipe exploration page
+            setTimeout(() => {
+              Swal.close();
+              window.location.href = '/explore-recipes';
+            }, 1500);
+          } catch (error) {
+            console.error('Error exploring recipes:', error);
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Failed to load recipe exploration. Please try again.'
+            });
+          }
+        },
+
+        // Image handling methods
+        handleImageError(event) {
+          console.log('Image failed to load:', event.target.src);
+          // Find the recipe and mark it as having an image error
+          const img = event.target;
+          const recipeCard = img.closest('.recipe-card-modern');
+          if (recipeCard) {
+            const recipeId = recipeCard.getAttribute('data-recipe-id');
+            const recipe = this.recipes.find(r => r.id === recipeId);
+            if (recipe) {
+              recipe.imageError = true;
+            }
+          }
+          // Hide the image and show fallback
+          img.style.display = 'none';
+          const fallback = img.nextElementSibling;
+          if (fallback && fallback.classList.contains('recipe-no-image')) {
+            fallback.style.display = 'flex';
+          }
+        },
+
+        handleImageLoad(event) {
+          console.log('Image loaded successfully:', event.target.src);
+          // Find the recipe and mark it as loaded
+          const img = event.target;
+          const recipeCard = img.closest('.recipe-card-modern');
+          if (recipeCard) {
+            const recipeId = recipeCard.getAttribute('data-recipe-id');
+            const recipe = this.recipes.find(r => r.id === recipeId);
+            if (recipe) {
+              recipe.imageError = false;
+            }
+          }
+        },
+
+        formatDate(dateString) {
+          const date = new Date(dateString);
+          const now = new Date();
+          const diffTime = Math.abs(now - date);
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+          if (diffDays === 1) {
+            return 'Yesterday';
+          } else if (diffDays < 7) {
+            return `${diffDays} days ago`;
+          } else if (diffDays < 30) {
+            const weeks = Math.floor(diffDays / 7);
+            return `${weeks} week${weeks > 1 ? 's' : ''} ago`;
+          } else {
+            return date.toLocaleDateString();
+          }
+        }
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>

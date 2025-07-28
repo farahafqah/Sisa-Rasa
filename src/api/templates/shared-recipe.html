@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Share Your Recipe - Sisa Rasa</title>
+  
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Boxicons -->
+  <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: url("{{ url_for('static', filename='images/bg.png') }}") no-repeat center center fixed;
+      background-size: cover;
+      margin: 0;
+    }
+
+    .sidebar {
+      background-color: #083640;
+      min-height: 100vh;
+      padding-top: 1rem;
+      color: white;
+      border-right: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .logo-container {
+      background-color: #072a32;
+      padding: 1.5rem 1rem;
+      margin-bottom: 2rem;
+      text-align: center;
+      border-radius: 0 0 10px 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    .logo-container img {
+      width: 80px;
+      height: auto;
+      margin-bottom: 0.75rem;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+      transition: transform 0.3s ease;
+    }
+
+    .logo-container:hover img {
+      transform: scale(1.05);
+    }
+
+    .logo-container h5 {
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+      color: white;
+    }
+
+    .logo-container small {
+      font-size: 0.8rem;
+      opacity: 0.9;
+      display: block;
+      color: #fedf2f;
+    }
+
+    .nav-links {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      padding: 0 1rem;
+    }
+
+    .nav-links a {
+      color: rgba(255,255,255,0.8);
+      text-decoration: none;
+      padding: 0.75rem 1rem;
+      border-radius: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 500;
+      transition: background 0.3s;
+      border-left: 4px solid transparent;
+    }
+
+    .nav-links a.active {
+      background-color: #ea5e18;
+      border-left: 4px solid #fedf2f;
+    }
+
+    .nav-links a:hover:not(.active) {
+      background-color: rgba(234, 94, 24, 0.3);
+    }
+
+    .nav-links a i {
+      font-size: 1.2rem;
+    }
+
+    .main-content {
+      padding: 1rem;
+    }
+
+    .header-bar {
+      background-color: transparent;
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #083640;
+    }
+
+    .header-bar h5 {
+      font-weight: 700;
+      margin-bottom: 0;
+    }
+
+    .user-profile {
+      background-color: #083640;
+      border-radius: 2rem;
+      padding: 0.5rem 1rem;
+      display: flex;
+      align-items: center;
+      color: white;
+    }
+
+    .user-profile img {
+      border: 2px solid white;
+    }
+
+    .page-header {
+      background-color: #ea5e18;
+      color: white;
+      padding: 1.5rem;
+      border-radius: 1rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .page-header h5 {
+      color: #fedf2f;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .page-header p {
+      margin-bottom: 0;
+      opacity: 0.9;
+    }
+
+    .form-section {
+      background-color: #ffffff;
+      border-radius: 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 2rem;
+      transition: all 0.3s ease;
+      margin-bottom: 1.5rem;
+    }
+
+    .form-section:hover {
+      box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      color: #083640;
+    }
+
+    .section-header i {
+      font-size: 1.5rem;
+      color: #ea5e18;
+    }
+
+    .section-header h5 {
+      font-weight: 600;
+      margin: 0;
+      margin: 0;
+    }
+
+    .form-group {
+      margin-bottom: 25px;
+    }
+
+    .form-label {
+      font-weight: 600;
+      color: #083640;
+    }
+
+    .form-control {
+      border-radius: 0.5rem;
+      padding: 0.75rem 1rem;
+      border: 1px solid #ddd;
+      transition: all 0.3s;
+    }
+
+    .form-control:focus {
+      border-color: #ea5e18;
+      box-shadow: 0 0 0 0.25rem rgba(234, 94, 24, 0.25);
+    }
+
+    .form-select {
+      border-radius: 0.5rem;
+      padding: 0.75rem 1rem;
+      border: 1px solid #ddd;
+      transition: all 0.3s;
+    }
+
+    .form-select:focus {
+      border-color: #ea5e18;
+      box-shadow: 0 0 0 0.25rem rgba(234, 94, 24, 0.25);
+    }
+
+    .image-upload-area {
+      border: 2px dashed #e9ecef;
+      border-radius: 15px;
+      padding: 40px;
+      text-align: center;
+      background: #f8f9fa;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .image-upload-area:hover {
+      border-color: #ea5e18;
+      background: rgba(234, 94, 24, 0.05);
+    }
+
+    .image-upload-area.dragover {
+      border-color: #ea5e18;
+      background: rgba(234, 94, 24, 0.1);
+    }
+
+    .upload-icon {
+      font-size: 3rem;
+      color: #ea5e18;
+      margin-bottom: 15px;
+    }
+
+    .upload-text {
+      color: #083640;
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+
+    .upload-hint {
+      color: #6c757d;
+      font-size: 14px;
+    }
+
+    .image-preview {
+      max-width: 100%;
+      max-height: 300px;
+      border-radius: 10px;
+      margin-top: 15px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .remove-image {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #dc3545;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .dynamic-list {
+      margin-bottom: 20px;
+    }
+
+    .list-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+      background: #f8f9fa;
+      border-radius: 10px;
+      padding: 10px;
+    }
+
+    .list-item input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 8px 12px;
+      font-size: 14px;
+    }
+
+    .list-item input:focus {
+      outline: none;
+    }
+
+    .remove-item {
+      background: #dc3545;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      margin-left: 10px;
+      font-size: 14px;
+    }
+
+    .add-item {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 0.5rem;
+      padding: 0.75rem 1rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      transition: all 0.3s ease;
+    }
+
+    .add-item:hover {
+      background-color: #218838;
+      transform: translateY(-1px);
+    }
+
+    .add-item i {
+      margin-right: 8px;
+    }
+
+    .recipe-details-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+    }
+
+    .submit-section {
+      text-align: center;
+      padding: 30px;
+    }
+
+    .submit-btn {
+      background-color: #ea5e18;
+      border-color: #ea5e18;
+      border-radius: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      font-weight: 600;
+      transition: all 0.3s;
+      color: white;
+      border: none;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .submit-btn:hover, .submit-btn:focus {
+      background-color: #d15415;
+      border-color: #d15415;
+      transform: translateY(-2px);
+    }
+
+    .submit-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .loading-spinner {
+      display: none;
+      margin-right: 10px;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+      }
+
+      .sidebar.show {
+        transform: translateX(0);
+      }
+
+      .main-content {
+        margin-left: 0;
+        padding: 20px;
+      }
+
+      .header-section h2 {
+        font-size: 2rem;
+      }
+
+      .recipe-details-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app" class="container-fluid">
+    <div class="row">
+      <!-- Sidebar -->
+      <div class="col-md-2 sidebar">
+        <div class="logo-container">
+          <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Sisa Rasa Logo">
+          <h5>Sisa Rasa</h5>
+          <small>Rasa Baru</small>
+          <small>Sisa Lama</small>
+        </div>
+        <nav class="nav-links">
+          <a href="{{ url_for('main.dashboard') }}"><i class='bx bx-grid-alt'></i>Dashboard</a>
+          <a href="{{ url_for('main.save_recipe_page') }}"><i class='bx bx-book-heart'></i>Save Recipe</a>
+          <a href="{{ url_for('main.shared_recipe_page') }}" class="active"><i class='bx bx-share-alt'></i>Share Recipe</a>
+          <a href="{{ url_for('main.community_page') }}"><i class='bx bx-group'></i>Community</a>
+          <a href="{{ url_for('main.profile_page') }}"><i class='bx bx-user'></i>Profile</a>
+          <a href="{{ url_for('main.home') }}" id="logoutBtn"><i class='bx bx-log-out'></i>Log Out</a>
+        </nav>
+      </div>
+
+      <!-- Main Content -->
+      <div class="col-md-10 main-content">
+        <!-- Header Bar -->
+        <div class="header-bar">
+          <h5>Share Recipe</h5>
+          <div class="user-profile">
+            <img src="{{ url_for('static', filename='images/default-avatar.png') }}" alt="User" width="32" height="32" class="rounded-circle me-2">
+            <span id="userNameDisplay">User</span>
+          </div>
+        </div>
+
+        <!-- Page Header -->
+        <div class="page-header">
+          <h5><i class='bx bx-share-alt'></i>Share Your Recipe</h5>
+          <p>Share your favorite recipes with the Sisa Rasa community and help reduce food waste!</p>
+        </div>
+
+        <!-- Recipe Form -->
+        <form id="recipeForm" enctype="multipart/form-data">
+          <!-- Basic Information Section -->
+          <div class="form-section">
+            <div class="section-header">
+              <i class='bx bx-info-circle'></i>
+              <h5>Basic Information</h5>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label class="form-label" for="recipeName">Recipe Name *</label>
+                  <input type="text" class="form-control" id="recipeName" name="recipeName"
+                         placeholder="Enter recipe name" required>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label class="form-label" for="cuisine">Cuisine Type</label>
+                  <select class="form-select" id="cuisine" name="cuisine">
+                    <option value="">Choose cuisine type</option>
+                    <option value="Chinese">Chinese</option>
+                    <option value="Italian">Italian</option>
+                    <option value="Japanese">Japanese</option>
+                    <option value="Indian">Indian</option>
+                    <option value="Mexican">Mexican</option>
+                    <option value="Thai">Thai</option>
+                    <option value="French">French</option>
+                    <option value="Mediterranean">Mediterranean</option>
+                    <option value="American">American</option>
+                    <option value="Korean">Korean</option>
+                    <option value="Indonesian">Indonesian</option>
+                    <option value="International">International</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="description">Description</label>
+              <textarea class="form-control" id="description" name="description" rows="4"
+                        placeholder="What's your story with this recipe? What makes it special? Share your inspiration and tips!"></textarea>
+            </div>
+          </div>
+
+          <!-- Recipe Image Section -->
+          <div class="form-section">
+            <div class="section-header">
+              <i class='bx bx-image'></i>
+              <h5>Recipe Image</h5>
+            </div>
+
+            <div class="image-upload-area" id="imageUploadArea">
+              <input type="file" id="recipeImage" name="recipeImage" accept="image/*" style="display: none;">
+              <div class="upload-content">
+                <i class='bx bx-cloud-upload upload-icon'></i>
+                <div class="upload-text">Upload Photo (Optional)</div>
+                <div class="upload-hint">Drag and drop or click to select an image</div>
+              </div>
+              <div class="image-preview-container" style="display: none;">
+                <img class="image-preview" id="imagePreview" src="" alt="Recipe preview">
+                <button type="button" class="remove-image" id="removeImage">
+                  <i class='bx bx-x'></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Ingredients Section -->
+          <div class="form-section">
+            <div class="section-header">
+              <i class='bx bx-list-ul'></i>
+              <h5>Ingredients</h5>
+            </div>
+
+            <div class="dynamic-list" id="ingredientsList">
+              <div class="list-item">
+                <input type="text" name="ingredients[]" placeholder="Enter ingredient (e.g., 2 cups rice)" required>
+                <button type="button" class="remove-item" onclick="removeListItem(this)">
+                  <i class='bx bx-minus'></i>
+                </button>
+              </div>
+            </div>
+
+            <button type="button" class="add-item" onclick="addIngredient()">
+              <i class='bx bx-plus'></i>
+              Add Ingredient
+            </button>
+          </div>
+
+          <!-- Instructions Section -->
+          <div class="form-section">
+            <div class="section-header">
+              <i class='bx bx-list-ol'></i>
+              <h5>Instructions</h5>
+            </div>
+
+            <div class="dynamic-list" id="instructionsList">
+              <div class="list-item">
+                <input type="text" name="instructions[]" placeholder="Step 1: Describe the first step..." required>
+                <button type="button" class="remove-item" onclick="removeListItem(this)">
+                  <i class='bx bx-minus'></i>
+                </button>
+              </div>
+            </div>
+
+            <button type="button" class="add-item" onclick="addInstruction()">
+              <i class='bx bx-plus'></i>
+              Add Step
+            </button>
+          </div>
+
+          <!-- Recipe Details Section -->
+          <div class="form-section">
+            <div class="section-header">
+              <i class='bx bx-time'></i>
+              <h5>Recipe Details</h5>
+            </div>
+
+            <div class="recipe-details-grid">
+              <div class="form-group">
+                <label class="form-label" for="prepTime">Prep Time (minutes)</label>
+                <input type="number" class="form-control" id="prepTime" name="prepTime"
+                       placeholder="30" min="1" max="1440">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="cookTime">Cook Time (minutes)</label>
+                <input type="number" class="form-control" id="cookTime" name="cookTime"
+                       placeholder="45" min="1" max="1440">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="servings">Servings</label>
+                <input type="number" class="form-control" id="servings" name="servings"
+                       placeholder="4" min="1" max="50">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="difficulty">Difficulty Level</label>
+                <select class="form-select" id="difficulty" name="difficulty">
+                  <option value="">Choose difficulty</option>
+                  <option value="Easy">Easy</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Hard">Hard</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Submit Section -->
+          <div class="submit-section">
+            <button type="submit" class="submit-btn" id="submitBtn">
+              <div class="loading-spinner" id="loadingSpinner">
+                <i class='bx bx-loader-alt bx-spin'></i>
+              </div>
+              Share Recipe
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // Authentication check and user info loading
+    document.addEventListener('DOMContentLoaded', function() {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        window.location.href = '/login';
+        return;
+      }
+
+      // Load user profile information
+      loadUserProfile();
+    });
+
+    // Function to load user profile information
+    function loadUserProfile() {
+      const token = localStorage.getItem('token');
+
+      fetch('/api/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      .then(res => {
+        if (!res.ok) {
+          throw new Error('Failed to get user info');
+        }
+        return res.json();
+      })
+      .then(data => {
+        if (data.status === 'success' && data.user) {
+          // Update user name display
+          const userNameDisplay = document.getElementById('userNameDisplay');
+          if (userNameDisplay) {
+            userNameDisplay.textContent = data.user.name || 'User';
+          }
+
+          // Update profile image if available
+          const userProfileImg = document.querySelector('.user-profile img');
+          if (data.user.profile_image && userProfileImg) {
+            userProfileImg.src = data.user.profile_image;
+            userProfileImg.alt = data.user.name || 'User';
+          }
+        }
+      })
+      .catch(err => {
+        console.error('Error fetching user info:', err);
+        // Keep default values if fetch fails
+      });
+    }
+
+    // Image upload functionality
+    const imageUploadArea = document.getElementById('imageUploadArea');
+    const recipeImage = document.getElementById('recipeImage');
+    const imagePreview = document.getElementById('imagePreview');
+    const removeImageBtn = document.getElementById('removeImage');
+    const uploadContent = imageUploadArea.querySelector('.upload-content');
+    const imagePreviewContainer = imageUploadArea.querySelector('.image-preview-container');
+
+    // Click to upload
+    imageUploadArea.addEventListener('click', () => {
+      if (!imagePreviewContainer.style.display || imagePreviewContainer.style.display === 'none') {
+        recipeImage.click();
+      }
+    });
+
+    // Drag and drop functionality
+    imageUploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      imageUploadArea.classList.add('dragover');
+    });
+
+    imageUploadArea.addEventListener('dragleave', () => {
+      imageUploadArea.classList.remove('dragover');
+    });
+
+    imageUploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      imageUploadArea.classList.remove('dragover');
+
+      const files = e.dataTransfer.files;
+      if (files.length > 0 && files[0].type.startsWith('image/')) {
+        recipeImage.files = files;
+        handleImagePreview(files[0]);
+      }
+    });
+
+    // File input change
+    recipeImage.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        handleImagePreview(e.target.files[0]);
+      }
+    });
+
+    // Handle image preview
+    function handleImagePreview(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        imagePreview.src = e.target.result;
+        uploadContent.style.display = 'none';
+        imagePreviewContainer.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Remove image
+    removeImageBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      recipeImage.value = '';
+      imagePreview.src = '';
+      uploadContent.style.display = 'block';
+      imagePreviewContainer.style.display = 'none';
+    });
+
+    // Dynamic list functions
+    function addIngredient() {
+      const ingredientsList = document.getElementById('ingredientsList');
+      const newItem = document.createElement('div');
+      newItem.className = 'list-item';
+      newItem.innerHTML = `
+        <input type="text" name="ingredients[]" placeholder="Enter ingredient (e.g., 2 cups rice)" required>
+        <button type="button" class="remove-item" onclick="removeListItem(this)">
+          <i class='bx bx-minus'></i>
+        </button>
+      `;
+      ingredientsList.appendChild(newItem);
+    }
+
+    function addInstruction() {
+      const instructionsList = document.getElementById('instructionsList');
+      const stepNumber = instructionsList.children.length + 1;
+      const newItem = document.createElement('div');
+      newItem.className = 'list-item';
+      newItem.innerHTML = `
+        <input type="text" name="instructions[]" placeholder="Step ${stepNumber}: Describe this step..." required>
+        <button type="button" class="remove-item" onclick="removeListItem(this)">
+          <i class='bx bx-minus'></i>
+        </button>
+      `;
+      instructionsList.appendChild(newItem);
+    }
+
+    function removeListItem(button) {
+      const listItem = button.parentElement;
+      const list = listItem.parentElement;
+
+      // Don't remove if it's the last item
+      if (list.children.length > 1) {
+        listItem.remove();
+
+        // Update instruction placeholders
+        if (list.id === 'instructionsList') {
+          updateInstructionPlaceholders();
+        }
+      }
+    }
+
+    function updateInstructionPlaceholders() {
+      const instructionInputs = document.querySelectorAll('#instructionsList input');
+      instructionInputs.forEach((input, index) => {
+        input.placeholder = `Step ${index + 1}: Describe this step...`;
+      });
+    }
+
+    // Form submission
+    document.getElementById('recipeForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      if (!validateForm()) {
+        return false;
+      }
+
+      const submitBtn = document.getElementById('submitBtn');
+      const loadingSpinner = document.getElementById('loadingSpinner');
+
+      // Show loading state
+      submitBtn.disabled = true;
+      loadingSpinner.style.display = 'inline-block';
+      submitBtn.innerHTML = '<div class="loading-spinner"><i class="bx bx-loader-alt bx-spin"></i></div> Sharing Recipe...';
+
+      try {
+        const formData = new FormData();
+
+        // Basic information
+        formData.append('name', document.getElementById('recipeName').value);
+        formData.append('description', document.getElementById('description').value);
+        formData.append('cuisine', document.getElementById('cuisine').value);
+
+        // Recipe image
+        const imageFile = document.getElementById('recipeImage').files[0];
+        if (imageFile) {
+          formData.append('image', imageFile);
+        }
+
+        // Ingredients
+        const ingredients = [];
+        document.querySelectorAll('input[name="ingredients[]"]').forEach(input => {
+          if (input.value.trim()) {
+            ingredients.push(input.value.trim());
+          }
+        });
+        formData.append('ingredients', JSON.stringify(ingredients));
+
+        // Instructions
+        const instructions = [];
+        document.querySelectorAll('input[name="instructions[]"]').forEach(input => {
+          if (input.value.trim()) {
+            instructions.push(input.value.trim());
+          }
+        });
+        formData.append('instructions', JSON.stringify(instructions));
+
+        // Recipe details
+        formData.append('prep_time', document.getElementById('prepTime').value || '30');
+        formData.append('cook_time', document.getElementById('cookTime').value || '45');
+        formData.append('servings', document.getElementById('servings').value || '4');
+        formData.append('difficulty', document.getElementById('difficulty').value || 'Medium');
+
+        // Submit to API
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/recipe/submit', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.status === 'success') {
+          // Show success message with community post info
+          let message = result.message || 'Recipe shared successfully! Thank you for contributing to the Sisa Rasa community.';
+          if (result.post_id) {
+            message += '\n\nYour recipe has also been shared as a community post! Check the Community page to see it.';
+          }
+          alert(message);
+
+          // Reset form
+          document.getElementById('recipeForm').reset();
+          removeImageBtn.click(); // Clear image preview
+
+          // Reset dynamic lists to single items
+          resetDynamicLists();
+
+        } else {
+          throw new Error(result.message || 'Failed to share recipe');
+        }
+
+      } catch (error) {
+        console.error('Error sharing recipe:', error);
+        alert('Error sharing recipe: ' + error.message);
+      } finally {
+        // Reset button state
+        submitBtn.disabled = false;
+        loadingSpinner.style.display = 'none';
+        submitBtn.innerHTML = 'Share Recipe';
+      }
+    });
+
+    function resetDynamicLists() {
+      // Reset ingredients list
+      const ingredientsList = document.getElementById('ingredientsList');
+      ingredientsList.innerHTML = `
+        <div class="list-item">
+          <input type="text" name="ingredients[]" placeholder="Enter ingredient (e.g., 2 cups rice)" required>
+          <button type="button" class="remove-item" onclick="removeListItem(this)">
+            <i class='bx bx-minus'></i>
+          </button>
+        </div>
+      `;
+
+      // Reset instructions list
+      const instructionsList = document.getElementById('instructionsList');
+      instructionsList.innerHTML = `
+        <div class="list-item">
+          <input type="text" name="instructions[]" placeholder="Step 1: Describe the first step..." required>
+          <button type="button" class="remove-item" onclick="removeListItem(this)">
+            <i class='bx bx-minus'></i>
+          </button>
+        </div>
+      `;
+    }
+
+    // Form validation
+    function validateForm() {
+      const recipeName = document.getElementById('recipeName').value.trim();
+      const ingredients = document.querySelectorAll('input[name="ingredients[]"]');
+      const instructions = document.querySelectorAll('input[name="instructions[]"]');
+
+      if (!recipeName) {
+        alert('Please enter a recipe name.');
+        return false;
+      }
+
+      let hasIngredients = false;
+      ingredients.forEach(input => {
+        if (input.value.trim()) hasIngredients = true;
+      });
+
+      if (!hasIngredients) {
+        alert('Please add at least one ingredient.');
+        return false;
+      }
+
+      let hasInstructions = false;
+      instructions.forEach(input => {
+        if (input.value.trim()) hasInstructions = true;
+      });
+
+      if (!hasInstructions) {
+        alert('Please add at least one instruction step.');
+        return false;
+      }
+
+      return true;
+    }
+  </script>
+
+</body>
+</html>
