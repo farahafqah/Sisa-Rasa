@@ -1178,7 +1178,7 @@ def get_prescriptive_analytics():
         recent_reviews = []
         recent_verifications = []
 
-        if mongo:
+        if mongo is not None:
             try:
                 recent_reviews = list(mongo.db.recipe_reviews.find({
                     'created_at': {'$gte': seven_days_ago}
@@ -1211,7 +1211,7 @@ def get_prescriptive_analytics():
         all_reviews = []
         all_verifications = []
 
-        if mongo:
+        if mongo is not None:
             try:
                 all_reviews = list(mongo.db.recipe_reviews.find())
                 all_verifications = list(mongo.db.recipe_verifications.find())
@@ -1235,7 +1235,7 @@ def get_prescriptive_analytics():
             recipe_verification_counts[recipe_id] += 1
 
         # Get recipe saves data from users
-        if mongo:
+        if mongo is not None:
             try:
                 saved_recipes = list(mongo.db.saved_recipes.find())
                 for saved_recipe in saved_recipes:
@@ -1306,7 +1306,7 @@ def get_prescriptive_analytics():
                 if recipe:
                     # Get latest review for this recipe
                     latest_review = None
-                    if mongo:
+                    if mongo is not None:
                         try:
                             latest_review_doc = mongo.db.recipe_reviews.find_one(
                                 {'recipe_id': str(recipe_id)},
@@ -1422,7 +1422,7 @@ def get_prescriptive_analytics():
         # Get most frequently searched ingredients from all users
         all_users = []
 
-        if mongo:
+        if mongo is not None:
             try:
                 all_users = list(mongo.db.users.find({}, {
                     'dashboard_data.search_stats.most_used_ingredients': 1,
@@ -1599,7 +1599,7 @@ def get_leftover_ingredients_analytics():
 
         # Get all users' search data
         all_users = []
-        if mongo:
+        if mongo is not None:
             try:
                 all_users = list(mongo.db.users.find({}, {
                     'dashboard_data.search_stats.most_used_ingredients': 1,

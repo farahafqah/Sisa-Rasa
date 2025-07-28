@@ -65,7 +65,7 @@ def get_user_by_id(user_id):
             print("No Flask app context available")
             return None
             
-        if not mongo.db:
+        if mongo.db is None:
             print("MongoDB connection not initialized")
             return None
             
@@ -81,18 +81,11 @@ def get_user_by_id(user_id):
         return None
 
 def get_user_by_email(email):
-    """Get a user by email."""
+    """Get user by email address."""
     try:
-        # Check if we're in an app context
-        if not current_app:
-            print("No Flask app context available")
-            return None
-            
-        if not mongo.db:
-            print("MongoDB connection not initialized")
-            return None
-            
-        return mongo.db.users.find_one({'email': email.lower()})
+        if mongo.db is not None:  # Fixed comparison
+            return mongo.db.users.find_one({'email': email.lower()})
+        return None
     except Exception as e:
         print(f"Error in get_user_by_email: {e}")
         return None
@@ -100,77 +93,71 @@ def get_user_by_email(email):
 def create_user(name, email, password):
     """Create a new user."""
     try:
-        # Check if we're in an app context
-        if not current_app:
-            print("No Flask app context available")
-            return None
+        if mongo.db is not None:
+            # Check if user already exists
+            if get_user_by_email(email):
+                return None, "User already exists"
             
-        if not mongo.db:
-            print("MongoDB connection not initialized")
-            return None
+            # Hash the password
+            hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
             
-        # Check if user already exists
-        if get_user_by_email(email):
-            return None
-
-        # Hash the password
-        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-
-        # Create user document
-        user = {
-            'name': name,
-            'email': email.lower(),
-            'password': hashed_password,
-            'profile_image': None,
-            'created_at': datetime.utcnow(),
-            'updated_at': datetime.utcnow(),
-            'preferences': {
-                'favorite_ingredients': [],
-                'dietary_restrictions': []
-            },
-            'saved_recipes': [],
-            'dashboard_data': {
-                'recent_searches': [],
-                'ingredient_history': [],
-                'search_stats': {
-                    'total_searches': 0,
-                    'most_used_ingredients': {},
-                    'last_search_date': None
-                }
-            },
-            'analytics': {
-                'total_recipe_views': 0,
-                'total_recipe_saves': 0,
-                'total_reviews_given': 0,
-                'cuisine_preferences': {},
-                'cooking_streak': {
-                    'current_streak': 0,
-                    'longest_streak': 0,
-                    'last_activity_date': None
+            # Create user document
+            user = {
+                'name': name,
+                'email': email.lower(),
+                'password': hashed_password,
+                'profile_image': None,
+                'created_at': datetime.utcnow(),
+                'updated_at': datetime.utcnow(),
+                'preferences': {
+                    'favorite_ingredients': [],
+                    'dietary_restrictions': []
                 },
-                'monthly_activity': {},
-                'discovery_stats': {
-                    'unique_ingredients_tried': 0,
-                    'recipe_diversity_score': 0
+                'saved_recipes': [],
+                'dashboard_data': {
+                    'recent_searches': [],
+                    'ingredient_history': [],
+                    'search_stats': {
+                        'total_searches': 0,
+                        'most_used_ingredients': {},
+                        'last_search_date': None
+                    }
+                },
+                'analytics': {
+                    'total_recipe_views': 0,
+                    'total_recipe_saves': 0,
+                    'total_reviews_given': 0,
+                    'cuisine_preferences': {},
+                    'cooking_streak': {
+                        'current_streak': 0,
+                        'longest_streak': 0,
+                        'last_activity_date': None
+                    },
+                    'monthly_activity': {},
+                    'discovery_stats': {
+                        'unique_ingredients_tried': 0,
+                        'recipe_diversity_score': 0
+                    }
                 }
             }
-        }
 
-        # Insert user into database
-        result = mongo.db.users.insert_one(user)
+            # Insert user into database
+            result = mongo.db.users.insert_one(user)
 
-        # Return the created user
-        if result.inserted_id:
-            user['_id'] = result.inserted_id
-            # Don't return the password
-            user.pop('password', None)
-            return user
+            # Return the created user
+            if result.inserted_id:
+                user['_id'] = result.inserted_id
+                # Don't return the password
+                user.pop('password', None)
+                return user, None
 
-        return None
+            return None, "Failed to insert user"
+        
+        return None, "Database not available"
         
     except Exception as e:
         print(f"Error in create_user: {e}")
-        return None
+        return None, str(e)
 
 def verify_password(user, password):
     """
@@ -844,6 +831,8 @@ def get_user_analytics(user_id):
     except Exception as e:
         print(f"Error getting user analytics: {e}")
         return None
+
+
 
 
 

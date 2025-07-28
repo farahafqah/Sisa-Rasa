@@ -35,7 +35,7 @@ def get_leftover_ingredients_analytics():
     try:
         from api.models.user import mongo
         
-        if not mongo:
+        if mongo is None:
             # Return fallback data if MongoDB is not available
             most_searched_leftovers = [
                 {'name': 'Chicken', 'count': 245, 'percentage': 22.1},
