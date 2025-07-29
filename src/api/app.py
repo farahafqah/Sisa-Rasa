@@ -62,6 +62,7 @@ except Exception as e:
 
 # Initialize the recommender
 recommender = None
+_last_data_update = None
 
 def initialize_recommender(num_recipes=10, max_recipes=10000):
     """
@@ -122,11 +123,79 @@ def initialize_recommender(num_recipes=10, max_recipes=10000):
         print(f"✅ Loaded {len(recommender.recipes)} recipes")
         print(f"✅ Found {len(recommender.knn_recommender.ingredient_names)} unique ingredients")
 
+        # Update the last data update timestamp
+        global _last_data_update
+        from datetime import datetime
+        _last_data_update = datetime.utcnow()
+
         return True
 
     except Exception as e:
         print(f"❌ Error initializing recommender: {e}")
         return False
+
+def refresh_recommender_data():
+    """
+    Refresh the recommender system's user interaction data without full reinitialization.
+    This is called when new reviews or ratings are added.
+    """
+    global recommender, _last_data_update
+
+    if recommender is None:
+        print("⚠️ Recommender not initialized, cannot refresh data")
+        return False
+
+    try:
+        print("🔄 Refreshing recommender data...")
+
+        # Clear existing caches
+        recommender.clear_cache()
+
+        # Reload user interaction data from MongoDB
+        with app.app_context():
+            try:
+                from api.models.user import mongo
+                if mongo is not None and mongo.db is not None:
+                    recommender.load_user_interaction_data(mongo.db)
+                    print("✅ User interaction data refreshed successfully!")
+
+                    # Update timestamp
+                    from datetime import datetime
+                    _last_data_update = datetime.utcnow()
+                    return True
+                else:
+                    print("⚠️ MongoDB not available for data refresh")
+                    return False
+            except Exception as e:
+                print(f"⚠️ Warning: Could not refresh user interaction data: {e}")
+                return False
+
+    except Exception as e:
+        print(f"❌ Error refreshing recommender data: {e}")
+        return False
+
+def get_recommender():
+    """
+    Get the current recommender instance, ensuring it's properly initialized.
+    """
+    global recommender
+
+    if recommender is None:
+        print("⚠️ Recommender not initialized, initializing now...")
+        initialize_recommender(num_recipes=5, max_recipes=100)
+
+    return recommender
+
+def invalidate_recommender_cache():
+    """
+    Invalidate all caches in the recommender system.
+    This should be called when recipe data changes.
+    """
+    global recommender
+
+    if recommender is not None:
+        recommender.clear_cache()
+        print("🗑️ Recommender cache invalidated")
 
 # Import and register blueprints
 from api.auth import auth_bp
@@ -161,32 +230,32 @@ def test_api():
     from flask import jsonify
     return jsonify({'status': 'success', 'message': 'API is working!'})
 
-@app.route('/api/analytics/leftover-ingredients', methods=['GET'])
-def get_leftover_ingredients_analytics():
-    """
-    Get analytics for most searched leftover-prone ingredients.
-    """
-    from flask import jsonify
-    from datetime import datetime
+# @app.route('/api/analytics/leftover-ingredients', methods=['GET'])
+# def get_leftover_ingredients_analytics():
+#     """
+#     Get analytics for most searched leftover-prone ingredients.
+#     """
+#     from flask import jsonify
+#     from datetime import datetime
 
-    # Return fallback data for now
-    most_searched_leftovers = [
-        {'name': 'Chicken', 'count': 245, 'percentage': 22.1},
-        {'name': 'Rice', 'count': 189, 'percentage': 17.0},
-        {'name': 'Tomatoes', 'count': 167, 'percentage': 15.1},
-        {'name': 'Onions', 'count': 134, 'percentage': 12.1},
-        {'name': 'Carrots', 'count': 112, 'percentage': 10.1}
-    ]
-    total_ingredient_searches = sum(item['count'] for item in most_searched_leftovers)
+#     # Return fallback data for now
+#     most_searched_leftovers = [
+#         {'name': 'Chicken', 'count': 245, 'percentage': 22.1},
+#         {'name': 'Rice', 'count': 189, 'percentage': 17.0},
+#         {'name': 'Tomatoes', 'count': 167, 'percentage': 15.1},
+#         {'name': 'Onions', 'count': 134, 'percentage': 12.1},
+#         {'name': 'Carrots', 'count': 112, 'percentage': 10.1}
+#     ]
+#     total_ingredient_searches = sum(item['count'] for item in most_searched_leftovers)
 
-    return jsonify({
-        'status': 'success',
-        'data': {
-            'most_searched_leftovers': most_searched_leftovers,
-            'total_searches': total_ingredient_searches,
-            'last_updated': datetime.utcnow().isoformat()
-        }
-    })
+#     return jsonify({
+#         'status': 'success',
+#         'data': {
+#             'most_searched_leftovers': most_searched_leftovers,
+#             'total_searches': total_ingredient_searches,
+#             'last_updated': datetime.utcnow().isoformat()
+#         }
+#     })
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
@@ -215,11 +284,12 @@ def health_check():
 
 # Register blueprints
 try:
+    app.register_blueprint(analytics_bp)  # This should come first
     app.register_blueprint(auth_bp)
-    app.register_blueprint(analytics_bp)
     app.register_blueprint(main_bp)
-except ValueError:
-    # Blueprint already registered, skip
+    print("✅ All blueprints registered successfully")
+except ValueError as e:
+    print(f"⚠️ Blueprint registration warning: {e}")
     pass
 
 if __name__ == '__main__':
@@ -228,6 +298,8 @@ if __name__ == '__main__':
 
     # Run the app
     app.run(debug=True, host='0.0.0.0', port=5000)
+
+
 
 
 

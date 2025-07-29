@@ -21,6 +21,7 @@ warnings.filterwarnings('ignore')
 
 # Import the existing KNN recommender
 from clean_recipe_recommender import EnhancedKNNRecipeRecommender
+from api.models.recipe import RecipeIDManager
 
 
 class HybridRecipeRecommender:
@@ -332,7 +333,9 @@ class HybridRecipeRecommender:
                 rating = review.get('rating')
 
                 if user_id and recipe_id and rating:
-                    self.user_ratings[user_id][recipe_id] = rating
+                    # Normalize recipe ID for consistent matching
+                    normalized_id = RecipeIDManager.normalize_recipe_id(recipe_id)
+                    self.user_ratings[user_id][normalized_id] = rating
 
             # Calculate recipe popularity and average ratings
             recipe_stats = defaultdict(lambda: {'ratings': [], 'review_count': 0})
@@ -342,8 +345,10 @@ class HybridRecipeRecommender:
                 rating = review.get('rating')
 
                 if recipe_id and rating:
-                    recipe_stats[recipe_id]['ratings'].append(rating)
-                    recipe_stats[recipe_id]['review_count'] += 1
+                    # Normalize recipe ID for consistent matching
+                    normalized_id = RecipeIDManager.normalize_recipe_id(recipe_id)
+                    recipe_stats[normalized_id]['ratings'].append(rating)
+                    recipe_stats[normalized_id]['review_count'] += 1
 
             # Update popularity scores and average ratings
             for recipe_id, stats in recipe_stats.items():

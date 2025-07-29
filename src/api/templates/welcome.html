@@ -1382,7 +1382,7 @@
                             <div class="most-searched-leftovers__content text-center">
                                 <h2 class="section__title">Most Searched Leftovers</h2>
                                 <p class="most-searched-leftovers__subtitle">
-                                    Discover what ingredients our community commonly searches for - these are the leftovers that need your attention!
+                                    Discover what ingredients our community commonly searches for. These are the leftovers that need your attention!
                                 </p>
 
                                 <div class="row g-4">
@@ -1653,38 +1653,19 @@
                             },
 
                             loadFallbackData() {
-                                // Fallback data if API fails
+                                // Show message when API fails instead of fake data
                                 this.analyticsData = {
                                     popular_recipes: [
                                         {
-                                            id: 'popular-1',
-                                            name: 'Classic Chicken Curry',
-                                            ingredients: ['chicken', 'curry powder', 'coconut milk'],
-                                            description: 'Highly rated recipe (4.8/5 stars)',
-                                            avg_rating: 4.8,
-                                            review_count: 156,
-                                            prep_time: 45,
-                                            difficulty: 'Medium'
-                                        },
-                                        {
-                                            id: 'popular-2',
-                                            name: 'Homemade Fried Rice',
-                                            ingredients: ['rice', 'egg', 'soy sauce', 'vegetables'],
-                                            description: 'Community favorite (4.6/5 stars)',
-                                            avg_rating: 4.6,
-                                            review_count: 89,
-                                            prep_time: 20,
-                                            difficulty: 'Easy'
-                                        },
-                                        {
-                                            id: 'popular-3',
-                                            name: 'Simple Pasta Marinara',
-                                            ingredients: ['pasta', 'tomato sauce', 'garlic', 'basil'],
-                                            description: 'Quick and delicious (4.4/5 stars)',
-                                            avg_rating: 4.4,
-                                            review_count: 67,
-                                            prep_time: 25,
-                                            difficulty: 'Easy'
+                                            id: 'no-data-1',
+                                            name: 'No Popular Recipes Available',
+                                            ingredients: [],
+                                            description: 'Unable to load popular recipes data. Please check your connection and try again.',
+                                            avg_rating: 0,
+                                            review_count: 0,
+                                            prep_time: 0,
+                                            difficulty: 'N/A',
+                                            is_error_message: true
                                         }
                                     ],
                                     leftover_solutions: {
@@ -1789,12 +1770,12 @@
 
                             async loadLeftoverAnalytics() {
                                 try {
-                                    console.log('Loading leftover analytics...');
+                                    console.log('🔄 Loading leftover analytics...');
 
                                     const controller = new AbortController();
                                     const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-                                    const response = await fetch('http://127.0.0.1:5000/api/analytics/leftover-ingredients', {
+                                    const response = await fetch('/api/analytics/leftover-ingredients', {
                                         signal: controller.signal
                                     });
                                     clearTimeout(timeoutId);
@@ -1804,15 +1785,19 @@
                                     const data = await response.json();
                                     if (data.status === 'success') {
                                         this.leftoverAnalytics = data.data;
+                                        
+                                        // Log data source for debugging
+                                        console.log(`📊 Leftover analytics loaded from: ${data.data.data_source || 'unknown'}`);
+                                        console.log('📊 Analytics data:', data.data);
+                                        
                                         this.renderLeftoverChart();
                                         this.renderLeftoverInsights();
                                     } else {
+                                        console.warn('⚠️ API returned error, using fallback');
                                         this.loadFallbackLeftoverData();
                                     }
                                 } catch (error) {
-                                    if (error.name === 'AbortError') {
-                                        console.warn('Leftover analytics request timed out');
-                                    }
+                                    console.error('❌ Error loading leftover analytics:', error);
                                     this.loadFallbackLeftoverData();
                                 }
                             },

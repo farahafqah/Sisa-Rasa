@@ -1775,53 +1775,21 @@
         },
 
         loadFallbackAnalytics() {
-          // Enhanced fallback data with realistic review integration
+          // Show error message instead of fake data when API fails
           this.analyticsData = {
             popular_recipes: [
               {
-                id: 'popular-1',
-                name: 'Classic Chicken Curry',
-                ingredients: ['chicken', 'curry powder', 'coconut milk', 'onion', 'garlic', 'ginger'],
-                description: 'Highly rated recipe perfect for leftover chicken',
-                avg_rating: 4.8,
-                review_count: 156,
-                prep_time: 45,
-                difficulty: 'Medium',
-                saves: 234,
-                latest_review: {
-                  text: 'Amazing flavor! Used leftover roasted chicken and it was perfect.',
-                  user_name: 'Sarah K.'
-                }
-              },
-              {
-                id: 'popular-2',
-                name: 'Homemade Fried Rice',
-                ingredients: ['rice', 'egg', 'soy sauce', 'vegetables', 'garlic', 'green onion'],
-                description: 'Community favorite for using leftover rice',
-                avg_rating: 4.6,
-                review_count: 89,
-                prep_time: 20,
-                difficulty: 'Easy',
-                saves: 189,
-                latest_review: {
-                  text: 'Great way to use day-old rice. Kids loved it too!',
-                  user_name: 'Mike R.'
-                }
-              },
-              {
-                id: 'popular-3',
-                name: 'Vegetable Stir Fry',
-                ingredients: ['mixed vegetables', 'soy sauce', 'garlic', 'ginger', 'sesame oil'],
-                description: 'Perfect for using up leftover vegetables',
-                avg_rating: 4.4,
-                review_count: 67,
-                prep_time: 15,
-                difficulty: 'Easy',
-                saves: 156,
-                latest_review: {
-                  text: 'Cleaned out my fridge and made something delicious!',
-                  user_name: 'Lisa M.'
-                }
+                id: 'no-data-1',
+                name: 'Unable to Load Popular Recipes',
+                ingredients: [],
+                description: 'Popular recipes data is currently unavailable. Please refresh the page or try again later.',
+                avg_rating: 0,
+                review_count: 0,
+                prep_time: 0,
+                difficulty: 'N/A',
+                saves: 0,
+                latest_review: null,
+                is_error_message: true
               }
             ],
             user_specific: {
@@ -1968,16 +1936,10 @@
           })
           .then(res => {
             if (!res.ok) {
-              // If API fails, use fallback data
+              // If API fails, show error message instead of fake data
               return Promise.resolve({
-                status: 'ok',
-                recipes: [
-                  { id: 'fallback-fried-rice', name: 'Fried Rice', ingredients: ['Rice', 'Egg', 'Soy Sauce'], steps: ['Stir fry everything together.'] },
-                  { id: 'fallback-chicken-salad', name: 'Chicken Salad', ingredients: ['Chicken', 'Lettuce', 'Tomato'], steps: ['Mix all ingredients.'] },
-                  { id: 'fallback-omelette', name: 'Omelette', ingredients: ['Eggs', 'Onion', 'Cheese'], steps: ['Beat eggs and fry with fillings.'] },
-                  { id: 'fallback-pancakes', name: 'Pancakes', ingredients: ['Flour', 'Egg', 'Milk'], steps: ['Mix and fry.'] },
-                  { id: 'fallback-nasi-lemak', name: 'Nasi Lemak', ingredients: ['Rice', 'Coconut Milk', 'Anchovies'], steps: ['Cook together.'] }
-                ]
+                status: 'error',
+                recipes: []
               });
             }
             return res.json();
@@ -2003,62 +1965,15 @@
                 return formattedRecipe;
               });
             } else {
-              // Fallback data if no recommendations
-              this.recommendedRecipes = [
-                {
-                  id: 'fallback-fried-rice',
-                  name: 'Fried Rice',
-                  ingredients: 'Rice, Egg, Soy Sauce',
-                  instructions: 'Stir fry everything together.',
-                  saved: false,
-                  rating_data: null,
-                  verification_data: null
-                },
-                {
-                  id: 'fallback-chicken-salad',
-                  name: 'Chicken Salad',
-                  ingredients: 'Chicken, Lettuce, Tomato',
-                  instructions: 'Mix all ingredients.',
-                  saved: false,
-                  rating_data: null,
-                  verification_data: null
-                },
-                {
-                  id: 'fallback-omelette',
-                  name: 'Omelette',
-                  ingredients: 'Eggs, Onion, Cheese',
-                  instructions: 'Beat eggs and fry with fillings.',
-                  saved: false,
-                  rating_data: null,
-                  verification_data: null
-                }
-              ];
+              // Show empty state if no recommendations
+              this.recommendedRecipes = [];
             }
           })
           .catch(err => {
             console.error('Error fetching recommendations:', err);
             this.loadingRecommendations = false;
-            // Fallback data on error
-            this.recommendedRecipes = [
-              {
-                id: 'fallback-fried-rice',
-                name: 'Fried Rice',
-                ingredients: 'Rice, Egg, Soy Sauce',
-                instructions: 'Stir fry everything together.',
-                saved: false,
-                rating_data: null,
-                verification_data: null
-              },
-              {
-                id: 'fallback-chicken-salad',
-                name: 'Chicken Salad',
-                ingredients: 'Chicken, Lettuce, Tomato',
-                instructions: 'Mix all ingredients.',
-                saved: false,
-                rating_data: null,
-                verification_data: null
-              }
-            ];
+            // Show empty state on error instead of fake data
+            this.recommendedRecipes = [];
           });
         },
         fetchRecentSearches() {
@@ -3318,3 +3233,6 @@
   <script src="https://unpkg.com/boxicons@2.1.4/dist/boxicons.js"></script>
 </body>
 </html>
+
+
+

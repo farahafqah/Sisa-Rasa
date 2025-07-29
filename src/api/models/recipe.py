@@ -8,33 +8,190 @@ from bson.objectid import ObjectId
 from datetime import datetime
 from flask import current_app
 from api.models.user import mongo
+import uuid
+
+class RecipeIDManager:
+    """
+    Unified recipe ID management system.
+
+    This class handles the conversion and standardization of recipe IDs
+    across different data sources (JSON files, MongoDB, user submissions).
+    """
+
+    @staticmethod
+    def normalize_recipe_id(recipe_id):
+        """
+        Normalize a recipe ID to a consistent string format.
+
+        Args:
+            recipe_id: Recipe ID in any format (int, str, ObjectId)
+
+        Returns:
+            str: Normalized recipe ID
+        """
+        if recipe_id is None:
+            return None
+
+        # Handle ObjectId
+        if isinstance(recipe_id, ObjectId):
+            return str(recipe_id)
+
+        # Handle integer IDs from JSON files
+        if isinstance(recipe_id, int):
+            return f"recipe_{recipe_id}"
+
+        # Handle string IDs
+        if isinstance(recipe_id, str):
+            # If it's already a valid ObjectId string, return as-is
+            if ObjectId.is_valid(recipe_id):
+                return recipe_id
+            # If it's a numeric string, convert to recipe_X format
+            if recipe_id.isdigit():
+                return f"recipe_{recipe_id}"
+            # Otherwise return as-is
+            return recipe_id
+
+        return str(recipe_id)
+
+    @staticmethod
+    def extract_original_id(recipe_id):
+        """
+        Extract the original ID from a normalized recipe ID.
+
+        Args:
+            recipe_id (str): Normalized recipe ID
+
+        Returns:
+            str or int: Original ID format
+        """
+        if not recipe_id:
+            return None
+
+        # If it's an ObjectId, return as string
+        if ObjectId.is_valid(recipe_id):
+            return recipe_id
+
+        # If it's in recipe_X format, extract the number
+        if recipe_id.startswith("recipe_"):
+            try:
+                return int(recipe_id.replace("recipe_", ""))
+            except ValueError:
+                return recipe_id
+
+        return recipe_id
+
+    @staticmethod
+    def find_recipe_in_recommender(recipe_id, recommender_recipes):
+        """
+        Find a recipe in the recommender system by ID.
+
+        Args:
+            recipe_id: Recipe ID to find
+            recommender_recipes: List of recipes from recommender
+
+        Returns:
+            dict or None: Recipe data if found
+        """
+        if not recipe_id or not recommender_recipes:
+            return None
+
+        normalized_id = RecipeIDManager.normalize_recipe_id(recipe_id)
+        original_id = RecipeIDManager.extract_original_id(recipe_id)
+
+        # Try multiple matching strategies
+        for recipe in recommender_recipes:
+            recipe_norm_id = RecipeIDManager.normalize_recipe_id(recipe.get('id'))
+
+            # Direct match with normalized ID
+            if recipe_norm_id == normalized_id:
+                return recipe
+
+            # Match with original ID
+            if recipe.get('id') == original_id:
+                return recipe
+
+            # For integer IDs, try both formats
+            if isinstance(original_id, int) and recipe.get('id') == original_id:
+                return recipe
+
+        return None
+
+    @staticmethod
+    def generate_user_recipe_id(user_id):
+        """
+        Generate a unique ID for user-submitted recipes.
+
+        Args:
+            user_id (str): User ID
+
+        Returns:
+            str: Unique recipe ID
+        """
+        return f"user_{user_id}_{uuid.uuid4().hex[:8]}"
 
 def get_recipe_by_id(recipe_id):
     """
-    Get a recipe by ID from MongoDB.
-    
+    Get a recipe by ID from MongoDB using unified ID system.
+
     Args:
-        recipe_id (str): Recipe ID
-        
+        recipe_id (str): Recipe ID in any format
+
     Returns:
         dict: Recipe document or None if not found
     """
+    if not recipe_id:
+        return None
+
     try:
-        return mongo.db.recipes.find_one({'_id': ObjectId(recipe_id)})
-    except:
+        normalized_id = RecipeIDManager.normalize_recipe_id(recipe_id)
+        original_id = RecipeIDManager.extract_original_id(recipe_id)
+
+        # Try multiple lookup strategies
+        query_conditions = []
+
+        # If it's a valid ObjectId, search by _id
+        if ObjectId.is_valid(normalized_id):
+            query_conditions.append({'_id': ObjectId(normalized_id)})
+
+        # Search by original_id
+        query_conditions.append({'original_id': original_id})
+        query_conditions.append({'original_id': normalized_id})
+
+        # For integer IDs, also try the raw number
+        if isinstance(original_id, int):
+            query_conditions.append({'original_id': original_id})
+
+        # Try each query condition
+        for condition in query_conditions:
+            result = mongo.db.recipes.find_one(condition)
+            if result:
+                return result
+
+        return None
+
+    except Exception as e:
+        print(f"Error in get_recipe_by_id: {e}")
         return None
 
 def get_recipe_by_original_id(original_id):
     """
     Get a recipe by its original ID from the dataset.
-    
+
     Args:
         original_id (str): Original recipe ID from the dataset
-        
+
     Returns:
         dict: Recipe document or None if not found
     """
-    return mongo.db.recipes.find_one({'original_id': original_id})
+    if not original_id:
+        return None
+
+    try:
+        # Use the unified system for consistency
+        return get_recipe_by_id(original_id)
+    except Exception as e:
+        print(f"Error in get_recipe_by_original_id: {e}")
+        return None
 
 def save_recipe_to_db(recipe_data):
     """

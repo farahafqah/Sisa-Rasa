@@ -6,6 +6,14 @@ This module defines the API routes for the recipe recommendation system.
 
 from flask import jsonify, request, render_template, redirect, url_for, current_app, Blueprint
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
+from datetime import datetime, timedelta
+from collections import defaultdict, Counter
+import json
+import os
+import sys
+import traceback
+import random
+from bson.objectid import ObjectId
 
 # Create a blueprint for the main routes
 main_bp = Blueprint('main', __name__)
@@ -16,7 +24,8 @@ from api.models.recipe import (
     save_recipe_to_db,
     get_saved_recipes_for_user,
     save_recipe_for_user,
-    remove_saved_recipe_for_user
+    remove_saved_recipe_for_user,
+    RecipeIDManager
 )
 from api.models.user import (
     save_search_history,
@@ -213,6 +222,137 @@ def health_check():
         'recipes_loaded': len(recommender.recipes),
         'ingredients_loaded': len(recommender.ingredient_names)
     })
+
+@main_bp.route('/api/debug/data-validation', methods=['GET'])
+def debug_data_validation():
+    """
+    Debug endpoint to validate data integrity and consistency.
+
+    This endpoint performs comprehensive validation of:
+    - Recipe ID consistency across systems
+    - Review data integrity
+    - Verification data integrity
+    - Recommender system consistency
+
+    Returns detailed validation report with errors, warnings, and recommendations.
+    """
+    try:
+        from api.models.user import mongo
+        from api.utils.data_validation import create_debug_report
+
+        # Get recommender instance
+        recommender = getattr(current_app, 'recommender', None)
+
+        # Create validation report
+        report = create_debug_report(
+            mongo_db=mongo.db if mongo else None,
+            recommender=recommender
+        )
+
+        # Add summary statistics
+        report['summary'] = {
+            'total_errors': len(report.get('errors', [])),
+            'total_warnings': len(report.get('warnings', [])),
+            'validation_status': 'PASS' if len(report.get('errors', [])) == 0 else 'FAIL',
+            'data_quality_score': max(0, 100 - (len(report.get('errors', [])) * 10) - (len(report.get('warnings', [])) * 2))
+        }
+
+        return jsonify({
+            'status': 'success',
+            'message': 'Data validation completed',
+            'report': report
+        })
+
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Error during data validation: {str(e)}'
+        }), 500
+
+@main_bp.route('/api/debug/popular-recipes-analysis', methods=['GET'])
+def debug_popular_recipes_analysis():
+    """
+    Debug endpoint to analyze the popular recipes calculation process.
+
+    This endpoint provides detailed information about:
+    - How popularity scores are calculated
+    - Which recipes have the highest scores
+    - Data sources and their contributions
+    - Potential issues with the ranking algorithm
+    """
+    try:
+        from api.models.user import mongo
+        from api.models.recipe import RecipeIDManager
+        from collections import defaultdict
+
+        # Get recommender instance
+        recommender = getattr(current_app, 'recommender', None)
+
+        if not recommender:
+            return jsonify({
+                'status': 'error',
+                'message': 'Recommender system not loaded'
+            }), 503
+
+        analysis = {
+            'timestamp': datetime.utcnow().isoformat(),
+            'data_sources': {},
+            'top_recipes': [],
+            'algorithm_details': {
+                'rating_weight': 0.4,
+                'review_count_weight': 0.25,
+                'verification_weight': 0.2,
+                'saves_weight': 0.15,
+                'max_review_count_considered': 20,
+                'max_verification_count_considered': 10,
+                'max_saves_count_considered': 15
+            },
+            'issues_found': []
+        }
+
+        # Analyze data sources
+        if mongo and mongo.db:
+            try:
+                # Reviews analysis
+                reviews_count = mongo.db.recipe_reviews.count_documents({})
+                unique_recipes_with_reviews = len(list(mongo.db.recipe_reviews.distinct('recipe_id')))
+
+                analysis['data_sources']['reviews'] = {
+                    'total_reviews': reviews_count,
+                    'unique_recipes_with_reviews': unique_recipes_with_reviews,
+                    'avg_reviews_per_recipe': round(reviews_count / max(unique_recipes_with_reviews, 1), 2)
+                }
+
+                # Verifications analysis
+                verifications_count = mongo.db.recipe_verifications.count_documents({})
+                unique_recipes_with_verifications = len(list(mongo.db.recipe_verifications.distinct('recipe_id')))
+
+                analysis['data_sources']['verifications'] = {
+                    'total_verifications': verifications_count,
+                    'unique_recipes_with_verifications': unique_recipes_with_verifications,
+                    'avg_verifications_per_recipe': round(verifications_count / max(unique_recipes_with_verifications, 1), 2)
+                }
+
+                # Saved recipes analysis
+                saves_count = mongo.db.saved_recipes.count_documents({})
+                analysis['data_sources']['saves'] = {
+                    'total_saves': saves_count
+                }
+
+            except Exception as e:
+                analysis['issues_found'].append(f"Error analyzing data sources: {str(e)}")
+
+        return jsonify({
+            'status': 'success',
+            'message': 'Popular recipes analysis completed',
+            'analysis': analysis
+        })
+
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Error during popular recipes analysis: {str(e)}'
+        }), 500
 
 @main_bp.route('/api/ingredients', methods=['GET'])
 def get_ingredients():
@@ -840,6 +980,29 @@ def submit_recipe_api():
                 'message': 'Failed to save recipe to database'
             }), 500
 
+        # Refresh recommender data after successful recipe submission
+        try:
+            # Import cache invalidation functions
+            from api.app import refresh_recommender_data, invalidate_recommender_cache
+
+            # Refresh the recommender data to include the new recipe
+            refresh_success = refresh_recommender_data()
+            if refresh_success:
+                print(f"DEBUG: Recommender data refreshed after new recipe submission: user={user_id}, recipe_id={saved_recipe_id}")
+            else:
+                print(f"WARNING: Failed to refresh recommender data after new recipe submission")
+                # Fallback: just invalidate cache
+                invalidate_recommender_cache()
+
+        except Exception as e:
+            print(f"WARNING: Could not refresh recommender data after recipe submission: {e}")
+            # Fallback: try to invalidate cache only
+            try:
+                from api.app import invalidate_recommender_cache
+                invalidate_recommender_cache()
+            except Exception as cache_error:
+                print(f"WARNING: Could not invalidate cache either: {cache_error}")
+
         # Note: Shared recipes go to community feed, not to personal saved recipes
 
         # Create a community post for the shared recipe
@@ -1128,6 +1291,33 @@ def get_personal_analytics():
             'message': f'Error getting personal analytics: {str(e)}'
         }), 500
 
+@main_bp.route('/api/analytics/prescriptive-test', methods=['GET'])
+def get_prescriptive_analytics_test():
+    """Test version of prescriptive analytics to debug the issue."""
+    try:
+        from flask import current_app
+        recommender = getattr(current_app, 'recommender', None)
+
+        if recommender:
+            return jsonify({
+                'status': 'success',
+                'message': f'Recommender found with {len(recommender.recipes)} recipes',
+                'debug': 'Test route working'
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': 'Recommender not found',
+                'debug': 'Test route working but no recommender'
+            })
+    except Exception as e:
+        import traceback
+        return jsonify({
+            'status': 'error',
+            'message': str(e),
+            'traceback': traceback.format_exc()
+        })
+
 @main_bp.route('/api/analytics/prescriptive', methods=['GET'])
 def get_prescriptive_analytics():
     """
@@ -1162,6 +1352,12 @@ def get_prescriptive_analytics():
         except ImportError as e:
             print(f"Warning: Could not import ObjectId: {e}")
             ObjectId = None
+
+        # Get recommender from current_app (moved to top to avoid scope issues)
+        recommender = getattr(current_app, 'recommender', None)
+        print(f"🔍 DEBUG: Recommender status: {recommender is not None}")
+        if recommender:
+            print(f"🔍 DEBUG: Recommender has {len(recommender.recipes) if hasattr(recommender, 'recipes') and recommender.recipes else 0} recipes")
 
         # Get user ID if authenticated (optional)
         user_id = None
@@ -1198,53 +1394,135 @@ def get_prescriptive_analytics():
         # Score based on recent reviews
         for review in recent_reviews:
             recipe_id = review.get('recipe_id')
-            rating = review.get('rating', 3)
-            # Higher weight for recent reviews, bonus for high ratings
-            trending_scores[recipe_id] += (rating / 5.0) * 2.0
+            if recipe_id:
+                normalized_id = RecipeIDManager.normalize_recipe_id(recipe_id)
+                rating = review.get('rating', 3)
+                # Higher weight for recent reviews, bonus for high ratings
+                trending_scores[normalized_id] += (rating / 5.0) * 2.0
 
         # Score based on recent verifications
         for verification in recent_verifications:
             recipe_id = verification.get('recipe_id')
-            trending_scores[recipe_id] += 1.5
+            if recipe_id:
+                normalized_id = RecipeIDManager.normalize_recipe_id(recipe_id)
+                trending_scores[normalized_id] += 1.5
 
-        # Get popular recipes (all-time high ratings and engagement)
-        all_reviews = []
-        all_verifications = []
-
-        if mongo is not None:
-            try:
-                all_reviews = list(mongo.db.recipe_reviews.find())
-                all_verifications = list(mongo.db.recipe_verifications.find())
-            except Exception as e:
-                print(f"Warning: Could not fetch all reviews/verifications: {e}")
-                all_reviews = []
-                all_verifications = []
-
-        # Calculate popularity scores with enhanced metrics
+        # Get popular recipes using optimized aggregation queries
         recipe_ratings = defaultdict(list)
         recipe_verification_counts = defaultdict(int)
         recipe_saves = defaultdict(int)
 
-        for review in all_reviews:
-            recipe_id = review.get('recipe_id')
-            rating = review.get('rating', 3)
-            recipe_ratings[recipe_id].append(rating)
-
-        for verification in all_verifications:
-            recipe_id = verification.get('recipe_id')
-            recipe_verification_counts[recipe_id] += 1
-
-        # Get recipe saves data from users
         if mongo is not None:
             try:
-                saved_recipes = list(mongo.db.saved_recipes.find())
-                for saved_recipe in saved_recipes:
-                    recipe_name = saved_recipe.get('name', '')
-                    # Try to match saved recipe name to recipe ID
-                    if recommender and recommender.recipes:
-                        matching_recipe = next((r for r in recommender.recipes if r['name'].lower() == recipe_name.lower()), None)
-                        if matching_recipe:
-                            recipe_saves[str(matching_recipe['id'])] += 1
+                # Optimized aggregation for recipe ratings
+                rating_pipeline = [
+                    {
+                        '$group': {
+                            '_id': '$recipe_id',
+                            'ratings': {'$push': '$rating'},
+                            'review_count': {'$sum': 1},
+                            'avg_rating': {'$avg': '$rating'}
+                        }
+                    }
+                ]
+
+                rating_results = list(mongo.db.recipe_reviews.aggregate(rating_pipeline))
+                for result in rating_results:
+                    recipe_id = result['_id']
+                    if recipe_id:
+                        normalized_id = RecipeIDManager.normalize_recipe_id(recipe_id)
+                        recipe_ratings[normalized_id] = result['ratings']
+
+                # Optimized aggregation for verifications
+                verification_pipeline = [
+                    {
+                        '$group': {
+                            '_id': '$recipe_id',
+                            'verification_count': {'$sum': 1}
+                        }
+                    }
+                ]
+
+                verification_results = list(mongo.db.recipe_verifications.aggregate(verification_pipeline))
+                for result in verification_results:
+                    recipe_id = result['_id']
+                    if recipe_id:
+                        normalized_id = RecipeIDManager.normalize_recipe_id(recipe_id)
+                        recipe_verification_counts[normalized_id] = result['verification_count']
+
+            except Exception as e:
+                print(f"Warning: Could not fetch aggregated reviews/verifications: {e}")
+                # Fallback to the old method if aggregation fails
+                try:
+                    all_reviews = list(mongo.db.recipe_reviews.find())
+                    all_verifications = list(mongo.db.recipe_verifications.find())
+
+                    # Process reviews manually as fallback
+                    for review in all_reviews:
+                        recipe_id = review.get('recipe_id')
+                        if recipe_id:
+                            normalized_id = RecipeIDManager.normalize_recipe_id(recipe_id)
+                            rating = review.get('rating', 3)
+                            recipe_ratings[normalized_id].append(rating)
+
+                    # Process verifications manually as fallback
+                    for verification in all_verifications:
+                        recipe_id = verification.get('recipe_id')
+                        if recipe_id:
+                            normalized_id = RecipeIDManager.normalize_recipe_id(recipe_id)
+                            recipe_verification_counts[normalized_id] += 1
+
+                except Exception as fallback_error:
+                    print(f"Warning: Fallback query also failed: {fallback_error}")
+                    recipe_ratings = defaultdict(list)
+                    recipe_verification_counts = defaultdict(int)
+
+        # Add detailed logging to see what's happening
+        print(f"🔍 DEBUG: Popular recipes calculation at {datetime.utcnow()}")
+        print(f"🔍 DEBUG: Found {len(recipe_ratings)} recipes with ratings")
+        print(f"🔍 DEBUG: Found {len(recipe_verification_counts)} recipes with verifications")
+
+        # Get recipe saves data using optimized aggregation
+        if mongo is not None:
+            try:
+                # Optimized aggregation for saved recipes
+                saves_pipeline = [
+                    {
+                        '$group': {
+                            '_id': '$recipe_id',
+                            'saves_count': {'$sum': 1}
+                        }
+                    }
+                ]
+
+                saves_results = list(mongo.db.saved_recipes.aggregate(saves_pipeline))
+                for result in saves_results:
+                    recipe_id = result['_id']
+                    if recipe_id:
+                        normalized_id = RecipeIDManager.normalize_recipe_id(recipe_id)
+                        recipe_saves[normalized_id] = result['saves_count']
+
+                # If aggregation by recipe_id doesn't work, try by name (fallback)
+                if not saves_results:
+                    name_saves_pipeline = [
+                        {
+                            '$group': {
+                                '_id': '$name',
+                                'saves_count': {'$sum': 1}
+                            }
+                        }
+                    ]
+
+                    name_saves_results = list(mongo.db.saved_recipes.aggregate(name_saves_pipeline))
+                    for result in name_saves_results:
+                        recipe_name = result['_id']
+                        if recipe_name and recommender and recommender.recipes:
+                            # Try to match saved recipe name to recipe ID
+                            matching_recipe = next((r for r in recommender.recipes if r['name'].lower() == recipe_name.lower()), None)
+                            if matching_recipe:
+                                normalized_id = RecipeIDManager.normalize_recipe_id(matching_recipe['id'])
+                                recipe_saves[normalized_id] = result['saves_count']
+
             except Exception as e:
                 print(f"Warning: Could not fetch saved recipes data: {e}")
 
@@ -1278,12 +1556,35 @@ def get_prescriptive_analytics():
         print(f"🔍 DEBUG: Found {len(popular_scores)} recipes with real ratings/reviews")
         print(f"🔍 DEBUG: Top popular recipe scores: {[(rid, data['score']) for rid, data in top_popular_ids[:3]]}")
 
+        # Validate that recipes exist in recommender before including them
+        validated_popular_ids = []
+        orphaned_recipes = []
+
+        for recipe_id, data in top_popular_ids:
+            recipe = RecipeIDManager.find_recipe_in_recommender(recipe_id, recommender.recipes) if recommender else None
+            if recipe:
+                validated_popular_ids.append((recipe_id, data))
+            else:
+                orphaned_recipes.append(recipe_id)
+                print(f"⚠️ WARNING: Recipe {recipe_id} has ratings but not found in recommender system")
+
+        # Log validation results
+        print(f"🔍 DEBUG: Validated {len(validated_popular_ids)} recipes, found {len(orphaned_recipes)} orphaned recipes")
+
+        # Log the top 5 validated recipes with their detailed scores
+        for i, (recipe_id, data) in enumerate(validated_popular_ids[:5]):
+            recipe = RecipeIDManager.find_recipe_in_recommender(recipe_id, recommender.recipes)
+            recipe_name = recipe['name'] if recipe else 'Unknown'
+            print(f"🔍 DEBUG: #{i+1} Popular: {recipe_name} (ID: {recipe_id}) - Score: {data['score']:.3f}, Reviews: {data['review_count']}, Avg Rating: {data['avg_rating']:.1f}, Verifications: {data['verification_count']}, Saves: {data['saves']}")
+
+        # Use validated list for final results
+        top_popular_ids = validated_popular_ids
+
         # Get recipe details from recommender
         trending_recipes = []
         popular_recipes = []
 
-        # Get recommender from current_app
-        recommender = getattr(current_app, 'recommender', None)
+        # Recommender already initialized at the top of the function
         if recommender and recommender.recipes:
             # Get trending recipes
             for recipe_id, score in top_trending_ids:
@@ -1302,7 +1603,7 @@ def get_prescriptive_analytics():
 
             # Get popular recipes with enhanced data
             for recipe_id, data in top_popular_ids:
-                recipe = next((r for r in recommender.recipes if str(r['id']) == str(recipe_id)), None)
+                recipe = RecipeIDManager.find_recipe_in_recommender(recipe_id, recommender.recipes)
                 if recipe:
                     # Get latest review for this recipe
                     latest_review = None
@@ -1323,6 +1624,7 @@ def get_prescriptive_analytics():
 
                     recipe_data = {
                         'id': recipe['id'],
+                        'normalized_id': RecipeIDManager.normalize_recipe_id(recipe['id']),
                         'name': recipe['name'],
                         'ingredients': recipe['ingredients'][:5],  # First 5 ingredients
                         'description': f"Highly rated recipe ({data['avg_rating']:.1f}/5 stars) with {data['review_count']} reviews",
@@ -1339,78 +1641,45 @@ def get_prescriptive_analytics():
                     }
                     popular_recipes.append(recipe_data)
 
-        # Only use fallback data if we have insufficient real data
+        # Handle insufficient real data properly
         print(f"🔍 DEBUG: Real popular recipes found: {len(popular_recipes)}")
 
         if len(popular_recipes) < 3:
-            fallback_popular = [
-                {
-                    'id': 'popular-1',
-                    'name': 'Classic Chicken Curry',
-                    'ingredients': ['chicken', 'curry powder', 'coconut milk', 'onion', 'garlic'],
-                    'description': 'Highly rated recipe (4.8/5 stars) with 156 reviews',
-                    'avg_rating': 4.8,
-                    'rating': 4.8,
-                    'review_count': 156,
-                    'total_reviews': 156,
-                    'verification_count': 23,
-                    'prep_time': 45,
-                    'difficulty': 'Medium',
-                    'saves': 234,
-                    'total_saves': 234,
-                    'latest_review': {
-                        'text': 'Amazing flavor! Used leftover chicken and it was perfect.',
-                        'user_name': 'Sarah K.',
-                        'rating': 5
-                    }
-                },
-                {
-                    'id': 'popular-2',
-                    'name': 'Perfect Pancakes',
-                    'ingredients': ['flour', 'egg', 'milk', 'sugar', 'baking powder'],
-                    'description': 'Community favorite (4.9/5 stars) with 203 reviews',
-                    'avg_rating': 4.9,
-                    'rating': 4.9,
-                    'review_count': 203,
-                    'total_reviews': 203,
-                    'verification_count': 45,
-                    'prep_time': 15,
-                    'difficulty': 'Easy',
-                    'saves': 189,
-                    'total_saves': 189,
-                    'latest_review': {
-                        'text': 'Fluffy and delicious! Kids loved them.',
-                        'user_name': 'Mike R.',
-                        'rating': 5
-                    }
-                },
-                {
-                    'id': 'popular-3',
-                    'name': 'Homemade Fried Rice',
-                    'ingredients': ['rice', 'egg', 'soy sauce', 'vegetables', 'garlic'],
-                    'description': 'Perfect for leftovers (4.6/5 stars) with 142 reviews',
-                    'avg_rating': 4.6,
-                    'rating': 4.6,
-                    'review_count': 142,
-                    'total_reviews': 142,
-                    'verification_count': 31,
-                    'prep_time': 20,
-                    'difficulty': 'Easy',
-                    'saves': 167,
-                    'total_saves': 167,
-                    'latest_review': {
-                        'text': 'Great way to use leftover rice. So tasty!',
-                        'user_name': 'Lisa T.',
-                        'rating': 4
-                    }
-                }
-            ]
+            print(f"🔍 DEBUG: Insufficient popular recipes data. Found {len(popular_recipes)} recipes with real reviews.")
 
-            # Only add fallback recipes if we need more to reach 3 recipes
-            needed_recipes = 3 - len(popular_recipes)
-            if needed_recipes > 0:
-                popular_recipes.extend(fallback_popular[:needed_recipes])
-                print(f"🔍 DEBUG: Added {needed_recipes} fallback recipes to supplement real data")
+            # Instead of fake data, try to get recipes from the recommender system
+            # that don't have reviews yet but are available
+            if recommender and recommender.recipes:
+                # Get recipes that aren't already in popular_recipes
+                existing_ids = {recipe.get('normalized_id', recipe.get('id')) for recipe in popular_recipes}
+
+                additional_recipes = []
+                for recipe in recommender.recipes:
+                    recipe_norm_id = RecipeIDManager.normalize_recipe_id(recipe['id'])
+                    if recipe_norm_id not in existing_ids and len(additional_recipes) < (3 - len(popular_recipes)):
+                        recipe_data = {
+                            'id': recipe['id'],
+                            'normalized_id': recipe_norm_id,
+                            'name': recipe['name'],
+                            'ingredients': recipe['ingredients'][:5],
+                            'description': f"New recipe - be the first to review!",
+                            'avg_rating': 0.0,
+                            'rating': 0.0,
+                            'review_count': 0,
+                            'total_reviews': 0,
+                            'verification_count': 0,
+                            'prep_time': recipe.get('prep_time', 30),
+                            'difficulty': recipe.get('difficulty', 'Medium'),
+                            'saves': 0,
+                            'total_saves': 0,
+                            'latest_review': None,
+                            'is_placeholder': True  # Mark as placeholder data
+                        }
+                        additional_recipes.append(recipe_data)
+                        existing_ids.add(recipe_norm_id)
+
+                popular_recipes.extend(additional_recipes)
+                print(f"🔍 DEBUG: Added {len(additional_recipes)} placeholder recipes from recommender system")
         else:
             # We have enough real data, just take the top 3
             popular_recipes = popular_recipes[:3]
@@ -1535,10 +1804,14 @@ def get_prescriptive_analytics():
         })
 
     except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
         print(f"Error getting prescriptive analytics: {e}")
+        print(f"Full traceback: {error_details}")
         return jsonify({
             'status': 'error',
-            'message': f'Error getting prescriptive analytics: {str(e)}'
+            'message': f'Error getting prescriptive analytics: {str(e)}',
+            'traceback': error_details
         }), 500
 
 @main_bp.route('/api/analytics/leftover-ingredients', methods=['GET'])
@@ -2281,18 +2554,82 @@ def add_recipe_review_api(recipe_id):
                 'message': 'Database connection error. Please try again.'
             }), 503
 
+        # Get all data in one transaction to avoid inconsistency
+        def get_consistent_recipe_data():
+            """Get all recipe data in one consistent snapshot."""
+            try:
+                if mongo is None:
+                    return [], [], []
+                
+                # Get all data at once to ensure consistency
+                pipeline = [
+                    {
+                        '$lookup': {
+                            'from': 'recipe_reviews',
+                            'localField': '_id',
+                            'foreignField': 'recipe_id',
+                            'as': 'reviews'
+                        }
+                    },
+                    {
+                        '$lookup': {
+                            'from': 'recipe_verifications', 
+                            'localField': '_id',
+                            'foreignField': 'recipe_id',
+                            'as': 'verifications'
+                        }
+                    },
+                    {
+                        '$addFields': {
+                            'avg_rating': {'$avg': '$reviews.rating'},
+                            'review_count': {'$size': '$reviews'},
+                            'verification_count': {'$size': '$verifications'}
+                        }
+                    },
+                    {
+                        '$sort': {
+                            'avg_rating': -1,
+                            'review_count': -1
+                        }
+                    }
+                ]
+                
+                recipe_data = list(mongo.db.recipes.aggregate(pipeline))
+                return recipe_data
+                
+            except Exception as e:
+                print(f"Error getting consistent recipe data: {e}")
+                return []
+
+
+
         # Add the review
         result = add_recipe_review(user_id, recipe_id, rating, review_text if review_text else None)
         print(f"DEBUG: add_recipe_review result: {result}")
 
-        # Update hybrid recommender with new rating
-        recommender = getattr(current_app, 'recommender', None)
-        if result['status'] == 'success' and recommender:
+        # Update hybrid recommender with new rating and refresh data
+        if result['status'] == 'success':
             try:
-                recommender.update_user_preference(user_id, recipe_id, rating)
-                print(f"DEBUG: Updated hybrid recommender with rating: user={user_id}, recipe={recipe_id}, rating={rating}")
+                # Import cache invalidation functions
+                from api.app import refresh_recommender_data, invalidate_recommender_cache
+
+                # Refresh the recommender data to include the new review
+                refresh_success = refresh_recommender_data()
+                if refresh_success:
+                    print(f"DEBUG: Recommender data refreshed after new review: user={user_id}, recipe={recipe_id}, rating={rating}")
+                else:
+                    print(f"WARNING: Failed to refresh recommender data after new review")
+                    # Fallback: just invalidate cache
+                    invalidate_recommender_cache()
+
             except Exception as e:
-                print(f"WARNING: Could not update hybrid recommender: {e}")
+                print(f"WARNING: Could not refresh recommender data: {e}")
+                # Fallback: try to invalidate cache only
+                try:
+                    from api.app import invalidate_recommender_cache
+                    invalidate_recommender_cache()
+                except Exception as cache_error:
+                    print(f"WARNING: Could not invalidate cache either: {cache_error}")
 
         # Track analytics for review
         if result['status'] == 'success':
@@ -2483,6 +2820,30 @@ def add_recipe_verification_api(recipe_id):
         # Add the verification
         result = add_recipe_verification(user_id, recipe_id, photo_data, notes if notes else None)
         print(f"DEBUG: add_recipe_verification result: {result}")
+
+        # Refresh recommender data after successful verification
+        if result['status'] == 'success':
+            try:
+                # Import cache invalidation functions
+                from api.app import refresh_recommender_data, invalidate_recommender_cache
+
+                # Refresh the recommender data to include the new verification
+                refresh_success = refresh_recommender_data()
+                if refresh_success:
+                    print(f"DEBUG: Recommender data refreshed after new verification: user={user_id}, recipe={recipe_id}")
+                else:
+                    print(f"WARNING: Failed to refresh recommender data after new verification")
+                    # Fallback: just invalidate cache
+                    invalidate_recommender_cache()
+
+            except Exception as e:
+                print(f"WARNING: Could not refresh recommender data: {e}")
+                # Fallback: try to invalidate cache only
+                try:
+                    from api.app import invalidate_recommender_cache
+                    invalidate_recommender_cache()
+                except Exception as cache_error:
+                    print(f"WARNING: Could not invalidate cache either: {cache_error}")
 
         processing_time = time.time() - start_time
         print(f"DEBUG: Verification submission completed in {processing_time:.2f} seconds")
@@ -3099,5 +3460,12 @@ def delete_shared_recipe(recipe_id):
             'status': 'error',
             'message': f'Error deleting recipe: {str(e)}'
         }), 500
+
+
+
+
+
+
+
 
 

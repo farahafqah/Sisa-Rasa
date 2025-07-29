@@ -16,46 +16,17 @@ analytics_bp = Blueprint('analytics', __name__)
 def get_leftover_ingredients_analytics():
     """
     Get analytics for most searched leftover-prone ingredients.
-
-    Returns:
-    --------
-    {
-        "status": "success",
-        "data": {
-            "most_searched_leftovers": [
-                {"name": "chicken", "count": 245, "percentage": 18.5},
-                {"name": "rice", "count": 189, "percentage": 14.2},
-                ...
-            ],
-            "total_searches": 1324,
-            "last_updated": "2024-01-01T12:00:00Z"
-        }
-    }
     """
     try:
         from api.models.user import mongo
         
+        print("🔍 DEBUG: Starting leftover ingredients analytics...")
+        
         if mongo is None:
-            # Return fallback data if MongoDB is not available
-            most_searched_leftovers = [
-                {'name': 'Chicken', 'count': 245, 'percentage': 22.1},
-                {'name': 'Rice', 'count': 189, 'percentage': 17.0},
-                {'name': 'Tomatoes', 'count': 167, 'percentage': 15.1},
-                {'name': 'Onions', 'count': 134, 'percentage': 12.1},
-                {'name': 'Carrots', 'count': 112, 'percentage': 10.1}
-            ]
-            total_ingredient_searches = sum(item['count'] for item in most_searched_leftovers)
-            
-            return jsonify({
-                'status': 'success',
-                'data': {
-                    'most_searched_leftovers': most_searched_leftovers,
-                    'total_searches': total_ingredient_searches,
-                    'last_updated': datetime.utcnow().isoformat()
-                }
-            })
+            print("⚠️ MongoDB not available, using fallback data")
+            return get_fallback_leftover_data()
 
-        # Define leftover-prone ingredients (ingredients that commonly go bad)
+        # Define leftover-prone ingredients
         leftover_prone_ingredients = {
             'chicken', 'beef', 'pork', 'fish', 'salmon', 'shrimp', 'turkey',
             'rice', 'pasta', 'bread', 'noodles',
@@ -68,12 +39,11 @@ def get_leftover_ingredients_analytics():
 
         # Get all users from MongoDB
         all_users = list(mongo.db.users.find({}))
+        print(f"🔍 DEBUG: Found {len(all_users)} users in database")
 
         # Aggregate ingredient usage across all users
         global_ingredient_usage = defaultdict(int)
         total_ingredient_searches = 0
-
-        print(f"🔍 DEBUG: Processing {len(all_users)} users for analytics")
 
         for user in all_users:
             dashboard_data = user.get('dashboard_data', {})
@@ -84,17 +54,13 @@ def get_leftover_ingredients_analytics():
                 print(f"🔍 DEBUG: User {user.get('email', 'unknown')} has ingredients: {most_used}")
 
             for ingredient, count in most_used.items():
-                # Normalize ingredient name (lowercase, strip whitespace)
                 normalized_ingredient = ingredient.lower().strip()
-
-                # Check if this ingredient is leftover-prone
                 if normalized_ingredient in leftover_prone_ingredients:
                     global_ingredient_usage[normalized_ingredient] += count
                     total_ingredient_searches += count
-                    print(f"🔍 DEBUG: Added {count} searches for {normalized_ingredient}")
 
-        print(f"🔍 DEBUG: Total global ingredient usage: {dict(global_ingredient_usage)}")
-        print(f"🔍 DEBUG: Total ingredient searches: {total_ingredient_searches}")
+        print(f"🔍 DEBUG: Global ingredient usage: {dict(global_ingredient_usage)}")
+        print(f"🔍 DEBUG: Total searches: {total_ingredient_searches}")
 
         # Get top leftover ingredients
         top_leftovers = sorted(global_ingredient_usage.items(), key=lambda x: x[1], reverse=True)[:5]
@@ -104,51 +70,53 @@ def get_leftover_ingredients_analytics():
         for ingredient, count in top_leftovers:
             percentage = (count / total_ingredient_searches * 100) if total_ingredient_searches > 0 else 0
             most_searched_leftovers.append({
-                'name': ingredient.title(),  # Capitalize for display
+                'name': ingredient.title(),
                 'count': count,
                 'percentage': round(percentage, 1)
             })
 
-        # If no real data, provide fallback data
-        if not most_searched_leftovers:
-            most_searched_leftovers = [
-                {'name': 'Chicken', 'count': 245, 'percentage': 22.1},
-                {'name': 'Rice', 'count': 189, 'percentage': 17.0},
-                {'name': 'Tomatoes', 'count': 167, 'percentage': 15.1},
-                {'name': 'Onions', 'count': 134, 'percentage': 12.1},
-                {'name': 'Carrots', 'count': 112, 'percentage': 10.1}
-            ]
-            total_ingredient_searches = sum(item['count'] for item in most_searched_leftovers)
+        # If no real data, provide fallback
+        if not most_searched_leftovers or total_ingredient_searches == 0:
+            print("⚠️ No real data found, using fallback")
+            return get_fallback_leftover_data()
 
-        return jsonify({
-            'status': 'success',
-            'data': {
-                'most_searched_leftovers': most_searched_leftovers,
-                'total_searches': total_ingredient_searches,
-                'last_updated': datetime.utcnow().isoformat()
-            }
-        })
-
-    except Exception as e:
-        print(f"Error getting leftover ingredients analytics: {e}")
-        # Return fallback data on error
-        most_searched_leftovers = [
-            {'name': 'Chicken', 'count': 245, 'percentage': 22.1},
-            {'name': 'Rice', 'count': 189, 'percentage': 17.0},
-            {'name': 'Tomatoes', 'count': 167, 'percentage': 15.1},
-            {'name': 'Onions', 'count': 134, 'percentage': 12.1},
-            {'name': 'Carrots', 'count': 112, 'percentage': 10.1}
-        ]
-        total_ingredient_searches = sum(item['count'] for item in most_searched_leftovers)
+        print(f"✅ Returning real analytics data: {most_searched_leftovers}")
         
         return jsonify({
             'status': 'success',
             'data': {
                 'most_searched_leftovers': most_searched_leftovers,
                 'total_searches': total_ingredient_searches,
-                'last_updated': datetime.utcnow().isoformat()
+                'last_updated': datetime.utcnow().isoformat(),
+                'data_source': 'real_user_data'
             }
         })
 
+    except Exception as e:
+        print(f"❌ Error getting leftover ingredients analytics: {e}")
+        return get_fallback_leftover_data()
+
+def get_fallback_leftover_data():
+    """Return fallback data when real data is not available"""
+    most_searched_leftovers = [
+        {'name': 'Chicken', 'count': 245, 'percentage': 22.1},
+        {'name': 'Rice', 'count': 189, 'percentage': 17.0},
+        {'name': 'Tomatoes', 'count': 167, 'percentage': 15.1},
+        {'name': 'Onions', 'count': 134, 'percentage': 12.1},
+        {'name': 'Carrots', 'count': 112, 'percentage': 10.1}
+    ]
+    total_ingredient_searches = sum(item['count'] for item in most_searched_leftovers)
+    
+    return jsonify({
+        'status': 'success',
+        'data': {
+            'most_searched_leftovers': most_searched_leftovers,
+            'total_searches': total_ingredient_searches,
+            'last_updated': datetime.utcnow().isoformat(),
+            'data_source': 'fallback_data'
+        }
+    })
+
 # Note: The /api/analytics/prescriptive route has been moved to routes.py
 # to avoid duplicate route definitions and ensure the real MongoDB implementation is used.
+

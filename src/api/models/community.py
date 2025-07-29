@@ -224,7 +224,7 @@ def get_recipe_reviews(recipe_id, sort_by='helpful', limit=50, skip=0):
         for review in reviews:
             formatted_reviews.append({
                 'id': str(review['_id']),
-                'user_name': review['user_name'],
+                'user_name': review.get('user_name', 'Anonymous User'),
                 'rating': review['rating'],
                 'review_text': review.get('review_text'),
                 'helpful_votes': review.get('helpful_votes', 0),
@@ -531,7 +531,7 @@ def get_recipe_verifications(recipe_id, limit=20, skip=0):
         for verification in verifications:
             formatted_verifications.append({
                 'id': str(verification['_id']),
-                'user_name': verification['user_name'],
+                'user_name': verification.get('user_name', 'Anonymous User'),
                 'notes': verification.get('notes'),
                 'has_photo': 'photo_data' in verification,
                 'created_at': verification['created_at'].isoformat(),
