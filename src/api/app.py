@@ -60,6 +60,31 @@ except Exception as e:
     print(f"❌ Database initialization failed: {e}")
     print("⚠️ App will continue without database")
 
+# Add this after the MongoDB initialization section
+print("🔍 RAILWAY DEBUG - Environment Variables:")
+print(f"  - RAILWAY_ENVIRONMENT: {os.environ.get('RAILWAY_ENVIRONMENT', 'Not set')}")
+print(f"  - PORT: {os.environ.get('PORT', 'Not set')}")
+print(f"  - MONGODB_URL exists: {'MONGODB_URL' in os.environ}")
+print(f"  - DATABASE_URL exists: {'DATABASE_URL' in os.environ}")
+print(f"  - MONGO_URI exists: {'MONGO_URI' in os.environ}")
+
+# Test MongoDB connection explicitly
+try:
+    from api.models.user import mongo
+    if mongo:
+        # Test the connection
+        result = mongo.db.command('ping')
+        print(f"✅ MongoDB ping successful: {result}")
+        
+        # Test collections
+        user_count = mongo.db.users.count_documents({})
+        review_count = mongo.db.reviews.count_documents({})
+        print(f"📊 Database stats - Users: {user_count}, Reviews: {review_count}")
+    else:
+        print("❌ MongoDB instance is None")
+except Exception as e:
+    print(f"❌ MongoDB connection test failed: {e}")
+
 # Initialize the recommender
 recommender = None
 _last_data_update = None
@@ -298,6 +323,7 @@ if __name__ == '__main__':
 
     # Run the app
     app.run(debug=True, host='0.0.0.0', port=5000)
+
 
 
 

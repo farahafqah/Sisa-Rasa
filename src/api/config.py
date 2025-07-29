@@ -7,23 +7,43 @@ This module loads configuration from environment variables.
 import os
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
-# Get the absolute path to the .env file
-dotenv_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '.env'))
+# Load environment variables from .env file (only if not in Railway)
+# Railway provides environment variables directly, so we only load .env for local development
+if not os.getenv('RAILWAY_ENVIRONMENT'):
+    # Get the absolute path to the .env file
+    dotenv_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '.env'))
 
-# Load the .env file from the specified path
-load_dotenv(dotenv_path=dotenv_path)
+    # Load the .env file from the specified path
+    load_dotenv(dotenv_path=dotenv_path)
+    print(f"📁 Loaded .env file from: {dotenv_path}")
+else:
+    print("🚂 Railway environment detected - using Railway environment variables")
 
 # MongoDB Configuration
-# Get the MongoDB URI from the environment with a default value
-MONGO_URI = os.getenv('MONGO_URI', 'mongodb://localhost:27017/sisarasa')
+# Railway might use different environment variable names, so check multiple options
+MONGO_URI = (
+    os.getenv('MONGO_URI') or
+    os.getenv('MONGODB_URI') or
+    os.getenv('DATABASE_URL') or
+    os.getenv('MONGODB_URL') or
+    'mongodb://localhost:27017/sisarasa'
+)
 
 # Validate MongoDB URI
-if not MONGO_URI:
-    print("❌ ERROR: MONGO_URI environment variable is not set!")
-    MONGO_URI = 'mongodb://localhost:27017/sisarasa'
+if not MONGO_URI or MONGO_URI == 'mongodb://localhost:27017/sisarasa':
+    print("❌ WARNING: Using default MongoDB URI - check environment variables!")
+    print(f"🔍 Available env vars: MONGO_URI={bool(os.getenv('MONGO_URI'))}, MONGODB_URI={bool(os.getenv('MONGODB_URI'))}, DATABASE_URL={bool(os.getenv('DATABASE_URL'))}")
 else:
     print(f"✅ MongoDB URI loaded: {MONGO_URI[:20]}...")
+
+# Additional Railway debugging
+if os.getenv('RAILWAY_ENVIRONMENT'):
+    print(f"🚂 Railway environment detected: {os.getenv('RAILWAY_ENVIRONMENT')}")
+    print(f"🔍 Railway MongoDB env vars check:")
+    print(f"  - MONGO_URI: {'✅' if os.getenv('MONGO_URI') else '❌'}")
+    print(f"  - MONGODB_URI: {'✅' if os.getenv('MONGODB_URI') else '❌'}")
+    print(f"  - DATABASE_URL: {'✅' if os.getenv('DATABASE_URL') else '❌'}")
+    print(f"  - MONGODB_URL: {'✅' if os.getenv('MONGODB_URL') else '❌'}")
 
 # JWT Configuration
 JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'dev-secret-key-change-in-production')
