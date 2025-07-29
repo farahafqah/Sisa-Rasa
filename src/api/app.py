@@ -92,11 +92,38 @@ def initialize_recommender(num_recipes=10, max_recipes=10000):
     base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     clean_recipes_path = os.path.join(base_dir, 'data', 'clean_recipes.json')
 
+    print(f"🔍 DEBUG: Base directory: {base_dir}")
+    print(f"🔍 DEBUG: Looking for recipes at: {clean_recipes_path}")
+    print(f"🔍 DEBUG: Current working directory: {os.getcwd()}")
+    print(f"🔍 DEBUG: File exists: {os.path.exists(clean_recipes_path)}")
+
     # Check if clean recipes file exists
     if not os.path.exists(clean_recipes_path):
-        print(f"Error: Clean recipes dataset not found at {clean_recipes_path}")
-        print("Please run the dataset download script to get the clean recipes dataset.")
-        return False
+        print(f"❌ Error: Clean recipes dataset not found at {clean_recipes_path}")
+
+        # Try alternative paths for Railway deployment
+        alternative_paths = [
+            os.path.join(os.getcwd(), 'data', 'clean_recipes.json'),
+            os.path.join(os.path.dirname(os.getcwd()), 'data', 'clean_recipes.json'),
+            './data/clean_recipes.json',
+            '../data/clean_recipes.json'
+        ]
+
+        for alt_path in alternative_paths:
+            print(f"🔍 Trying alternative path: {alt_path}")
+            if os.path.exists(alt_path):
+                print(f"✅ Found recipes at alternative path: {alt_path}")
+                clean_recipes_path = alt_path
+                break
+        else:
+            print("❌ Could not find clean_recipes.json in any expected location")
+            print("⚠️ Available files in current directory:")
+            try:
+                for item in os.listdir('.'):
+                    print(f"  - {item}")
+            except:
+                pass
+            return False
 
     try:
         # Load recipes
@@ -274,12 +301,31 @@ def health_check():
     except Exception as e:
         db_status = f"❌ disconnected: {str(e)}"
     
+    # Check environment variables for Railway debugging
+    env_info = {
+        'PORT': os.environ.get('PORT', 'Not set'),
+        'RAILWAY_ENVIRONMENT': os.environ.get('RAILWAY_ENVIRONMENT', 'Not set'),
+        'MONGO_URI_SET': '✅' if os.environ.get('MONGO_URI') else '❌',
+        'MAX_RECIPES': os.environ.get('MAX_RECIPES', 'Not set'),
+        'NUM_RECIPES': os.environ.get('NUM_RECIPES', 'Not set')
+    }
+
     return jsonify({
         'status': 'success',
         'app': '✅ running',
         'database': db_status,
         'recommender': '✅ loaded' if recommender else '❌ not loaded',
+        'environment': env_info,
         'timestamp': datetime.utcnow().isoformat()
+    })
+
+@app.route('/', methods=['GET'])
+def root_health_check():
+    """Root endpoint for Railway health checks."""
+    return jsonify({
+        'status': 'success',
+        'message': 'Sisa Rasa API is running',
+        'health_endpoint': '/api/health'
     })
 
 # Register blueprints
@@ -291,6 +337,26 @@ try:
 except ValueError as e:
     print(f"⚠️ Blueprint registration warning: {e}")
     pass
+
+# Initialize recommender for production deployment (Railway/gunicorn)
+# This ensures the recommender is initialized when the module is imported
+if not recommender and os.environ.get('PORT'):  # Railway sets PORT environment variable
+    print("🚂 Railway deployment detected - initializing recommender...")
+    try:
+        max_recipes = int(os.environ.get('MAX_RECIPES', 5000))
+        num_recipes = int(os.environ.get('NUM_RECIPES', 10))
+
+        print(f"Initializing with {max_recipes} max recipes, {num_recipes} recommendations")
+        success = initialize_recommender(num_recipes=num_recipes, max_recipes=max_recipes)
+
+        if not success:
+            print("❌ Failed to initialize recommender for Railway deployment")
+            print("⚠️ App will continue without recommender - some features may be limited")
+        else:
+            print("✅ Recommender initialized successfully for Railway deployment")
+    except Exception as e:
+        print(f"❌ Error during Railway recommender initialization: {e}")
+        print("⚠️ App will continue without recommender - some features may be limited")
 
 if __name__ == '__main__':
     # Initialize the recommender with small dataset for testing

@@ -1,1 +1,1 @@
-web: cd src && gunicorn run_api:app --host 0.0.0.0 --port $PORT
+web: cd src && gunicorn api.app:app --host 0.0.0.0 --port $PORT
