@@ -36,45 +36,25 @@ mongo = PyMongo()
 def init_db(app):
     """Initialize the database connection."""
     try:
-        print(f"🔍 DEBUG: Initializing database with URI: {app.config.get('MONGO_URI', 'Not set')[:30]}...")
-
         # Initialize PyMongo with the app
         mongo.init_app(app)
         print("✅ PyMongo initialized with Flask app")
-
+        
         # Test connection and create indexes INSIDE app context
         with app.app_context():
-            # Test the connection with more detailed error handling
-            try:
-                result = mongo.db.command('ping')
-                print(f"✅ MongoDB connection successful! Ping result: {result}")
-
-                # Test basic database operations
-                db_name = mongo.db.name
-                print(f"✅ Connected to database: {db_name}")
-
-                # Check collections
-                collections = mongo.db.list_collection_names()
-                print(f"✅ Available collections: {collections}")
-
-            except Exception as ping_error:
-                print(f"❌ MongoDB ping failed: {ping_error}")
-                print(f"❌ Error type: {type(ping_error)}")
-                raise ping_error
-
+            # Test the connection
+            result = mongo.db.command('ping')
+            print("✅ MongoDB connection successful!")
+            
             # Create indexes for user collection
             try:
                 mongo.db.users.create_index('email', unique=True)
                 print("✅ Database indexes created successfully!")
             except Exception as index_error:
                 print(f"⚠️ Warning: Could not create indexes: {index_error}")
-                # Don't fail initialization for index creation issues
-
+                
     except Exception as e:
         print(f"❌ MongoDB connection failed: {e}")
-        print(f"❌ Error type: {type(e)}")
-        import traceback
-        print(f"❌ Full traceback: {traceback.format_exc()}")
         print("⚠️ App will continue without database connection")
 
 def get_user_by_id(user_id):
