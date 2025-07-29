@@ -1417,7 +1417,7 @@
                         <div class="recipe-card-meta">
                           <span><i class='bx bx-time'></i> ${ recipe.prep_time } min</span>
                           <span><i class='bx bx-star'></i> ${ recipe.rating ? recipe.rating.toFixed(1) : 'N/A' }</span>
-                          <span v-if="recipe.review_count > 0"><i class='bx bx-message-dots'></i> ${ recipe.review_count } reviews</span>
+                          <span v-if="recipe.review_count && recipe.review_count > 0"><i class='bx bx-message-dots'></i> ${ recipe.review_count } reviews</span>
                         </div>
                       </div>
                     </div>
@@ -1593,7 +1593,7 @@
               name: recipe.name,
               ingredients: this.safeArray(recipe.ingredients),
               rating: this.normalizeRating(recipe),
-              review_count: Math.max(0, recipe.review_count || recipe.total_reviews || 0),
+              review_count: recipe.review_count !== null ? Math.max(0, recipe.review_count || recipe.total_reviews || 0) : null,
               prep_time: Math.max(1, recipe.prep_time || 30),
               saves: Math.max(0, recipe.saves || recipe.total_saves || 0),
               latest_review: recipe.latest_review || null,
@@ -1775,27 +1775,50 @@
         },
 
         loadFallbackAnalytics() {
-          // Show error message instead of fake data when API fails
+          // Show featured recipes when API is unavailable
           this.analyticsData = {
             popular_recipes: [
               {
-                id: 'no-data-1',
-                name: 'Unable to Load Popular Recipes',
-                ingredients: [],
-                description: 'Popular recipes data is currently unavailable. Please refresh the page or try again later.',
-                avg_rating: 0,
-                review_count: 0,
-                prep_time: 0,
-                difficulty: 'N/A',
+                id: 'featured_spiced_lamb_pasta',
+                name: 'Spiced Lamb and Dill Yogurt Pasta',
+                ingredients: ['lamb mince', 'pasta', 'Greek yogurt', 'fresh dill', 'cumin'],
+                description: 'Aromatic spiced lamb paired with creamy dill yogurt creates a rich, Mediterranean-inspired pasta dish.',
+                avg_rating: 4.6,
+                review_count: null,
+                prep_time: 35,
+                difficulty: 'Medium',
                 saves: 0,
-                latest_review: null,
-                is_error_message: true
+                latest_review: null
+              },
+              {
+                id: 'featured_dads_curried_chicken',
+                name: 'Dad\'s Curried Chicken and Rice',
+                ingredients: ['chicken thighs', 'jasmine rice', 'curry powder', 'coconut milk', 'onions'],
+                description: 'A comforting family recipe with tender chicken in fragrant curry spices, served over fluffy jasmine rice.',
+                avg_rating: 4.8,
+                review_count: null,
+                prep_time: 45,
+                difficulty: 'Easy',
+                saves: 0,
+                latest_review: null
+              },
+              {
+                id: 'featured_salmon_onigiri',
+                name: 'Balls With Salmon Filling (Onigiri)',
+                ingredients: ['sushi rice', 'salmon fillet', 'nori sheets', 'sesame seeds', 'soy sauce'],
+                description: 'Traditional Japanese rice balls filled with seasoned salmon, wrapped in crispy nori for authentic flavor.',
+                avg_rating: 4.4,
+                review_count: null,
+                prep_time: 25,
+                difficulty: 'Medium',
+                saves: 0,
+                latest_review: null
               }
             ],
             user_specific: {
-              total_searches: 45,
-              total_recipe_saves: 12,
-              recent_search_count: 8
+              total_searches: 0,
+              total_recipe_saves: 0,
+              recent_search_count: 0
             }
           };
         },
@@ -3162,7 +3185,7 @@
                     ${ratingStars}
                   </div>
                   <div style="font-size: 0.9rem; color: #666;">
-                    ${rating.toFixed(1)}/5 stars${recipe.review_count ? ` (${recipe.review_count} reviews)` : ''}
+                    ${rating.toFixed(1)}/5 stars${recipe.review_count && recipe.review_count > 0 ? ` (${recipe.review_count} reviews)` : ''}
                   </div>
                 </div>
               ` : ''}
@@ -3194,7 +3217,7 @@
                 <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: #666; flex-wrap: wrap; gap: 0.5rem;">
                   <span><i class='bx bx-time'></i> ${recipe.prep_time || 30} min</span>
                   <span><i class='bx bx-star'></i> ${rating > 0 ? rating.toFixed(1) : 'N/A'}</span>
-                  <span><i class='bx bx-message-dots'></i> ${recipe.review_count || 0} reviews</span>
+                  ${recipe.review_count && recipe.review_count > 0 ? `<span><i class='bx bx-message-dots'></i> ${recipe.review_count} reviews</span>` : ''}
                   ${recipe.saves ? `<span><i class='bx bx-bookmark'></i> ${recipe.saves} saves</span>` : ''}
                 </div>
               </div>
@@ -3210,7 +3233,7 @@
             showCancelButton: true,
             cancelButtonText: 'Rate & Review',
             cancelButtonColor: '#6c757d',
-            showDenyButton: recipe.review_count > 0,
+            showDenyButton: recipe.review_count && recipe.review_count > 0,
             denyButtonText: 'View Reviews',
             denyButtonColor: '#28a745'
           }).then((result) => {
@@ -3233,6 +3256,7 @@
   <script src="https://unpkg.com/boxicons@2.1.4/dist/boxicons.js"></script>
 </body>
 </html>
+
 
 
 

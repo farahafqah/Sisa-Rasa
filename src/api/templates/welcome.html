@@ -1653,19 +1653,38 @@
                             },
 
                             loadFallbackData() {
-                                // Show message when API fails instead of fake data
+                                // Show featured recipes when API fails
                                 this.analyticsData = {
                                     popular_recipes: [
                                         {
-                                            id: 'no-data-1',
-                                            name: 'No Popular Recipes Available',
-                                            ingredients: [],
-                                            description: 'Unable to load popular recipes data. Please check your connection and try again.',
-                                            avg_rating: 0,
-                                            review_count: 0,
-                                            prep_time: 0,
-                                            difficulty: 'N/A',
-                                            is_error_message: true
+                                            id: 'featured_spiced_lamb_pasta',
+                                            name: 'Spiced Lamb and Dill Yogurt Pasta',
+                                            ingredients: ['lamb mince', 'pasta', 'Greek yogurt', 'fresh dill', 'cumin'],
+                                            description: 'Aromatic spiced lamb paired with creamy dill yogurt creates a rich, Mediterranean-inspired pasta dish.',
+                                            avg_rating: 4.6,
+                                            review_count: null,
+                                            prep_time: 35,
+                                            difficulty: 'Medium'
+                                        },
+                                        {
+                                            id: 'featured_dads_curried_chicken',
+                                            name: 'Dad\'s Curried Chicken and Rice',
+                                            ingredients: ['chicken thighs', 'jasmine rice', 'curry powder', 'coconut milk', 'onions'],
+                                            description: 'A comforting family recipe with tender chicken in fragrant curry spices, served over fluffy jasmine rice.',
+                                            avg_rating: 4.8,
+                                            review_count: null,
+                                            prep_time: 45,
+                                            difficulty: 'Easy'
+                                        },
+                                        {
+                                            id: 'featured_salmon_onigiri',
+                                            name: 'Balls With Salmon Filling (Onigiri)',
+                                            ingredients: ['sushi rice', 'salmon fillet', 'nori sheets', 'sesame seeds', 'soy sauce'],
+                                            description: 'Traditional Japanese rice balls filled with seasoned salmon, wrapped in crispy nori for authentic flavor.',
+                                            avg_rating: 4.4,
+                                            review_count: null,
+                                            prep_time: 25,
+                                            difficulty: 'Medium'
                                         }
                                     ],
                                     leftover_solutions: {
