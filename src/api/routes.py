@@ -1374,19 +1374,21 @@ def get_prescriptive_analytics():
         recent_reviews = []
         recent_verifications = []
 
-        if mongo is not None:
-            try:
-                recent_reviews = list(mongo.db.recipe_reviews.find({
-                    'created_at': {'$gte': seven_days_ago}
-                }))
+        # Ensure we're in Flask application context for Railway deployment
+        with current_app.app_context():
+            if mongo is not None:
+                try:
+                    recent_reviews = list(mongo.db.recipe_reviews.find({
+                        'created_at': {'$gte': seven_days_ago}
+                    }))
 
-                recent_verifications = list(mongo.db.recipe_verifications.find({
-                    'created_at': {'$gte': seven_days_ago}
-                }))
-            except Exception as e:
-                print(f"Warning: Could not fetch reviews/verifications: {e}")
-                recent_reviews = []
-                recent_verifications = []
+                    recent_verifications = list(mongo.db.recipe_verifications.find({
+                        'created_at': {'$gte': seven_days_ago}
+                    }))
+                except Exception as e:
+                    print(f"Warning: Could not fetch reviews/verifications: {e}")
+                    recent_reviews = []
+                    recent_verifications = []
 
         # Calculate trending scores
         trending_scores = defaultdict(float)
@@ -1412,70 +1414,72 @@ def get_prescriptive_analytics():
         recipe_verification_counts = defaultdict(int)
         recipe_saves = defaultdict(int)
 
-        if mongo is not None:
-            try:
-                # Optimized aggregation for recipe ratings
-                rating_pipeline = [
-                    {
-                        '$group': {
-                            '_id': '$recipe_id',
-                            'ratings': {'$push': '$rating'},
-                            'review_count': {'$sum': 1},
-                            'avg_rating': {'$avg': '$rating'}
-                        }
-                    }
-                ]
-
-                rating_results = list(mongo.db.recipe_reviews.aggregate(rating_pipeline))
-                for result in rating_results:
-                    recipe_id = result['_id']
-                    if recipe_id:
-                        normalized_id = RecipeIDManager.normalize_recipe_id(recipe_id)
-                        recipe_ratings[normalized_id] = result['ratings']
-
-                # Optimized aggregation for verifications
-                verification_pipeline = [
-                    {
-                        '$group': {
-                            '_id': '$recipe_id',
-                            'verification_count': {'$sum': 1}
-                        }
-                    }
-                ]
-
-                verification_results = list(mongo.db.recipe_verifications.aggregate(verification_pipeline))
-                for result in verification_results:
-                    recipe_id = result['_id']
-                    if recipe_id:
-                        normalized_id = RecipeIDManager.normalize_recipe_id(recipe_id)
-                        recipe_verification_counts[normalized_id] = result['verification_count']
-
-            except Exception as e:
-                print(f"Warning: Could not fetch aggregated reviews/verifications: {e}")
-                # Fallback to the old method if aggregation fails
+        # Ensure we're in Flask application context for Railway deployment
+        with current_app.app_context():
+            if mongo is not None:
                 try:
-                    all_reviews = list(mongo.db.recipe_reviews.find())
-                    all_verifications = list(mongo.db.recipe_verifications.find())
+                    # Optimized aggregation for recipe ratings
+                    rating_pipeline = [
+                        {
+                            '$group': {
+                                '_id': '$recipe_id',
+                                'ratings': {'$push': '$rating'},
+                                'review_count': {'$sum': 1},
+                                'avg_rating': {'$avg': '$rating'}
+                            }
+                        }
+                    ]
 
-                    # Process reviews manually as fallback
-                    for review in all_reviews:
-                        recipe_id = review.get('recipe_id')
+                    rating_results = list(mongo.db.recipe_reviews.aggregate(rating_pipeline))
+                    for result in rating_results:
+                        recipe_id = result['_id']
                         if recipe_id:
                             normalized_id = RecipeIDManager.normalize_recipe_id(recipe_id)
-                            rating = review.get('rating', 3)
-                            recipe_ratings[normalized_id].append(rating)
+                            recipe_ratings[normalized_id] = result['ratings']
 
-                    # Process verifications manually as fallback
-                    for verification in all_verifications:
-                        recipe_id = verification.get('recipe_id')
+                    # Optimized aggregation for verifications
+                    verification_pipeline = [
+                        {
+                            '$group': {
+                                '_id': '$recipe_id',
+                                'verification_count': {'$sum': 1}
+                            }
+                        }
+                    ]
+
+                    verification_results = list(mongo.db.recipe_verifications.aggregate(verification_pipeline))
+                    for result in verification_results:
+                        recipe_id = result['_id']
                         if recipe_id:
                             normalized_id = RecipeIDManager.normalize_recipe_id(recipe_id)
-                            recipe_verification_counts[normalized_id] += 1
+                            recipe_verification_counts[normalized_id] = result['verification_count']
 
-                except Exception as fallback_error:
-                    print(f"Warning: Fallback query also failed: {fallback_error}")
-                    recipe_ratings = defaultdict(list)
-                    recipe_verification_counts = defaultdict(int)
+                except Exception as e:
+                    print(f"Warning: Could not fetch aggregated reviews/verifications: {e}")
+                    # Fallback to the old method if aggregation fails
+                    try:
+                        all_reviews = list(mongo.db.recipe_reviews.find())
+                        all_verifications = list(mongo.db.recipe_verifications.find())
+
+                        # Process reviews manually as fallback
+                        for review in all_reviews:
+                            recipe_id = review.get('recipe_id')
+                            if recipe_id:
+                                normalized_id = RecipeIDManager.normalize_recipe_id(recipe_id)
+                                rating = review.get('rating', 3)
+                                recipe_ratings[normalized_id].append(rating)
+
+                        # Process verifications manually as fallback
+                        for verification in all_verifications:
+                            recipe_id = verification.get('recipe_id')
+                            if recipe_id:
+                                normalized_id = RecipeIDManager.normalize_recipe_id(recipe_id)
+                                recipe_verification_counts[normalized_id] += 1
+
+                    except Exception as fallback_error:
+                        print(f"Warning: Fallback query also failed: {fallback_error}")
+                        recipe_ratings = defaultdict(list)
+                        recipe_verification_counts = defaultdict(int)
 
         # Add detailed logging to see what's happening
         print(f"🔍 DEBUG: Popular recipes calculation at {datetime.utcnow()}")
@@ -1483,48 +1487,50 @@ def get_prescriptive_analytics():
         print(f"🔍 DEBUG: Found {len(recipe_verification_counts)} recipes with verifications")
 
         # Get recipe saves data using optimized aggregation
-        if mongo is not None:
-            try:
-                # Optimized aggregation for saved recipes
-                saves_pipeline = [
-                    {
-                        '$group': {
-                            '_id': '$recipe_id',
-                            'saves_count': {'$sum': 1}
-                        }
-                    }
-                ]
-
-                saves_results = list(mongo.db.saved_recipes.aggregate(saves_pipeline))
-                for result in saves_results:
-                    recipe_id = result['_id']
-                    if recipe_id:
-                        normalized_id = RecipeIDManager.normalize_recipe_id(recipe_id)
-                        recipe_saves[normalized_id] = result['saves_count']
-
-                # If aggregation by recipe_id doesn't work, try by name (fallback)
-                if not saves_results:
-                    name_saves_pipeline = [
+        # Ensure we're in Flask application context for Railway deployment
+        with current_app.app_context():
+            if mongo is not None:
+                try:
+                    # Optimized aggregation for saved recipes
+                    saves_pipeline = [
                         {
                             '$group': {
-                                '_id': '$name',
+                                '_id': '$recipe_id',
                                 'saves_count': {'$sum': 1}
                             }
                         }
                     ]
 
-                    name_saves_results = list(mongo.db.saved_recipes.aggregate(name_saves_pipeline))
-                    for result in name_saves_results:
-                        recipe_name = result['_id']
-                        if recipe_name and recommender and recommender.recipes:
-                            # Try to match saved recipe name to recipe ID
-                            matching_recipe = next((r for r in recommender.recipes if r['name'].lower() == recipe_name.lower()), None)
-                            if matching_recipe:
-                                normalized_id = RecipeIDManager.normalize_recipe_id(matching_recipe['id'])
-                                recipe_saves[normalized_id] = result['saves_count']
+                    saves_results = list(mongo.db.saved_recipes.aggregate(saves_pipeline))
+                    for result in saves_results:
+                        recipe_id = result['_id']
+                        if recipe_id:
+                            normalized_id = RecipeIDManager.normalize_recipe_id(recipe_id)
+                            recipe_saves[normalized_id] = result['saves_count']
 
-            except Exception as e:
-                print(f"Warning: Could not fetch saved recipes data: {e}")
+                    # If aggregation by recipe_id doesn't work, try by name (fallback)
+                    if not saves_results:
+                        name_saves_pipeline = [
+                            {
+                                '$group': {
+                                    '_id': '$name',
+                                    'saves_count': {'$sum': 1}
+                                }
+                            }
+                        ]
+
+                        name_saves_results = list(mongo.db.saved_recipes.aggregate(name_saves_pipeline))
+                        for result in name_saves_results:
+                            recipe_name = result['_id']
+                            if recipe_name and recommender and recommender.recipes:
+                                # Try to match saved recipe name to recipe ID
+                                matching_recipe = next((r for r in recommender.recipes if r['name'].lower() == recipe_name.lower()), None)
+                                if matching_recipe:
+                                    normalized_id = RecipeIDManager.normalize_recipe_id(matching_recipe['id'])
+                                    recipe_saves[normalized_id] = result['saves_count']
+
+                except Exception as e:
+                    print(f"Warning: Could not fetch saved recipes data: {e}")
 
         # Calculate average ratings and popularity scores
         popular_scores = {}
@@ -1607,20 +1613,22 @@ def get_prescriptive_analytics():
                 if recipe:
                     # Get latest review for this recipe
                     latest_review = None
-                    if mongo is not None:
-                        try:
-                            latest_review_doc = mongo.db.recipe_reviews.find_one(
-                                {'recipe_id': str(recipe_id)},
-                                sort=[('created_at', -1)]
-                            )
-                            if latest_review_doc:
-                                latest_review = {
-                                    'text': latest_review_doc.get('review_text', ''),
-                                    'user_name': latest_review_doc.get('user_name', 'Anonymous'),
-                                    'rating': latest_review_doc.get('rating', 5)
-                                }
-                        except Exception as e:
-                            print(f"Warning: Could not fetch latest review for recipe {recipe_id}: {e}")
+                    # Ensure we're in Flask application context for Railway deployment
+                    with current_app.app_context():
+                        if mongo is not None:
+                            try:
+                                latest_review_doc = mongo.db.recipe_reviews.find_one(
+                                    {'recipe_id': str(recipe_id)},
+                                    sort=[('created_at', -1)]
+                                )
+                                if latest_review_doc:
+                                    latest_review = {
+                                        'text': latest_review_doc.get('review_text', ''),
+                                        'user_name': latest_review_doc.get('user_name', 'Anonymous'),
+                                        'rating': latest_review_doc.get('rating', 5)
+                                    }
+                            except Exception as e:
+                                print(f"Warning: Could not fetch latest review for recipe {recipe_id}: {e}")
 
                     recipe_data = {
                         'id': recipe['id'],
@@ -1691,15 +1699,17 @@ def get_prescriptive_analytics():
         # Get most frequently searched ingredients from all users
         all_users = []
 
-        if mongo is not None:
-            try:
-                all_users = list(mongo.db.users.find({}, {
-                    'dashboard_data.search_stats.most_used_ingredients': 1,
-                    'dashboard_data.ingredient_history': 1
-                }))
-            except Exception as e:
-                print(f"Warning: Could not fetch user data: {e}")
-                all_users = []
+        # Ensure we're in Flask application context for Railway deployment
+        with current_app.app_context():
+            if mongo is not None:
+                try:
+                    all_users = list(mongo.db.users.find({}, {
+                        'dashboard_data.search_stats.most_used_ingredients': 1,
+                        'dashboard_data.ingredient_history': 1
+                    }))
+                except Exception as e:
+                    print(f"Warning: Could not fetch user data: {e}")
+                    all_users = []
 
         # Aggregate ingredient usage across all users
         global_ingredient_usage = defaultdict(int)
@@ -1747,49 +1757,51 @@ def get_prescriptive_analytics():
         user_specific = {}
         if user_id and mongo and ObjectId:
             try:
-                user = mongo.db.users.find_one({'_id': ObjectId(user_id)})
-                if user:
-                    dashboard_data = user.get('dashboard_data', {})
-                    analytics = user.get('analytics', {})
+                # Ensure we're in Flask application context for Railway deployment
+                with current_app.app_context():
+                    user = mongo.db.users.find_one({'_id': ObjectId(user_id)})
+                    if user:
+                        dashboard_data = user.get('dashboard_data', {})
+                        analytics = user.get('analytics', {})
 
-                    # User's most used ingredients
-                    user_ingredients = dashboard_data.get('search_stats', {}).get('most_used_ingredients', {})
-                    top_user_ingredients = sorted(user_ingredients.items(), key=lambda x: x[1], reverse=True)[:5]
+                        # User's most used ingredients
+                        user_ingredients = dashboard_data.get('search_stats', {}).get('most_used_ingredients', {})
+                        top_user_ingredients = sorted(user_ingredients.items(), key=lambda x: x[1], reverse=True)[:5]
 
-                    # Recent search patterns
-                    recent_searches = dashboard_data.get('recent_searches', [])
+                        # Recent search patterns
+                        recent_searches = dashboard_data.get('recent_searches', [])
 
-                    # Personalized leftover suggestions based on user history
-                    user_leftover_suggestions = []
-                    for ingredient, count in top_user_ingredients:
-                        # Find recipes that use this ingredient
-                        if recommender and recommender.recipes:
-                            matching_recipes = [
-                                r for r in recommender.recipes[:100]  # Limit search
-                                if ingredient.lower() in [ing.lower() for ing in r.get('ingredients', [])]
-                            ][:3]  # Top 3 matches
+                        # Personalized leftover suggestions based on user history
+                        user_leftover_suggestions = []
+                        for ingredient, count in top_user_ingredients:
+                            # Find recipes that use this ingredient
+                            if recommender and recommender.recipes:
+                                matching_recipes = [
+                                    r for r in recommender.recipes[:100]  # Limit search
+                                    if ingredient.lower() in [ing.lower() for ing in r.get('ingredients', [])]
+                                ][:3]  # Top 3 matches
 
-                            if matching_recipes:
-                                user_leftover_suggestions.append({
-                                    'ingredient': ingredient,
-                                    'usage_count': count,
-                                    'suggested_recipes': [
-                                        {
-                                            'id': r['id'],
-                                            'name': r['name'],
-                                            'ingredients': r['ingredients'][:4]  # First 4 ingredients
-                                        } for r in matching_recipes
-                                    ]
-                                })
+                                if matching_recipes:
+                                    user_leftover_suggestions.append({
+                                        'ingredient': ingredient,
+                                        'usage_count': count,
+                                        'suggested_recipes': [
+                                            {
+                                                'id': r['id'],
+                                                'name': r['name'],
+                                                'ingredients': r['ingredients'][:4]  # First 4 ingredients
+                                            } for r in matching_recipes
+                                        ]
+                                    })
 
-                    user_specific = {
-                        'most_used_ingredients': [{'name': ing, 'count': count} for ing, count in top_user_ingredients],
-                        'total_searches': dashboard_data.get('search_stats', {}).get('total_searches', 0),
-                        'recent_search_count': len(recent_searches),
-                        'personalized_leftover_suggestions': user_leftover_suggestions,
-                        'cooking_streak': analytics.get('cooking_streak', {}),
-                        'total_recipe_saves': analytics.get('total_recipe_saves', 0)
-                    }
+                        user_specific = {
+                            'most_used_ingredients': [{'name': ing, 'count': count} for ing, count in top_user_ingredients],
+                            'total_searches': dashboard_data.get('search_stats', {}).get('total_searches', 0),
+                            'recent_search_count': len(recent_searches),
+                            'personalized_leftover_suggestions': user_leftover_suggestions,
+                            'cooking_streak': analytics.get('cooking_streak', {}),
+                            'total_recipe_saves': analytics.get('total_recipe_saves', 0)
+                        }
             except Exception as e:
                 print(f"Error getting user-specific analytics: {e}")
                 user_specific = {}
