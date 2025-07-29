@@ -109,12 +109,23 @@ def signup():
             'message': 'Password must be at least 6 characters long'
         }), 400
 
-    # Create user
-    user = create_user(
+    # Create user - handle tuple return
+    result = create_user(
         name=data['name'],
         email=data['email'],
         password=data['password']
     )
+
+    # Handle tuple return (user, error_message)
+    if isinstance(result, tuple):
+        user, error = result
+        if not user:
+            return jsonify({
+                'status': 'error',
+                'message': error or 'Failed to create user'
+            }), 500
+    else:
+        user = result
 
     if not user:
         return jsonify({
@@ -681,3 +692,4 @@ def verify_reset_token():
             'status': 'success',
             'valid': False
         })
+
